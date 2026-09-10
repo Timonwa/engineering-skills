@@ -227,7 +227,6 @@ In chat only: the detected entry situation, the recorded interview answers, the 
 - **Executes a standard it does not invent** — workspace/turbo/catalog → `turborepo-monorepo`; CI, hooks, CODEOWNERS, deploy → `devops`; shared tsconfig + the contracts layers → `typescript-best-practices`; `tailwind-config` + the `ui:` prefix → `tailwind-css`; the `ui` package's contents → `design-system` + `reusables`; shared-kind packages and the grouping thresholds → `code-structure`; names → `naming`; a separate API app's internals → `api-architecture`.
 - **Project facts belong elsewhere** — real scopes, domains, ports in prose, deploy hosts, owner handles, secret names → `scaffold-agents-md`.
 - **Adjacent jobs** — realigning apps that have already diverged → `sync-apps`; a framework or major upgrade → `migrate-framework`; a feature inside an app → `scaffold-feature`.
-- Called **into** by `scaffold-next-app` when an app turns out to need a workspace around it first, and by `scaffold-agents-md` when a repo's shape must be settled before its facts are written.
 
 ## References
 

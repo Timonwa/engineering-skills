@@ -230,7 +230,6 @@ In chat only: whether this was a first run or an add-run and which house markers
 - **Skeleton and integration wiring only.** The first feature slice → `scaffold-feature`. `AGENTS.md` → `scaffold-agents-md`. Moving an existing app to a new framework or major → `migrate-framework`. Realigning already-diverged sibling apps → `sync-apps`.
 - **An add-run wires an integration in; it does not restructure.** Renaming a kind, re-splitting `styles/`, or moving `app/` into `src/` is first-run-scale work — say so and stop rather than half-applying it.
 - **Executes, never invents the standard** — layout `code-structure`, names `naming`, types/schemas `typescript-best-practices`, styles/tokens `tailwind-css`, tiers `design-system`, primitives `reusables`, stories `storybook-setup` + `storybook-story-writing`, env/CI/hooks `devops`, API layering `api-architecture`, framework flags `nextjs-best-practices`, Firebase `firebase-architecture`, markup and a11y `html-best-practices` + `accessibility`.
-- Called **into** by `scaffold-monorepo` (per app) and called back into by `scaffold-agents-md` when a repo needs its structure before its docs.
 
 ## References
 

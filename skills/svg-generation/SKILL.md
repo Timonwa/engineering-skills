@@ -1,11 +1,11 @@
 ---
 name: svg-generation
-description: Use when creating SVGs by hand — icons, technical diagrams, flowcharts, pipeline/architecture visualizations, illustrations, or any vector graphic. Produces clean, optimized, accessible, theme-able SVG. Palette/type come from the project (`tailwind-css`, `frontend-design`); contrast/a11y verification → `accessibility`; asset file names → `naming`.
+description: Use when creating SVGs by hand — icons, technical diagrams, flowcharts, pipeline/architecture visualizations, illustrations, or any vector graphic. Produces clean, optimized, accessible, theme-able SVG. Palette and type come from the project.
 ---
 
 # SVG generation
 
-Well-structured, production-ready SVG: clean source, correct accessibility, and theme-able colors. Plan the visual before writing code; use the project's palette and type (`frontend-design` / `tailwind-css`), not arbitrary values.
+Well-structured, production-ready SVG: clean source, correct accessibility, and theme-able colors. Plan the visual before writing code; use the project's palette and type (`tailwind-css`), not arbitrary values.
 
 ## Plan first
 
@@ -49,7 +49,7 @@ Well-structured, production-ready SVG: clean source, correct accessibility, and 
 ## Diagrams & flowcharts
 
 - Consistent node sizes per type; align to a grid with even spacing. Prefer straight lines with right-angle bends over diagonal spaghetti; label connections when the relationship isn't obvious.
-- **Visual hierarchy** (→ `frontend-design`): larger/bolder = primary, smaller/lighter = secondary. Group with subtle background fills/rounded rects. Consistent flow direction (L→R or top-down).
+- **Visual hierarchy:** larger/bolder = primary, smaller/lighter = secondary. Group with subtle background fills/rounded rects. Consistent flow direction (L→R or top-down).
 - Differentiate types by treatment (solid vs dashed border, category fills); add a **legend** when > 3 colors/symbols. Center text inside shapes.
 
 ## Optimization
@@ -57,7 +57,7 @@ Well-structured, production-ready SVG: clean source, correct accessibility, and 
 - Strip defaults and cruft: no redundant attributes, empty `<g>`, or unused `<defs>`; 1–2 decimal places on coordinates; attributes over inline `style`.
 - Run generated/exported SVGs through **SVGO** (or the editor's "optimize"); in a build pipeline, wire it in via the SVGO CLI, a bundler plugin, or SVGR's `svgo` option. Aim < 10KB for icons, < 50KB for most diagrams.
 - **Embedding decision**: **inline** when the SVG is styled/animated/themed (`currentColor`, CSS vars, a11y wiring); **`<img src>`/`background-image`** for static art you want cached and out of the DOM; **sprite + `<use>`** for icons repeated many times on a page.
-- **Never inline untrusted/user-uploaded SVG** — it can execute scripts. Sanitize it (DOMPurify) or serve it via `<img>` where scripts don't run (→ `frontend-security`).
+- **Never inline untrusted/user-uploaded SVG** — it can execute scripts. Sanitize it (DOMPurify) or serve it via `<img>` where scripts don't run.
 
 ## Patterns
 
@@ -107,4 +107,4 @@ UI icon (theme-able, decorative next to a label — inline in JSX/HTML, hence no
 - [ ] Optimized — no unused defs/empty groups/redundant attrs; run through SVGO.
 - [ ] File named per `naming` (kebab-case, descriptive).
 
-> **Related:** a logo, brand icon or favicon set is a different job — the type has to be outlined and the assets have to survive export → `logo-generation`. A diagram for a blog post follows that publication's article craft, not this skill's defaults.
+> **Related:** a logo, brand icon or favicon set is a different job — the type has to be outlined and the assets have to survive export. A diagram for a blog post follows that publication's article craft, not this skill's defaults.

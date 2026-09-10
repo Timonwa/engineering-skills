@@ -11,7 +11,7 @@ effort: high
 
 A **manually-invoked, red-team API audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/api-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`api-architecture`** (plus **`backend-security`** and **`firebase-architecture`**) ARE present, also apply their house-specific rules as an enhancement. Run the whole house audits family in one pass via **`audit-all`**.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`api-architecture`** (plus **`backend-security`** and **`firebase-architecture`**) ARE present, also apply their house-specific rules as an enhancement.
 
 ## Arguments
 
