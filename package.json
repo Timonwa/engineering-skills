@@ -1,0 +1,16 @@
+{
+  "name": "engineering-skills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Claude Code engineering skills for Next.js, React and Firebase.",
+  "license": "MIT",
+  "repository": "github:Timonwa/engineering-skills",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate": "claude plugin validate . --strict"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6"
+  }
+}
