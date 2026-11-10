@@ -1,11 +1,11 @@
 ---
 name: typescript
-description: Use when writing or reviewing TypeScript — typing code, designing types, configuring tsconfig, or fixing type errors. Enforces strict, inference-first TypeScript (TS 5.x) — no any / unsafe casts, discriminated unions, satisfies, utility types, and Zod as the source of truth. Identifier naming and suffixes live in the `naming` skill.
+description: Use when writing or reviewing TypeScript — typing code, designing types, configuring tsconfig, typing Next.js routes, or fixing type errors. Enforces strict, inference-first TypeScript 7 — no any or unsafe casts, discriminated unions, satisfies, utility types, erasable syntax only, tsconfig presets chosen by who resolves the imports, and typed routes. Zod schemas live in `schemas-and-contracts`; identifier naming in `naming`.
 ---
 
 # TypeScript
 
-Strict, inference-first TypeScript. Types are documentation the compiler checks — make illegal states unrepresentable. (Identifier naming + suffixes → the `naming` skill.)
+Strict, inference-first TypeScript. Types are documentation the compiler checks — make illegal states unrepresentable.
 
 ## Project specifics first
 
@@ -16,74 +16,86 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Non-negotiables
 
-- **`strict: true`, always.** Never disable strict or a rule to "make it pass."
-- **No `any`.** Take `unknown` at boundaries and narrow; reach for a generic before `any`. (Lint bans it.)
-- **No unsafe casts.** No `as` to launder unknown data into a type; no non-null `!` to silence the compiler — narrow or fix the type instead. (`as const`, and `as` for a genuinely-known narrowing, are fine.)
-- **Type everything typeable, but infer internally / annotate boundaries** — annotate function params, exported return types, and public APIs; let locals infer.
-- **`import type` for type-only imports** — `verbatimModuleSyntax` enforces it; keeps types out of the runtime module graph.
+- **`strict: true`, always.** Never disable strict or a rule to make something pass.
+- **No `any`.** Take `unknown` at boundaries and narrow; reach for a generic before `any`.
+- **No unsafe casts.** No `as` to launder unknown data into a type, no non-null `!` to silence the compiler — narrow or fix the type. `as const`, and `as` for a narrowing you can prove, are fine.
+- **Infer internally, annotate boundaries.** Annotate function parameters, exported return types and public APIs; let locals infer.
+- **Data crossing a boundary is typed by its schema**, never by a hand-written type beside it. How the schemas are written is `schemas-and-contracts`'.
 
 ## Designing types
 
-- **`satisfies`** to check a value against a type _while keeping its literal type_ (config objects, lookup maps) — not a plain annotation, which widens.
-- **Discriminated unions** for "one of N shapes" (`{ status: "ok"; data } | { status: "error"; message }`); narrow on the discriminant and exhaustive-check the default with `never`.
-- **`as const`** for literal/readonly data; derive the union from it (`type Status = (typeof STATUSES)[number]`).
-- **Utility types** over hand-rolling: `Pick` / `Omit` / `Partial` / `Required` / `Record` / `ReturnType` / `Awaited`. Compose, don't duplicate.
-- **Generics** with constraints (`<T extends …>`); give them meaningful names when non-trivial. Don't over-generalize.
-- **`type` vs `interface`:** prefer `type` (composes, unions, inference); use `interface` only when you need declaration merging or `implements`.
-- **Errors are `unknown`** — `catch (error: unknown)` and narrow (`instanceof Error`, a schema parse) before touching it.
-- **Branded types** for ids where mixing them up is a real bug risk (`type UserId = string & { readonly __brand: "UserId" }`) — don't brand everything.
-- **`NoInfer<T>`** to lock an inference site so a second argument can't widen what the first inferred.
-- **Template-literal types** for string grammars the compiler can check (e.g. cache tags: `` type CacheTag = `${Entity}:${string}` ``).
+- **`satisfies`** checks a value against a type while keeping its literal type (config objects, lookup maps); a plain annotation widens it.
+- **Discriminated unions** for one of several shapes (`{ status: "ok"; data } | { status: "error"; message }`); narrow on the discriminant and check the default is `never`.
+- **`as const`** for literal, read-only data; derive the union from it (`type Status = (typeof STATUSES)[number]`).
+- **Utility types** over hand-rolled ones: `Pick`, `Omit`, `Partial`, `Required`, `Record`, `ReturnType`, `Awaited`. Compose, don't duplicate.
+- **Generics** with constraints (`<T extends …>`); don't over-generalise.
+- **`type` over `interface`**, which composes, unions and infers; use `interface` only for declaration merging or `implements`.
+- **Errors are `unknown`** — `catch (error: unknown)` and narrow (`instanceof Error`, a schema parse) before touching one.
+- **Branded types** for ids where mixing two up is a real risk (`type UserId = string & { readonly __brand: "UserId" }`) — not for everything.
+- **`NoInfer<T>`** locks an inference site so a second argument can't widen what the first inferred.
+- **Template-literal types** for string grammars the compiler can check (`` type CacheTag = `${Entity}:${string}` ``).
 
-## Zod = source of truth
+## Erasable syntax only
 
-**Zod 4.** String-format validators are top-level — `z.email()`, `z.uuid()`, `z.url()`; the chained `z.string().email()` forms are deprecated. Where data crosses a boundary (API, forms, content, env), validate with a Zod schema and **infer the type** — never maintain a parallel hand-written type:
+Every file must run by deleting its types — Node runs `.ts` that way natively, and single-file transpilers (SWC, esbuild) compile each file on its own. Node's TypeScript docs recommend two compiler options for it:
 
-```ts
-const UserSchema = z.object({ id: z.string(), name: z.string(), email: z.email() });
-type User = z.infer<typeof UserSchema>;
-```
+- **`erasableSyntaxOnly: true`** refuses the features that generate code: `enum`, a `namespace` with values, parameter properties (`constructor(private name: string)`), `import =`. Use an `as const` object with a derived union instead of an enum, and an explicit field assigned in the constructor instead of a parameter property.
+- **`verbatimModuleSyntax: true`** keeps every import exactly as written, so a type-only import must say so (`import type { User }`, or `import { save, type User }`). A tool that strips types per file can then drop it safely.
 
-**Compose schemas, don't repeat them** — derive related shapes from a base: `CreateX` (user-writable fields) → `.extend()` into the full `X` (adds `id`/timestamps) → `.omit({…}).partial()` for `UpdateX`. Write schemas are **`.pick()` allowlists** off the full schema — fail-closed: a new field isn't client-writable until you explicitly add it (house `api-architecture` standard). Keep validation limits in `UPPER_SNAKE` constants and reference them in `.min()`/`.max()`, not magic numbers.
+Turning them on in an existing codebase: the first passes as soon as no file uses the four features; the second needs type-only imports marked, which `@typescript-eslint/consistent-type-imports` fixes automatically.
 
-(Schema/type naming → `naming`.)
+## tsconfig presets
 
-## Where contracts live
+**Who resolves a workspace's imports decides its module settings**, so a monorepo keeps one shared preset per kind of consumer, never one setting for every package. A wrong choice builds cleanly and fails at import time.
 
-Same four layers whichever shape the repo is — **a single app puts them in `lib/`, a monorepo puts them in a shared package** so the API and every app import one copy. The grammar and the rules below do not change between the two, which is what makes moving an app into a workspace a folder move:
+| Preset          | For                              | Module settings                                                                                   |
+| --------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `base`          | everything; the others extend it | `strict`, `noUncheckedIndexedAccess`, `isolatedModules`, `skipLibCheck`, a `target`               |
+| `nextjs`        | a Next.js app                    | `module: "ESNext"`, `moduleResolution: "Bundler"`, `jsx: "preserve"`, `noEmit`, the `next` plugin |
+| `react-library` | a package every consumer bundles | `module: "ESNext"`, `moduleResolution: "Bundler"`, `jsx: "react-jsx"`                             |
+| `node-library`  | a package plain Node loads       | `module: "NodeNext"`, `moduleResolution: "NodeNext"`                                              |
 
-| Layer          | Single app                            | Monorepo                         |
-| -------------- | ------------------------------------- | -------------------------------- |
-| `constants/`   | `src/lib/constants`                   | `packages/contracts/constants`   |
-| `schemas/`     | `src/lib/schemas`                     | `packages/contracts/schemas`     |
-| `types/`       | `src/lib/types`                       | `packages/contracts/types`       |
-| `permissions/` | `src/lib/constants` + `src/lib/utils` | `packages/contracts/permissions` |
+- **`NodeNext` requires the `.js` extension on relative imports** (`import { x } from "./x.js"`). That's the ESM spec, and it's what makes plain `tsc` output loadable by Node.
+- **An app's own `tsconfig.json`** extends its preset and adds the path alias (`"@/*": ["./src/*"]`). Add a second alias only with a reason.
+- **Strictness worth adopting knowingly:** `noUncheckedIndexedAccess` (indexed access yields `T | undefined`) is in the base; `exactOptionalPropertyTypes` (`?:` no longer accepts an explicit `undefined`) is a project's choice.
+- **A Next.js app type-checks with `next typegen && tsc --noEmit`,** because typed routes and `PageProps`/`LayoutProps` come from Next's generated types.
+- **When the linter's TypeScript parser lags a major version,** alias the linter package's own `typescript` dependency to the last major it supports, record why in the lint config's docs, and remove the alias once the parser catches up. Lint and the compiler then check with slightly different versions, so the compiler stays the authority.
 
-What each holds:
+## Typed routes
 
-- `constants/` — `as const` arrays → derived unions, validation limits, label maps.
-- `schemas/` — Zod schemas + their inferred types. One file per domain (`<domain>.schema.ts`) plus a `shared.schema.ts` for cross-domain primitives (timestamp, pagination, email) that per-endpoint schemas `.extend()`.
-- `types/` — plain TS interfaces with **no Zod**, for runtime-UI state that isn't a wire contract (upload progress, client auth state). The boundary rule: **wire contract → schema; UI-only state → interface.**
-- `permissions/` — permission strings, role → permission maps, `can()` helpers (when the app has RBAC). **Client-safe on purpose:** `can()` is pure with no I/O, so the same function gates a UI affordance and a server guard. A single app therefore splits it across the existing kinds — the strings and maps are constants, `can()` is a util — rather than adding a kind that only a monorepo needs.
+With `typedRoutes: true` in `next.config`, Next checks every `href` against the app's real pages.
 
-Rules that keep it honest:
+- **Each app declares its own `RouteTable` type in its routes file** and ends the table with `} as const satisfies RouteTable`. `Route` is a real union of pages only inside an app, where Next's generated types declare it; in a shared package it is a stub that accepts any string, so a shared `RouteTable` would check nothing.
 
-- **Declare a schema and its inferred type together as one unit** — `export const XSchema = …` immediately followed by `export type X = z.infer<typeof XSchema>`. Never pool the types at the bottom of the file — pooled types drift when schemas are added or renamed.
-- **Additive changes are the default** (new optional field, extended schema). A destructive change (remove/rename a field) ships as **one coordinated PR** updating the API and all consumers — the contract is shared, so a partial rollout breaks the other side.
+  ```ts
+  import type { Route } from "next";
 
-## tsconfig baseline
+  type RouteTable = {
+    [key: string]: Route | RouteTable | ((...args: never[]) => string);
+  };
 
-- `strict: true` and an explicit `target` (don't inherit the default). **`module`/`moduleResolution` follow who resolves the imports:** `"preserve"` + `"bundler"` for anything a bundler builds — an app, or a package every consumer bundles; `"NodeNext"` + `"NodeNext"` for a package **Node** loads directly. `NodeNext` then requires the `.js` extension on relative imports, which is the ESM spec and what makes plain `tsc` output loadable. Getting this wrong builds clean and fails at import time, so in a workspace it is a separate shared config per consumer, never one setting for every package.
-- **`verbatimModuleSyntax: true`** — forces `import type`, so every import statement is erasable and single-file transpilers stay correct.
-- **`erasableSyntaxOnly: true`** (TS 5.8+) — bans enums, namespaces, and parameter properties; the compiler-level enforcement of this skill's no-`enum` rule.
-- `isolatedModules`, `skipLibCheck: true` (don't re-check `node_modules` types), `noEmit` (the framework builds), `jsx: "react-jsx"`; the framework TS plugin where applicable (`{ "name": "next" }`).
-- Path alias `@/*`. Add a second alias only with a reason — e.g. an `@env` alias for the validated env module, giving env access a single import point.
-- Strictness upgrades to adopt knowingly: **`noUncheckedIndexedAccess`** (indexed access yields `T | undefined`) and **`exactOptionalPropertyTypes`** (`?:` no longer accepts an explicit `undefined`).
+  export const ROUTES = {
+    home: "/",
+    events: {
+      root: "/events",
+      detail: (eventId: string): `/events/${string}` => `/events/${eventId}`,
+    },
+  } as const satisfies RouteTable;
+  ```
+
+- **A path with a parameter is a function typed by its template** (`` `/events/${string}` ``), never a bare `Route`: `Route` excludes dynamic routes, so a `Link` fed a bare `Route` from a function would stop being checked.
+- **Type a nav item's `href` as `Route`**, so every navigation link is checked when it compiles.
+- **Never `as Route` on a literal** — the cast accepts a path that no longer exists, while `satisfies` fails the build. Keep `as Route` for a path known only at runtime (a `returnTo` read from the URL, a path the API sends), with a comment saying which.
 
 ## Avoid
 
-- `any`, unsafe `as`, non-null `!` abuse, `@ts-ignore` (use `@ts-expect-error` **with a reason** only when truly unavoidable).
-- **`enum`** — prefer an `as const` object + derived union (smaller output, tree-shakeable, plays well with `isolatedModules`).
-- A hand-written type that duplicates a Zod schema or an already-inferred shape.
+- `any`, unsafe `as`, non-null `!` to silence errors, and `@ts-ignore`. Use `@ts-expect-error` with a reason only when truly unavoidable.
+- `enum`, namespaces with values and parameter properties — `erasableSyntaxOnly` refuses them.
+- A hand-written type that duplicates a schema or an already-inferred shape.
 
-> **Audit:** review this domain on demand with the manually-invoked `codebase-audit` command (see `audit-all` for the whole suite).
+## Related skills
+
+- Zod schemas, write and read shapes, and the shared contracts package → `schemas-and-contracts`.
+- Names of types, schemas and generics → `naming`.
+- Where route and endpoint files live → `code-structure`.
+- Reviewing a codebase against this skill → `codebase-audit`.
