@@ -1,12 +1,12 @@
 ---
 name: code-structure
 description: >-
-  The required file and folder structure for pages, route entries, components and lib/ modules in any framework — thin route and layout entries, components/ mirroring the route groups, section-based pages composed by an index, one folder per component across the four ui/ tiers, and a flat kind-first lib/ using the `<domain>.<kind>.ts` grammar. Use when adding or refactoring a page, building a screen, splitting UI, or organizing lib/.
+  The file and folder structure of a Next.js App Router app — thin page and layout entries, components/ organised by product area, section-based pages composed by an index, a flat kind-first lib/ using the `<domain>.<kind>.ts` grammar, the server folders for each app shape (an app with its own backend, a frontend over a separate API, the API app itself), and where shared code goes in a monorepo. Use when adding or refactoring a page, building a screen, splitting UI, organising lib/ or server code, or deciding whether code belongs in a package.
 ---
 
-# Code structure — pages, components, and lib
+# Code structure — pages, components, lib and server code
 
-Every page/screen is built this way, in every framework. **Never write a page as one large inline file.** Only the route/entry file differs per framework; the structure below is identical everywhere.
+Every page is built from small files in predictable places, so a path can be guessed before it is opened. **Never write a page as one large inline file.** The rules for pages, components and `lib/` apply to every app; the server folders depend on the app's shape; the monorepo section applies only when there are packages.
 
 ## Project specifics first
 
@@ -15,131 +15,161 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Rules
+## Pages
 
-1. **Thin route/entry.** The framework's entry file only imports a composed `…PageContent` and renders it — no markup, data, or logic inline. That file is `app/**/page.tsx` (Next.js), `src/pages/*.astro` (Astro), or a route element (React Router) — see Entry files below. **A layout file is an entry too**: `layout.tsx` renders a shell from `ui/layouts/` and nothing else. The one thing that stays in the route file is a **guard** — a layout that throws escapes its own `error.tsx`, so the check belongs where the boundary is visible.
-2. **Feature-grouped UI.** A page's components live under `components/<feature>/<page>/` (e.g. `components/marketing/landing/`, `components/owner/dashboard/`).
-3. **One file per section.** Split the page into section components — PascalCase, **named export**, one concern each (`Header.tsx`, `Hero.tsx`, `HowItWorks.tsx`, `Footer.tsx`). Named (not default) so the file name, export name, and every import match — never renamed on import.
-4. **`index.tsx` composes.** It imports the sections and stacks them into a named-exported `…PageContent` that owns the page's layout wrapper.
-5. **Reusable primitives** (Button, Card, …) live in `components/ui/`. Section-local data/constants live with the section, not in the entry file.
-6. **Sections are self-contained.** A section owns its own wrapper/`Card`/markup. `index.tsx` and the entry file only import and stack — they never wrap a section in a primitive or add inline JSX beyond the layout container.
-7. **Extract repeated UI** (wordmark, nav, a title+description heading) into reusable components; anything every page in a route group shares goes in that group's layout.
+1. **Thin entries.** `app/**/page.tsx` only imports a composed `…PageContent` and renders it — no markup, data or logic inline. A `layout.tsx` is an entry too: it renders a shell from `ui/layouts/` and passes this app's regions (nav items, footer) in as props. The one thing an entry may hold beyond that is a guard; what the check does and where the real check belongs are `auth`'s.
+2. **One file per section.** Split the page into section components — PascalCase, **named export**, one concern each (`Hero.tsx`, `HowItWorks.tsx`, `Pricing.tsx`). Named, not default, so the file name, the export and every import match.
+3. **`index.tsx` composes.** It imports the sections and stacks them into a named-exported `…PageContent` that owns the page's layout wrapper.
+4. **Sections are self-contained.** A section owns its wrapper and markup; `index.tsx` and the entry only import and stack. Section-local data and constants live with the section, never in the entry.
+5. **Extract repeated UI.** Anything two pages share becomes a component with props for what differs; anything every page in a route group shares goes in that group's layout.
 
 ## Small, isolated files (≤ ~200 lines)
 
-Never cram many components/logic into one file. When a file grows past ~200 lines or mixes concerns, **split it**: one file per modal/overlay, one file per section, and stateful logic into a `use-*.ts` hook. Shared hooks live in the `hooks` kind (`lib/hooks/<feature>/use-*.ts`, or `packages/hooks` when shared in a monorepo); a hook used by exactly one section may colocate with it; a hook that returns JSX (a provider component) is a component file, not a hook file. The orchestrator only composes the pieces. Don't duplicate — extract. As soon as the same UI or logic is used in two places (or clearly will be), pull it into one reusable piece: shared UI becomes a component with props for whatever differs; shared logic becomes a helper or hook. (See the `reusables` skill for how to build them.)
-
-## The tree
-
-The concrete end-to-end trees live with the commands that produce them — the single-app tree in `scaffold-next-app`, the workspace tree in `scaffold-monorepo`. This skill owns the rules those trees obey; the sections below are the authority when the two disagree.
+When a file passes ~200 lines or mixes concerns, **split it**: one file per modal or overlay, one per section, stateful logic into a `use-*.ts` hook. A hook used by exactly one section may sit beside it; a shared one goes in the `hooks` kind. A hook that returns JSX (a provider) is a component file. The orchestrator only composes. As soon as the same UI or logic is used twice, extract one piece — how to build it is `reusables`.
 
 ## Where things live
 
-- `components/ui/` — generic, app-agnostic reusables, **always organized into 4 tiers** (from day one): `base/` = primitive atoms (Button, Input, Badge, Avatar, Checkbox); `blocks/` = composed components built from base (Card, Modal, DataTable, Tabs, Accordion, Toast); `patterns/` = whole page regions (Navbar, Sidebar, Footer, SidePanel); `layouts/` = page-level wrappers/shells. **Decision — an ordered ladder, first match wins:** `base` = renders one thing, no internal sub-components, no children orchestration; `blocks` = has internal structure, may ship as a multi-export pair (`Accordion` + `AccordionItem`), manages its own state; `patterns` = a whole region of the page, often with several variants; `layouts` = slot-based API (navbar/sidebar/footer as slot props).
-- **One folder per component inside a tier**; the folder's `index.tsx` IS the component, with its story and (when there is behaviour) a test beside it: `ui/base/Button/{index.tsx, Button.stories.tsx, Button.test.tsx}`. No per-component barrel — importing the folder resolves to the component, and stories/tests are discovered by glob, never exported. The tier barrel lists one line per component folder; a root `ui/index.ts` re-exports all four tiers.
-- **Every component ships a story. A test only where there is behaviour** — state, keyboard handling, conditional rendering, focus management. A component that renders what it is given has nothing to assert that the story does not already show, and a test asserting "it rendered" is maintenance without cover.
-- **A compound component's parts are separate named exports**, never static properties (`Accordion.Item`) — a static property defeats tree-shaking through the tier barrels.
-- **A layout takes its regions as slot props.** `DashboardLayout` never imports `Sidebar`; the route's `layout.tsx` passes it in, with this app's nav items from `constants/`. That is what lets one shell serve every app.
-- `components/_shared/` — cross-feature widgets, grouped by concern (e.g. `otp/`, `layout/`, `content/`). **Each group has a barrel** (`_shared/<group>/index.ts`, one explicit export line per file) and is imported as `@/components/_shared/<group>` — but **a server-coupled component (one whose import chain reaches `lib/server`) is excluded from its group barrel** and imported by path, so a client import of the barrel can never drag server code into the bundle. **No root `_shared/index.ts`** — the group name carries the concern, and one flattened surface would be a second place every server-coupled exclusion has to be maintained.
-- `components/<feature>/_shared/` — shared within one feature.
-- `components/<feature>/<page>/` — a page's sections + `index.tsx`.
-- **`components/` mirrors the route tree, group for group.** One folder per route group (`marketing/`, `dashboard/`, `admin/`, `legal/`, `auth/`), one folder per page inside it, each pairing with the segment it serves — so a wrong pairing is visible on sight. A group with a single page keeps its sections flat in the group folder; framework boundaries (`error`, `not-found`, `unauthorized`) group by kind in `components/errors/` rather than by the route that hosts them.
-- **`components/` holds only component `.tsx`.** The allowed exceptions: colocated `*.stories.tsx` and `*.test.tsx` files, CSS modules where a project uses them, a stub `data.ts` beside the component it feeds (placeholder records until the real source is wired — it sits next to the UI so deleting it is obviously part of wiring that source), and the barrels. Real static content is not a stub: it belongs in `lib/data/`. A `const` whose values are React components is UI — it lives in a `.tsx`, not `lib/`.
-- **`lib/` is strictly kind-first, and flat inside each kind.** Every top-level folder is a _kind_: `config/ constants/ data/ hooks/ schemas/ types/ utils/` (use the ones the app needs). Exactly one folder per kind — **never a domain/feature folder at the `lib/` root**, and never a mini `hooks/`/`types/` rebuilt inside a feature. No loose files at the `lib/` root.
-- **The domain is a filename prefix, not a subfolder.** `constants/auth.constant.ts`, not `constants/auth/index.ts`; `utils/seo.utils.ts`, not `utils/seo/`. One grammar per kind, so a path is predictable before you look:
+All source sits under `src/`, with the path alias `@/*` → `./src/*`.
 
-| Kind         | Grammar                | Holds                                                               |
-| ------------ | ---------------------- | ------------------------------------------------------------------- |
-| `config/`    | bare names             | one-per-app settings: `env`, `routes`, `endpoints`, `site`          |
-| `constants/` | `<domain>.constant.ts` | frozen domain values; the const and its inferred type, together     |
-| `data/`      | `<domain>.data.ts`     | static content records — pricing tiers, FAQs, team                  |
-| `hooks/`     | `use-<subject>.ts`     | one hook per file, named for what it gives you                      |
-| `schemas/`   | `<domain>.schema.ts`   | Zod schemas with their inferred types, in the same file             |
-| `types/`     | `<domain>.type.ts`     | shapes with no const or schema behind them                          |
-| `utils/`     | `<domain>.utils.ts`    | pure helpers; a single-function file may keep a bare name (`cn.ts`) |
+| Folder            | Holds                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `src/app/`        | routes only: `page.tsx`, `layout.tsx`, `error.tsx`, `not-found.tsx`, `loading.tsx` and route handlers             |
+| `src/proxy.ts`    | the request proxy, beside `src/app/`                                                                              |
+| `src/components/` | the app's pages and features, organised by product area                                                           |
+| `src/ui/`         | the app's own shared UI, in the tiers `design-system` defines — only what no package already provides             |
+| `src/lib/`        | everything that isn't a component, kind-first (below)                                                             |
+| `src/styles/`     | one entry plus one file per layer, never a single growing stylesheet; the layers and their order are `tailwind`'s |
+| `src/testing/`    | fixtures, fakes and render helpers shared by the app's tests; how to write them is `testing`                      |
 
-- **`schemas/`, `constants/`, and `types/` each own their inferred type.** A Zod schema keeps `z.infer` beside it in `schemas/`; a const keeps its inferred type beside it in `constants/`; `types/` holds only what neither produces. Re-declaring any of them in `types/` is how the three kinds drift.
-- **`schemas/` mirrors the monorepo's `packages/contracts`** — same `<domain>.schema.ts` grammar, same schema-and-type-together rule — so moving an app into a workspace is a folder move, not a rewrite (`typescript`).
-- **A const's inferred type lives in the constant file** — `AUTH_METHODS` → `AuthMethodType` beside it, never re-declared in `types/`.
-- **Every kind has a barrel with one explicit export line per file** (`@/lib/<kind>`) — never `export *` from a directory. The barrel is the kind's public surface, and a wildcard hides what joined it.
-- **Never create an empty kind.** A folder holding only a barrel is noise; add the kind when its first file exists.
-- **Server-only code lives under one `lib/server/` boundary** — the single sanctioned exception to "kinds only at root", because server/client is a hard runtime boundary. It has **its own barrel** (`@/lib/server`) marked `server-only`, and the same kind-first, flat-inside rule as the rest of `lib/`:
+### `components/`
 
-| Kind        | Grammar               | Holds                                                                  |
-| ----------- | --------------------- | ---------------------------------------------------------------------- |
-| `actions/`  | `<domain>.action.ts`  | Server Actions by domain — never one giant `actions.ts`                |
-| `cache/`    | `<domain>.cache.ts`   | the cached readers (`use cache` + `cacheLife` + `cacheTag`)            |
-| `clients/`  | `<service>.client.ts` | one configured SDK singleton per external service                      |
-| `data/`     | `<domain>.data.ts`    | store access only — plus the collection-path registry and batch writer |
-| `services/` | `<domain>.service.ts` | business logic; the only caller of `data/`                             |
-| `utils/`    | `<domain>.utils.ts`   | server-only helpers: the guard, response builders, logger, errors      |
+- **It's organised by product area** — the part of the product a page belongs to, the way you'd name it when saying what you're working on: `auth/`, `marketing/`, `billing/`, `events/`. A route group that is one area (marketing, auth, legal) is one folder; a group that holds many areas, such as a dashboard or a whole admin app, gives each feature its own folder rather than nesting them under the group's name. Inside an area, one folder per page, named and nested the way its URL is, so `billing/plans/` holds the sections of `/billing/plans`.
+- **Framework boundaries group by kind**, not by the route that hosts them: `components/errors/` holds the error, not-found and unauthorised views; `components/guards/` holds client-side gates.
+- **`components/_shared/`** holds cross-feature widgets, grouped by concern (`otp/`, `layout/`). Each group has a barrel with one explicit export per file and is imported as `@/components/_shared/<group>`. A **server-coupled component** (its import chain reaches server code) stays out of its group barrel and is imported by path, so a client import of the barrel can never drag server code into the bundle. There is no root `_shared/index.ts`.
+- **`components/<area>/_shared/`** holds what one area's pages share.
+- **It holds only component `.tsx`**, plus colocated stories and tests, CSS modules where a project uses them, the barrels, and a stub `data.ts` beside the component it feeds while the real source isn't wired. Real static content goes in `lib/data/`. A `const` whose values are React components is UI and lives in a `.tsx`.
 
-- **A client is not a util, a config, or a query.** A configured SDK singleton holds a live connection, so it gets its own kind rather than being filed under the values you read at boot or the queries that use it.
-- **A domain that outgrows one file becomes a folder inside its kind** — every kind, not just clients. **The folder carries the domain, so the files inside carry only the concern** — repeating the domain in each filename is noise the path already states. An `index.ts` re-exports them, so callers import the domain and never its parts:
+### `lib/`
+
+**Strictly kind-first, and flat inside each kind.** Every top-level folder is a _kind_ — exactly one folder per kind, never a domain or feature folder at the `lib/` root, never a mini `hooks/` or `types/` rebuilt inside a feature, no loose files at the root. **The domain is a filename prefix, not a subfolder**: `constants/auth.constant.ts`, not `constants/auth/index.ts`.
+
+| Kind         | Grammar                | Holds                                                                            |
+| ------------ | ---------------------- | -------------------------------------------------------------------------------- |
+| `config/`    | bare names             | one-per-app settings: `env`, `routes`, `endpoints`, `site`                       |
+| `constants/` | `<domain>.constant.ts` | frozen domain values; the const and its inferred type together                   |
+| `data/`      | `<domain>.data.ts`     | static content records — pricing tiers, FAQs, team                               |
+| `hooks/`     | `use-<subject>.ts`     | one hook per file, named for what it gives you                                   |
+| `schemas/`   | `<domain>.schema.ts`   | Zod schemas with their inferred types, in the same file                          |
+| `seo/`       | bare names             | the app's metadata factory and structured-data builders; what goes in is `seo`'s |
+| `types/`     | `<domain>.type.ts`     | shapes with no const or schema behind them                                       |
+| `utils/`     | `<domain>.utils.ts`    | pure helpers; a single-function file may keep a bare name (`cn.ts`)              |
+
+- **`schemas/`, `constants/` and `types/` each own their inferred type.** `types/` holds only what neither a schema nor a const produces; re-declaring one there is how the kinds drift. How schemas are written is `schemas-and-contracts`'.
+- **Every kind has a barrel with one explicit export line per file** (`@/lib/<kind>`), never `export *` from a directory — a wildcard hides what joined it.
+- **The `config/` barrel is server-only**, because it re-exports `env`, which reads secrets. Client code imports the one file it needs by path (`@/lib/config/routes`); a lint rule or type check won't catch the barrel, the build will.
+- **Never create an empty kind.** Add a kind when its first file exists.
+- **No hardcoded paths.** Page paths come from `config/routes.ts`, API paths from `config/endpoints.ts`. Both are objects grouped by area, never one flat map: `routes.ts` by route group, `endpoints.ts` by the backend's own resource. A path with a parameter is a function inside its group, so no caller concatenates, and the API version is one constant the endpoints are built from. Typing the routes is `typescript`'s.
+
+### Growing a kind
+
+- **A domain that outgrows one file becomes a folder inside its kind**, and the files inside carry only the concern, because the folder already names the domain. An `index.ts` re-exports them, so callers import the domain, never its parts:
 
   ```txt
   services/
     user.service.ts              one concern, stays a file
     event/                       outgrew one file
       crud.service.ts            not event-crud.service.ts
-      member.service.ts
       publishing.service.ts
       index.ts
   ```
 
-  **Start flat and split when it earns it** — a folder holding one file plus a barrel is ceremony. The trigger is the same as everywhere else: past ~200 lines, or two concerns that change for different reasons. `clients/redis/` (`client.ts`, `keys.ts`, `locks.ts`) is the same rule in the `clients` kind.
+  Start flat; split past ~200 lines or when two concerns change for different reasons.
 
-- **A kind whose files pile up groups them by whatever they share, and for some kinds that is a concern rather than a domain.** The rule above is the domain case; the axis is always "what would a reader scan for". `hooks/` groups by concern — `auth/ data/ profile/ ui/`, each with its own barrel — because nobody looks for "the event hook", they look for "the hook that closes a menu". **Concerns split where they change for different reasons, not where they sound similar:** `auth/` answers "are you signed in", `profile/` answers "may you do this", and folding the second into the first means a permissions change touches the sign-in group. Same for `utils/` once it passes a couple of dozen files. **The count, not the shape, is the trigger:** flat while a directory listing is still scannable at a glance, grouped past that. A monorepo's `packages/hooks` starts grouped, because a package serving several apps is already past the threshold on day one.
-- **The top-level `server/` barrel exports `actions`, `cache`, and `services` only.** `clients/`, `data/`, and `utils/` are called by the layers above them, not by app code — exporting them invites a page to query the store directly.
-- Mark browser-only entry points `client-only`. **Never share a barrel between server-only and client-safe code** — a client importing a mixed barrel drags server code into the client bundle (or fails the build). Everything _outside_ `server/` is client-safe by default.
-- **Server Actions group by concern in separate files** under `server/actions/` — never one giant `actions.ts`; shared action result types live in their own file.
-- **Next-specific placement:** `error.tsx` / `not-found.tsx` / `loading.tsx` live beside their segment; private folders (`_components/`) are allowed for route-local pieces that must not become routes.
-- **A route group that needs a URL prefix keeps a real segment inside it.** `(auth)/auth/` and `(dashboard)/dashboard/` — the parens buy the shared layout, the inner folder buys the `/auth` and `/dashboard` prefix. A group that is grouping only (`(legal)`, `(marketing)`) has no inner segment, because its pages sit at the root of the URL.
-- **`layout.tsx` is a thin entry too** — it renders a shell from `ui/layouts/` and passes this app's regions in as slots. **But a guard stays in the route file, never the layout:** a layout that throws escapes its own `error.tsx`, so the redirect or 403 never renders.
-- **`styles/` is one entry plus one file per layer**, never a single growing stylesheet: the entry imports the layers in a fixed order, and a layer that gets long splits by scope rather than absorbing more. Which layers exist, what belongs in each, and the import order → `tailwind`.
-- **No hardcoded paths.** Page paths come from `config/routes.ts`, API paths from `config/endpoints.ts` — never a literal path/URL string in a component or service (see `naming`).
-- **Both are grouped objects, never one flat map.** Fifty keys in a single `const` is unscannable and merge-hostile, and says nothing about where a new path belongs. `routes.ts` groups **by route group**, mirroring the app tree; `endpoints.ts` groups **by the backend's own resource or service** — the API's shape is what changes, so the config follows the API and not the pages that call it. A path taking a parameter is a function inside its group, so no caller concatenates. **The API version is a constant the endpoints are built from**, never repeated on each line — a version bump is then one edit that no endpoint can be missed by, and two versions running side by side is a small map rather than a second copy of the file.
-- **Keep the `use client` boundary small** (React Server Components (RSC)/SSR frameworks): add `"use client"` only to the interactive leaf components, not whole trees — a Server Component composes Client Components and passes server data/children to them as props (client code can't import server code). A smaller boundary ships less JS and prevents accidental server-code leaks.
-- **Monorepo variant:** a kind that two or more apps use is **also** a workspace package — `packages/ui`, `packages/hooks`, `packages/contracts`, `packages/utils` (imported as `@app/<kind>`), each keeping the same tiers, folder-per-component, and `<domain>.<kind>.ts` grammar as the in-app version. **The package sits beside the app's own folder, it does not replace it:** every app keeps its full kind-first `lib/` and its own `components/ui/` for what only it uses. **Consumer count is the only test** — two or more → the package, one → that app. A reusable starts app-scoped (you cannot know it is shared until a second app asks), and promoting it is a file move plus an import swap. Hoisting app-local code early is the more expensive mistake of the two: every sibling app then rebuilds for a change none of them care about.
+- **A kind whose files pile up groups them by what a reader scans for**, which for some kinds is a concern rather than a domain. `hooks/` groups as `auth/ data/ profile/ ui/`, because nobody looks for "the event hook", they look for "the hook that closes a menu". Concerns split where they change for different reasons: "are you signed in" and "may you do this" are two groups. Flat while a listing is still scannable at a glance, grouped past that.
 
-## Naming
+## Server code, by app shape
 
-Follow the **`naming`** skill for the full standard — verb-first functions (`get`/`fetch`/`format`…), boolean assertions (`is`/`has`/`can`), `use*` hooks, component/props/`Schema`/type conventions, the file casing rule (PascalCase for component/story files, kebab-case for everything else), and the feature-ownership prefix (a symbol used by one feature carries that feature's prefix; shared ones keep the bare name).
+Server-only code sits behind one boundary with its own barrel marked `server-only`, kind-first and flat inside, like the rest of `lib/`. **Never share a barrel between server-only and client-safe code** — a client importing a mixed barrel drags server code into the bundle or fails the build. Everything outside the boundary is client-safe; mark browser-only entry points `client-only`. Which kinds the boundary holds depends on where the app's data comes from.
 
-## Entry files (only this differs per framework)
+### An app with its own backend
+
+One Next.js app that talks to its database and services itself. The boundary is `lib/server/`:
+
+| Kind        | Grammar               | Holds                                                                  |
+| ----------- | --------------------- | ---------------------------------------------------------------------- |
+| `actions/`  | `<domain>.action.ts`  | Server Actions by domain — never one giant `actions.ts`                |
+| `services/` | `<domain>.service.ts` | business logic; the only caller of `data/`                             |
+| `data/`     | `<domain>.data.ts`    | store access only — plus the collection-path registry and batch writer |
+| `clients/`  | `<service>.client.ts` | one configured SDK singleton per external service                      |
+| `utils/`    | `<domain>.utils.ts`   | server-only helpers: the guard, response builders, logger, errors      |
+
+The barrel exports `actions` and `services`. `clients/`, `data/` and `utils/` are called by the layers above them, and exporting them invites a page to query the store directly.
+
+### A frontend over a separate API
+
+An app that reads and writes only through an API it doesn't contain — a sibling API app, or an external backend. The boundary is `lib/server/`, and it holds no business logic:
+
+| Kind       | Grammar              | Holds                                                              |
+| ---------- | -------------------- | ------------------------------------------------------------------ |
+| `actions/` | `<domain>.action.ts` | Server Actions by domain, each calling the API                     |
+| `data/`    | `<domain>.data.ts`   | the API reads, with their caching; how they cache is `nextjs`'     |
+| `utils/`   | `<domain>.utils.ts`  | the typed fetchers, the session helpers, the action-result builder |
+
+The barrel exports `actions` and `data`, plus the identity helpers an entry's guard calls. The fetchers stay out: actions and reads call them, app code never does.
+
+### The API app
+
+A Next.js app that only serves the API. The whole app is server code, so the boundary is `src/server/`, not `lib/server/`:
+
+| Kind        | Grammar               | Holds                                                  |
+| ----------- | --------------------- | ------------------------------------------------------ |
+| `services/` | `<domain>.service.ts` | business logic; the only caller of `data/`             |
+| `data/`     | `<domain>.data.ts`    | store access only                                      |
+| `clients/`  | `<service>.client.ts` | one configured SDK singleton per external service      |
+| `guards/`   | `<name>.guard.ts`     | the auth, permission and resource checks a route calls |
+| `utils/`    | `<domain>.utils.ts`   | response builders, errors, logger, cookies             |
+
+The barrel exports `services` and `guards` only, so a route can never reach `data/` or a client. The route order and the guards themselves are `api-architecture`'s. The app's other kinds (`config/`, `constants/`, `schemas/`) sit at `src/` beside `server/`.
+
+- **A client is not a util, a config or a query.** A configured SDK singleton holds a live connection, so it gets its own kind. A client that outgrows one file becomes a folder (`clients/redis/` with `client.ts`, `keys.ts`, `locks.ts`).
+- **Server Actions group by domain in separate files**; the shared action-result type lives in its own file.
+
+## In a monorepo
+
+Skip this section for a single app.
+
+- **Consumer count decides placement.** Code two or more apps use becomes a workspace package (`packages/ui`, `packages/hooks`, `packages/utils`, a shared schemas package); code one app uses stays in that app's `lib/`. Promote on the second consumer, never before — you can't know something is shared until a second app asks, and promoting is a file move plus an import swap. Hoisting early is the more expensive mistake: every sibling app then rebuilds for changes it doesn't care about.
+- **A package sits beside the app's own folder; it doesn't replace it.** Each app keeps its full kind-first `lib/` and its own `src/ui/` for what only it uses. A package keeps the same `<domain>.<kind>.ts` grammar as the in-app kind.
+- **A package ships source or builds to `dist/`.** It ships TypeScript source when every consumer's bundler compiles it (UI, hooks, utils for Next.js apps). It builds to `dist/` when plain Node loads it as well as bundlers, such as a schemas package that serverless workers import too; then every consumer reads the build, with NodeNext resolution. A `dist/` package is rebuilt after every change, and anything running from it restarts.
+- How the workspace, the catalog and the task graph are set up is `monorepo`'s.
+
+## Next.js placement
+
+- `error.tsx`, `not-found.tsx` and `loading.tsx` sit beside their segment; private folders (`_components/`) hold route-local pieces that must not become routes.
+- **A route group that needs a URL prefix keeps a real segment inside it.** `(auth)/auth/`: the parentheses buy the shared layout, the inner folder buys the `/auth` prefix. A group that only groups (`(marketing)`, `(legal)`) has no inner segment, because its pages sit at the root of the URL.
+
+## Entry files
 
 ```tsx
-// Next.js — app/(marketing)/about/page.tsx  (this file MUST default-export)
+// app/(marketing)/about/page.tsx — a page must default-export
 import { AboutPageContent } from "@/components/marketing/about";
+
 export default function AboutPage() {
   return <AboutPageContent />;
 }
 ```
 
 ```tsx
-// Next.js — app/(marketing)/layout.tsx  (a layout is a thin entry too)
+// app/(marketing)/layout.tsx — a layout is a thin entry too
 import { NAV_ITEMS } from "@/lib/constants";
-import { MarketingLayout } from "@/components/ui";
+import { MarketingLayout } from "@/ui/layouts";
 
 export default function MarketingRouteLayout({ children }: { children: React.ReactNode }) {
   return <MarketingLayout nav={NAV_ITEMS}>{children}</MarketingLayout>;
 }
 ```
 
-```astro
----
-// Astro — src/pages/landing.astro
-import { LandingPageContent } from "@/components/marketing/landing";
----
-<LandingPageContent />
-```
-
-```tsx
-// React Router — in your routes table
-// { path: "/landing", element: <LandingPageContent /> }
-```
-
-## Section + index template
+## Section and index
 
 ```tsx
 // components/marketing/landing/Hero.tsx
@@ -150,31 +180,34 @@ export function Hero() {
 
 ```tsx
 // components/marketing/landing/index.tsx
-import { Header } from "./Header";
 import { Hero } from "./Hero";
-import { Footer } from "./Footer";
+import { HowItWorks } from "./HowItWorks";
 
 export function LandingPageContent() {
   return (
-    <div className="page-wrapper">
-      <Header />
-      <main>
-        <Hero />
-      </main>
-      <Footer />
-    </div>
+    <main>
+      <Hero />
+      <HowItWorks />
+    </main>
   );
 }
 ```
 
-## Checklist before finishing a page
+## Checklist before finishing
 
-- [ ] The route/entry file is ~3 lines (import + render); default export only where the framework requires it — and its `layout.tsx` is thin too, renderering a shell from `ui/layouts/`.
-- [ ] Every visual section is its own file with a named export.
-- [ ] `index.tsx` composes the sections and holds the layout wrapper.
-- [ ] Reusable bits are in `components/ui/`, one folder per component, each with a story.
-- [ ] `components/` mirrors the route groups and holds only `.tsx` (+ colocated stories/tests and an approved stub).
-- [ ] `lib/` is kind-first and flat inside each kind, files named `<domain>.<kind>.ts`, every kind barrel listing one explicit export per file.
-- [ ] Nothing in `types/` re-declares a type a constant file already infers.
+- [ ] Each `page.tsx` is ~3 lines (import + render) and each `layout.tsx` renders a shell; neither holds more than a guard.
+- [ ] Every visual section is its own file with a named export, composed by `index.tsx`.
+- [ ] `components/` is organised by product area, pages nested as their URLs are, and holds only `.tsx` (plus colocated stories, tests and an approved stub).
+- [ ] `lib/` is kind-first and flat inside each kind, files named `<domain>.<kind>.ts`, every kind barrel one explicit export per file.
+- [ ] Nothing in `types/` re-declares a type a schema or constant already infers.
+- [ ] Server code sits behind the boundary for this app's shape, and its barrel exports only the layers app code may call.
+- [ ] Client code imports config files by path, never the `config/` barrel.
+- [ ] In a monorepo, nothing moved into a package before its second consumer.
 
-> **Audit:** review this domain on demand with the manually-invoked `codebase-audit` / `conventions-audit` command (see `audit-all` for the whole suite).
+## Related skills
+
+- Names of files, symbols and suffixes → `naming`.
+- UI tiers and how components are organised in them → `design-system`; building one reusable → `reusables`.
+- The `"use client"` boundary, data fetching and caching → `nextjs`.
+- Where the auth check belongs → `auth`.
+- Reviewing a codebase against this skill → `conventions-audit`.
