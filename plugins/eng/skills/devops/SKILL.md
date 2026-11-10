@@ -1,7 +1,7 @@
 ---
 name: devops
 description: >-
-  A repo's build, check and ship automation — Prettier and shared ESLint presets, git hooks that stay fast, GitHub Actions with a composite setup action and parallel jobs that share nothing, CI hardening (least-privilege tokens, SHA-pinned actions, timeouts, secret scanning, advisories that fail only on a critical), tier branches with promotion PRs merged by merge commit, release-drafter releases, deploys that CI never runs, and the gates to add when a project needs them (E2E, performance budgets, previews, provenance). Use when setting up or reviewing CI/CD, hooks, branches, releases or deployment.
+  A repo's format, check, release and ship automation — Prettier and shared ESLint presets, fast git hooks, GitHub Actions with parallel jobs and hardening, tier branches with merge-commit promotions, release-drafter releases, deploys kept out of CI, and opt-in gates. Use when setting up or reviewing CI/CD, hooks, branches, releases or deployment.
 ---
 
 # DevOps

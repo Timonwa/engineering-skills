@@ -1,7 +1,7 @@
 ---
 name: schemas-and-contracts
 description: >-
-  Zod schemas at every boundary and the shared contracts that hold them — Zod as the single source of each wire shape, write schemas as `.pick()` allowlists, partial updates that don't reset omitted fields to defaults, tolerant schemas for stored reads versus exact ones for writes, list projections as pick schemas, safe shared primitives, where constants, schemas, types and permissions live in an app or a monorepo package, building a contracts package Node and bundlers both load, and changing a contract without breaking a consumer. Use when adding a field, an endpoint body, a form schema, an enum, a list shape, or a shared type.
+  Zod schemas at every boundary and the shared contracts that hold them — write schemas as `.pick()` allowlists, partial updates that keep omitted fields, tolerant reads of stored data, list projections, safe shared primitives, and building a contracts package. Use when adding a field, a request body, a form schema, an enum, a list shape or a shared type.
 ---
 
 # Schemas and contracts

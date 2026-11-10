@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  How code is tested with Vitest across Next.js apps, an API, shared packages and serverless workers — mock only the I/O boundaries a test can't run and let all workspace code run for real, in-memory fakes over call recorders, manual mocks typed with the SDK's own signatures, fixtures and fakes in src/testing/ promoted to a shared testing package on the second consumer, route specs that call the exported handler with a real Request, node and jsdom projects, resetting mocks between tests, inlining a dependency so a mock reaches it, what gets a test and what doesn't, running suites two at a time and splitting long ones in CI, and never weakening a failing test. Use when writing, fixing or reviewing tests, or setting up a test runner in a workspace.
+  House testing standard for Vitest across Next.js apps, an API, shared packages and workers — mock only the I/O boundaries, in-memory fakes over call recorders, typed manual mocks, shared fixtures, route specs with a real Request, independent tests, and never weakening a failing test. Use when writing, fixing or reviewing tests, or setting up Vitest in a workspace.
 ---
 
 # Testing

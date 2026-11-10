@@ -169,30 +169,6 @@ export default function MarketingRouteLayout({ children }: { children: React.Rea
 }
 ```
 
-## Section and index
-
-```tsx
-// components/marketing/landing/Hero.tsx
-export function Hero() {
-  return <section>{/* ... */}</section>;
-}
-```
-
-```tsx
-// components/marketing/landing/index.tsx
-import { Hero } from "./Hero";
-import { HowItWorks } from "./HowItWorks";
-
-export function LandingPageContent() {
-  return (
-    <main>
-      <Hero />
-      <HowItWorks />
-    </main>
-  );
-}
-```
-
 ## Checklist before finishing
 
 - [ ] Each `page.tsx` is ~3 lines (import + render) and each `layout.tsx` renders a shell; neither holds more than a guard.

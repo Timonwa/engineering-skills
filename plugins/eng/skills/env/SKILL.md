@@ -1,7 +1,7 @@
 ---
 name: env
 description: >-
-  Environment configuration for Next.js apps, an API and serverless workers — secrets in env and everything public in committed per-tier constants, the tier named by APP_ENV and never NODE_ENV, a Zod env guard at boot with no direct process.env reads outside named carve-outs, values required only on deployed tiers, NEXT_PUBLIC_ rules, .env.example holding names only, secret grants per tier on Firebase App Hosting, worker secrets, an env parity check, and ops scripts that never default to production. Use when adding a config value, a secret, a grant, a tier, or a script that reads env.
+  Environment configuration for Next.js apps, an API and workers — secrets in env and public per-tier facts in committed constants, `APP_ENV` as the tier, a Zod env guard at boot, `NEXT_PUBLIC_` rules, a names-only `.env.example`, App Hosting secret grants and safe ops scripts. Use when adding a config value, a secret, a grant, a tier, or anything that reads env.
 ---
 
 # Env
