@@ -239,6 +239,16 @@
         "ref": "main"
       },
       "description": "Create and debug Cloudinary transformation URLs from natural language instructions. Use when building Cloudinary delivery URLs, applying image/video transformations, optimizing media, or debugging transformation syntax errors."
+    },
+    {
+      "name": "turborepo",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/vercel/turborepo.git",
+        "path": "skills/turborepo",
+        "ref": "main"
+      },
+      "description": "Build system guide for JavaScript and TypeScript monorepos with task caching and parallel execution."
     }
   ]
 }

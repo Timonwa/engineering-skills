@@ -1,13 +1,11 @@
 ---
 name: monorepo
-description: Use when setting up or working in a monorepo — pnpm workspaces + Turborepo (v2). Covers workspace layout, turbo.json tasks/caching/dependsOn graph, shared config packages, the pnpm catalog, dev/build orchestration, remote caching, and CI with --affected. What goes INSIDE packages (code layout) → `code-structure`; the tsconfig/tailwind config packages → `typescript` / `tailwind`.
+description: Use when setting up or working in a pnpm + Turborepo monorepo — the workspace layout, pnpm 11 settings, one version per dependency through the pnpm catalog with recorded exceptions, build-script allowlists, serverless workers that pin resolved versions, peer dependencies for shared packages, the house turbo.json shape, dev through pnpm, and CI with --affected. Turborepo's own mechanics come from the official `turborepo` skill; code layout inside packages is `code-structure`'s.
 ---
 
-# Turborepo monorepo
+# Monorepo
 
-House monorepo = **pnpm workspaces + Turborepo v2**. This skill owns the _build tooling_ (workspaces, `turbo.json`, caching, task graph, CI). The _code layout inside_ `apps/` and `packages/` → `code-structure`.
-
-> **Project facts → `AGENTS.md`:** the `@org/*` scope, which apps exist, whether there's a `functions/*` tier, and whether the pnpm catalog is used. This skill is the standard shape; those are per-repo.
+The house monorepo is **pnpm workspaces + Turborepo 2**. This skill holds the house rules for the workspace — layout, versions, the shape of `turbo.json`, how dev and CI run. How Turborepo itself works — task syntax, the graph, caching, filters, `prune`, `boundaries` — is the official `turborepo` skill, which reads the docs that ship with the installed `turbo`.
 
 ## Project specifics first
 
@@ -18,28 +16,37 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Workspace layout
 
-- `apps/*` — deployable apps (Next.js, Astro, a Storybook app). `packages/*` — shared libraries. `functions/*` — serverless/workers, **only when present**.
-- Shared packages are **`@org/*`**-scoped and consumed via the **`workspace:*`** protocol: typically `typescript-config`, `eslint-config` (or `biome-config`), `ui`, `utils`, `hooks`, `contracts`, `tailwind-config`. What lives inside each → `code-structure`.
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - "apps/*" # deployable apps
+  - "packages/*" # shared libraries and config
+  - "functions/*" # serverless workers, only when present
+```
 
-## pnpm setup
+- Shared packages are scoped (`@org/<name>`) and consumed with the **`workspace:*`** protocol.
+- The usual set: `typescript-config`, `eslint-config`, `tailwind-config`, `ui`, `hooks`, `utils`, a shared schemas package, and a `testing` package of shared fakes. What goes inside each, and when code moves into one, is `code-structure`'s.
 
-- **`packageManager: "pnpm@10.19.0"`** in the root `package.json` — corepack requires an **exact version**, not a range (activate with `corepack enable`).
-- `pnpm-workspace.yaml` lists the globs:
-  ```yaml
-  packages:
-    - "apps/*"
-    - "packages/*"
-  ```
-- **Catalog** — pin shared major deps once and reference them everywhere, so every app moves in lockstep:
-  ```yaml
-  catalog:
-    next: 16.2.10 # keep current — example values, check the registry
-    react: 19.2.0 # keep current
-    react-dom: 19.2.0 # keep current
-  ```
-  Consume with `"next": "catalog:"` in each app's `package.json`. Use it for the framework/runtime deps shared across apps.
-- **The catalog only covers deps you put in it** — catch drift in the rest with `pnpm dedupe` and syncpack (`pnpm dlx syncpack list-mismatches`).
-- **pnpm blocks dependency lifecycle scripts by default** — allowlist the few that genuinely must build via **`allowBuilds`** in `pnpm-workspace.yaml`, a name → boolean map (`sharp: true`, `esbuild: true`); never flip a blanket ignore-scripts switch off. `onlyBuiltDependencies` was the pnpm 10 form and is **removed in 11**; in 11 `strictDepBuilds` defaults to `true`, so an unreviewed build fails the install.
+## pnpm
+
+- **`packageManager` names an exact version** (`"pnpm@11.x.y"`) in the root `package.json`; corepack refuses a range. `engines.node` states the minimum Node (`">=24"`), and `.nvmrc` holds the version CI and every machine run.
+- **One version per third-party dependency, through the catalog.** Every app and package writes `"<dep>": "catalog:"`, and the version lives once in `pnpm-workspace.yaml`. The catalog records what was resolved when the dependency was added — nothing gets re-picked per package.
+- **An exception is recorded, never silent.** A place that can't use `catalog:` gets an exact version and a labelled syncpack `versionGroup` saying why, so `syncpack lint` (the `deps:check` script) passes and the reason sits beside the rule. The usual cases:
+  - **A host that refuses `catalog:`** — some deploy adapters read a framework's exact version from each app's own `package.json`. Pin it there, and bump it in the same change as the catalog.
+  - **Serverless workers** whose build runs a plain `npm install` (see below).
+  - **A tool aliased to an older major**, such as a linter whose TypeScript parser lags a release (`typescript`).
+- **Dependency build scripts are blocked by default.** Allow the few that must build with `allowBuilds` in `pnpm-workspace.yaml`, a name → boolean map (`sharp: true`, `esbuild: true`). `onlyBuiltDependencies` was the pnpm 10 form and is removed in 11, where an unreviewed build fails the install. Never switch scripts on for everything.
+- **pnpm 11 holds back versions newer than its minimum release age**, a supply-chain guard. A version needed sooner goes in `minimumReleaseAgeExclude`, named exactly (`zod@4.5.1`), and comes out once it ages past the window.
+- **Never force a version inside a third-party dependency's tree** (`overrides`) to silence an advisory; the fix is that dependency releasing it. How advisories are reported and which fail CI is `devops`'.
+
+## Serverless workers
+
+A worker in `functions/*` is bundled — esbuild into a `deploy/` folder with its own generated `package.json` — because the cloud build that installs it runs a plain `npm install`, which reads neither `catalog:` nor `workspace:`. So the generated manifest pins the **resolved** versions of its runtime dependencies, and the workers' production dependencies sit in an ignored syncpack group. Workspace packages are bundled in, never installed.
+
+## Shared packages
+
+- **A package that uses a singleton declares it as a peer dependency** (`react`, `react-dom`, `next`, `firebase`, a form library), so every app supplies one copy. Two copies of React or Firebase break hooks and auth state in ways no type check catches.
+- Whether a package ships source or builds to `dist/`, and the module settings each needs, are `code-structure`'s and `typescript`'s.
 
 ## turbo.json — the house shape
 
@@ -47,94 +54,41 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
+  "globalEnv": ["NODE_ENV"],
   "tasks": {
-    "build":       { "dependsOn": ["^build"], "inputs": ["$TURBO_DEFAULT$", ".env*"],
-                     "env": ["NEXT_PUBLIC_*", "APP_ENV"],
-                     "outputs": ["dist/**", ".next/**", "!.next/cache/**", "storybook-static/**"] },
-    "lint":        { "dependsOn": ["^build", "^lint"] },
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["APP_ENV", "NEXT_PUBLIC_*"],
+      "outputs": ["dist/**", "deploy/**", ".next/**", "!.next/cache/**", "storybook-static/**"]
+    },
+    "lint": { "dependsOn": ["^build", "^lint"] },
     "check-types": { "dependsOn": ["^build", "^check-types"] },
-    "test":        { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
-    "dev":         { "cache": false, "persistent": true }
+    "test": { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
+    "dev": { "cache": false, "persistent": true }
   }
 }
 ```
 
-- **It's `tasks`, not `pipeline`.** `pipeline` was renamed in Turborepo 2.0 — never write it (migrate old configs with `npx @turbo/codemod migrate`). Schema host is `turborepo.com`.
-- `test` is optional (include it in repos that have tests). No `globalDependencies`/`globalEnv` by default — add `globalDependencies` only for a genuinely cross-cutting file.
+- **Every env var a build reads is listed in that task's `env`.** Strict mode withholds an unlisted variable from the task and leaves it out of the cache key, so a build bakes in `undefined`, or a changed secret restores a stale cached build. Turn on `turbo/no-undeclared-env-vars` in the shared ESLint config so a missing entry fails lint.
+- **`globalEnv` stays minimal** — a variable there re-hashes every task.
+- **Declare `outputs` on every task that should cache**, and exclude `.next/cache/**`.
 
-## Task graph
+## Running things
 
-- **`"^build"`** = run this task in _dependencies_ first (topological). **`"build"`** = same package. **`"pkg#task"`** = one specific package.
-- Independent tasks (format) declare no `dependsOn`; build → `["^build"]`; typecheck/lint → `["^build", "^<self>"]`; test → `["^build"]`; **dev → `cache:false, persistent:true`**.
-- A **`persistent`** task (dev servers) **can't have dependents** — nothing may `dependsOn` it.
-
-## Env vars & strict mode
-
-Turborepo 2 runs tasks in **strict env mode**: an env var not declared in the task's `env` (or `globalEnv`) is **not passed to the task's process** and is excluded from its cache key. Two silent failure modes:
-
-- A build that reads `NEXT_PUBLIC_*` gets `undefined` — the app "builds fine" with missing config baked in.
-- A changed secret doesn't change the hash, so turbo restores a **stale cached build** made with the old value.
-
-Declare per-task `env` — wildcards allowed: `"env": ["NEXT_PUBLIC_*", "APP_ENV"]`. `inputs: [".env*"]` is **not a substitute**: it hashes the files, not the process env, and CI-injected vars never touch a `.env` file.
-
-## Caching
-
-- **Declare `outputs` or the task won't cache.** Fine-tune `inputs` with `$TURBO_DEFAULT$` + negations (`"!**/*.md"`); include `.env*` where builds read env.
-- Always **exclude `.next/cache/**`** from Next build outputs (it's not a build artifact).
-- **Remote cache**: `turbo login` + `turbo link` (Vercel Remote Cache); in CI, provide `TURBO_TOKEN` + `TURBO_TEAM` so cache is shared across machines.
-- **`outputLogs`** (per task, or the `--output-logs` flag) tames log noise: `full` (default), `new-only` (replay only cache misses — the CI sweet spot), `errors-only`.
-
-## Per-package config
-
-A package overrides/extends the root by `extends`:
-
-```json
-{ "extends": ["//"], "tasks": {
-  "build": { "dependsOn": ["build:styles", "build:components"] },
-  "build:styles": { "outputs": ["dist/**"] },
-  "build:components": { "dependsOn": ["^build"], "outputs": ["dist/**"] },
-  "dev": { "with": ["dev:styles", "dev:components"] }
-}}
-```
-
-(This is the real `packages/ui` pattern — a build split into styles + components. Use `$TURBO_EXTENDS$` to add to an inherited array; `extends: false` to opt a task out.)
-
-## Running tasks
-
-- `turbo run build` / `lint` / `check-types` — cached, parallel, topologically ordered.
-- **`--filter`** to scope: `web` (one), `web...` (web + its deps), `...web` (web + its dependents), `./apps/*` (by path).
-- **CI: `turbo run <task> --affected`** — runs only packages changed vs the base branch. Use this, not the legacy `--filter=[HEAD^]`.
-- **Dev is orchestrated by pnpm, not turbo**: `pnpm -r --parallel --filter web --filter app dev` (turbo's `dev` task is persistent; pnpm picks which apps start).
-- **`turbo boundaries`** (2.x) — enforces cross-package import rules: no reaching into another package's internals, no importing undeclared dependencies.
-- **`turbo prune <app> --docker`** — writes a partial monorepo containing only `<app>` + its deps, for slim Docker/App Hosting builds (v2 syntax; the v1 `--scope` flag is gone).
-
-## Cache troubleshooting
-
-- **Cache invalidates unexpectedly** → inspect `globalDependencies`, the task's `inputs`, and its `env` — one over-broad glob or wildcard var re-hashes everything.
-- **Type errors survive a cache hit** → check types through **transit nodes** so packages type-check in parallel yet re-run when a dependency changes: `"transit": { "dependsOn": ["^transit"] }` and give `check-types` `"dependsOn": ["transit"]`.
-- **`turbo run build --dry-run --filter=<pkg>`** — shows what would run and why (the hash inputs) without running anything.
-- **`--force`** bypasses the cache entirely; **`--continue`** keeps running past a failed task (use in CI to surface every failure in one run).
-- **Large monorepos** may need a raised `concurrency` (default 10).
-
-## Framework build outputs
-
-Next.js → `.next/**` (exclude `!.next/cache/**`); Astro → `dist/**`; Storybook → `storybook-static/**`. (No NestJS in the house stack — API needs are Next route handlers + Firebase, or an external backend.)
-
-## Shared-package gotchas
-
-- **Apps consume built output (`dist/`)** — a type change in a shared package is invisible to consumers until that package rebuilds. Wire `dependsOn: ["^build"]` on build/lint/check-types, run the package's watch task in dev; if types look stale, `pnpm --filter @org/<pkg> build`.
-- **An ESM package that Node loads needs `moduleResolution: "NodeNext"`, not `"bundler"`.** Under `bundler`, `tsc` emits extensionless relative imports, which Node’s ESM resolver rejects — the build passes and `dist/` cannot be imported (`ERR_MODULE_NOT_FOUND` naming a file that exists). `NodeNext` makes TypeScript require the `.js` extension in source and error without it, so plain `tsc` emits loadable output. Split the shared configs by consumer (a `node-library.json` beside `react-library.json`) rather than rewriting emitted imports in a post-build script.
-
-## CI & versioning
-
-- **GitHub Actions** (house CI): `corepack enable` → `pnpm install --frozen-lockfile` → `turbo run lint check-types build test --affected`, with remote-cache env. Template + a fuller root/`ui` config in `references/config-templates.md`.
-- **Versioning**: manual by default (house repos don't ship packages externally). Add **Changesets** only if you start publishing a package to a registry.
+- **Dev runs through pnpm, not turbo**: `pnpm -r --parallel --filter <app> --filter <app> dev`, plus a `dev:<app>` script per app. pnpm decides which apps start; turbo's `dev` task is only there to be persistent.
+- **Tests run two suites at a time** (`turbo run test --concurrency=2`), so parallel suites don't starve each other of memory and time out.
+- **CI runs only what changed**: `turbo run <task> --affected`, with `TURBO_SCM_BASE=origin/<base branch>` so a pull request compares against its real base rather than the previous commit. Remote caching is optional; a repo without it says so.
 
 ## Do / Don't
 
-- **Do** use `tasks` + the `turborepo.com` schema; declare `outputs` on every cacheable task; declare per-task `env` for every var a task reads (strict mode); depend on `^build`; pin shared deps via the pnpm catalog; `extends: ["//"]` in packages; run `--affected` in CI; orchestrate dev with pnpm.
-- **Don't** write `pipeline` (v1); forget `outputs` (silent cache misses); rely on `inputs: [".env*"]` instead of `env` (hashes files, not the process env); give a `persistent` task dependents; hardcode diverging dep versions across apps; reach for NestJS/Jest/CircleCI/GitLab/Docker recipes (off-stack).
+- **Do** pin every third-party version through the catalog; record every exception as a labelled syncpack group; allow builds one dependency at a time; declare every env var a task reads; run dev through pnpm; use `--affected` in CI with `TURBO_SCM_BASE`.
+- **Don't** write a version range in an app's `package.json` when the catalog has it; force a version inside someone else's dependency tree; give a `persistent` task dependents; put a variable in `globalEnv` that only one task reads.
 
-> **Audit:** review this domain on demand with the manually-invoked `dependency-audit` command (see `audit-all` for the whole suite).
+## Related skills
 
-> **Boundaries:** the shared tsconfig and contracts layers → `typescript`; Tailwind config shared across apps → `tailwind`.
+- Turborepo's mechanics — task syntax, the graph, caching, filters, `prune`, `boundaries`, troubleshooting → the official `turborepo` skill. It reads the docs bundled with the installed `turbo`; on a `turbo` too old to bundle them, upgrade first.
+- Where code goes inside apps and packages, and source vs `dist/` packages → `code-structure`.
+- tsconfig presets and NodeNext → `typescript`.
+- CI jobs, hooks and the advisory policy → `devops`.
+- Reviewing the workspace's dependencies → `dependency-audit`.
