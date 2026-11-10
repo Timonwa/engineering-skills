@@ -1,6 +1,6 @@
 ---
 name: naming
-description: Use whenever naming or renaming anything — code (functions, hooks, components, variables, booleans, types, Zod schemas, constants, files), test files and fixtures, CSS classes, design tokens, assets (icons/illustrations/logos), and design files. Enforces descriptive, verb-first, ownership-revealing names with the house casing, the `<domain>.<kind>.ts` file suffixes, and structured patterns. Apply when writing new code, creating assets/tokens, reviewing names, or refactoring.
+description: Use whenever naming or renaming anything — code (functions, hooks, components, variables, booleans, types, Zod schemas, constants, files), test files and fixtures, CSS classes, design tokens and assets (icons/illustrations/logos). Enforces descriptive, verb-first, ownership-revealing names with the house casing, the `<domain>.<kind>.ts` file suffixes, and structured patterns. Apply when writing new code, creating assets/tokens, reviewing names, or refactoring.
 ---
 
 # Naming
@@ -117,9 +117,5 @@ Structured, hierarchical — `{category}-{property}-{concept}-{variant}-{state}`
 - **Other** — `[type]-[name]-[variant].[ext]`.
 
 Ship logos and symbols as **SVG**; add a PNG only where a raster is required (email, social cards, an OS icon), with the same stem. Favicon and app-icon files are not brand assets — in Next they are metadata files in `app/` (`favicon.ico`, `icon.svg`, `apple-icon.png`) and keep the framework's required names.
-
-## Design files (Figma / design tool)
-
-Pages are **numbered + descriptive** (`01-foundations`, `02-components`, `03-blocks`); components use **PascalCase** matching their code counterpart (`SearchInput`) so design and code stay one to one. Layers are addressed as `[category]/[name]/[variant]/[state]` (`blocks/Card/elevated/hover`) — in code, `variant` and `state` are props and story states, not folders.
 
 > **Audit:** review this domain on demand with `conventions-audit` (see `audit-all` for the whole suite).
