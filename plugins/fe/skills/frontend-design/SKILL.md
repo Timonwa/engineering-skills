@@ -12,6 +12,13 @@ Design quality is the judgment layer _on top of_ the technical skills: given tok
 
 > **Project facts → `AGENTS.md`:** the brand palette, fonts, type/spacing scales, breakpoints, radius/shadow tokens, motion timings, and the site's aesthetic/voice. This skill is the _how-to-design-well_; those are the _materials_. Use the project's existing tokens and scales — never invent one-off values.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Process
 
 - **Start with hierarchy, not decoration.** Decide what's primary/secondary/tertiary on the screen before choosing colors or borders.

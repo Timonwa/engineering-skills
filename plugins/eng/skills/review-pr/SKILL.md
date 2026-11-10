@@ -14,6 +14,13 @@ A complete, standalone review pipeline for a pull request or a branch diff. It f
 
 `$ARGUMENTS` may contain a PR number/URL, an explicit `base...head` range, and any of the flags `--comment` (post findings to the PR), `--fix` (apply findings after review), `--deep` (widen the hunt). Parse them out; treat leftover text as extra focus for the review.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Guardrails — read first
 
 - **Read-only by default.** Steps 0–5 never modify code. Fixes happen only in Step 6, on explicit request.

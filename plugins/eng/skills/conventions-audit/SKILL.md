@@ -15,6 +15,13 @@ A **manually-invoked, red-team conventions audit** of an app or a specific diff/
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`naming`** and **`code-structure`** ARE present, also apply their house-specific rules as an enhancement.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Arguments
 
 - `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).

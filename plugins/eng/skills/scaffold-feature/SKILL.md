@@ -10,6 +10,13 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Bash(ls:*), Bash(pnpm:*), Bash(npm
 
 Creates a new feature's files in the right places with the right imports from day one — by following the owning skill for each layer (rather than restating conventions here), and by reading the project's `AGENTS.md` and existing code for the facts those skills can't know.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Arguments
 
 - `[feature-name]` — the feature/resource to scaffold, e.g. `notifications`.

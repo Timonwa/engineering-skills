@@ -9,6 +9,13 @@ House monorepo = **pnpm workspaces + Turborepo v2**. This skill owns the _build 
 
 > **Project facts → `AGENTS.md`:** the `@org/*` scope, which apps exist, whether there's a `functions/*` tier, and whether the pnpm catalog is used. This skill is the standard shape; those are per-repo.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Workspace layout
 
 - `apps/*` — deployable apps (Next.js, Astro, a Storybook app). `packages/*` — shared libraries. `functions/*` — serverless/workers, **only when present**.

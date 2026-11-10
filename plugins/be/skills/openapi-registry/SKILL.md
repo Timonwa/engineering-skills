@@ -10,6 +10,13 @@ The API reference is generated from a registry module, never hand-written per en
 
 This skill governs the registry → OpenAPI spec layer, not any particular viewer — the resulting spec renders identically in Swagger UI, Scalar, Postman, ReDoc, or Stoplight; swapping the display tool never changes how a route is registered.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## The registry pattern
 
 - **Two modules own the spec** — a registrations module (`registry.ts` — every route's `registerRoute()` entry; the file you edit) and a spec-config module (`openapi.ts` — info, servers, tags). These names are the pattern, not a mandate: find the project's equivalents via its `AGENTS.md` or the docs-serving route.

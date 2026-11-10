@@ -10,6 +10,13 @@ Server-first Next.js. The framework mechanics — rendering model, data, caching
 
 > **What's a project fact (→ `AGENTS.md`), not a rule here:** whether **Cache Components** (`cacheComponents: true`) is enabled, the auth provider, per-route rendering strategy, and the data source. This skill encodes the _approach_; the repo's `AGENTS.md` says which knobs are on.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Server-first by default
 
 - **Everything is a Server Component** until it needs interactivity. Reach for `"use client"` only on the **interactive leaf** (state, effects, event handlers, browser APIs, context) — never on a layout/page to "make a child work."

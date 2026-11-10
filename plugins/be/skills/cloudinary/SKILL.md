@@ -10,6 +10,13 @@ Cloudinary derives every variant (size, format, quality, effects) **at delivery 
 
 > **Project facts → `AGENTS.md`:** the cloud name per environment, folder scheme, named-transformation names, env var names, and which shape the project uses. This skill is the portable standard.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## The delivery URL grammar
 
 - **Every delivery URL follows one shape:** `https://res.cloudinary.com/<cloud_name>/<resource_type>/<delivery_type>/<transformations>/<version>/<public_id>.<ext>` — e.g. `.../myclould/image/upload/w_800,c_limit,q_auto,f_auto/v1712345678/blog/hero.jpg`. Transforms are edited into the URL between `/upload/` and the version/public_id; the asset is never re-uploaded to get a variant.

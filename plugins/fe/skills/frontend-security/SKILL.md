@@ -12,6 +12,13 @@ In-depth **client-side / browser security** for web UIs (React / Next.js). The b
 >
 > **Concrete snippets** (nonce CSP, DOMPurify wrapper, postMessage guard, sandboxed iframe, Subresource Integrity (SRI), safe redirect, token storage) → `references/frontend-hardening.md`. **A full app review** → the manual **`security-audit`** skill.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## First principle — the client is untrusted and inspectable
 
 Everything shipped to the browser is **readable and editable**: source, `NEXT_PUBLIC_*` values, in-memory state, and every network call. Two consequences that drive the rest of this skill:

@@ -8,6 +8,13 @@ description: >-
 
 House standard for **database-backed runtime feature flags** — toggles an admin flips live, without a redeploy. Store-agnostic (Firestore is the reference implementation where an example needs one); the single principle underneath everything: **a flag the system cannot positively prove ON is OFF.**
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## When a flag — and when never
 
 - **A flag is a runtime product toggle** — feature gating, a kill switch, maintenance mode, a time-boxed rollout. It changes what users experience, and an admin must be able to flip it while the system runs.

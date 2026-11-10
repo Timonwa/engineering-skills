@@ -12,6 +12,13 @@ Takes a repo that an **official scaffolder already created** and adapts it into 
 
 It scopes strictly to the **workspace shell**: `pnpm-workspace.yaml` and the catalog, `turbo.json`, the root `package.json`, `.npmrc`, the shared packages, root CI, hooks, CODEOWNERS, and the `functions/*` tier. The **inside of each app** — folder tree, component tiers, kind-first `lib/`, styles, env validation, Storybook wiring — belongs to `scaffold-next-app`, which this skill delegates to per app as its final step.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Arguments
 
 - `[scope]` — the npm scope for shared packages (`@app`, `@acme`, …). Omitted → detect from an existing `package.json`, else ask. Never invent one.

@@ -12,6 +12,13 @@ How the repo **builds, checks, and ships** — the CI/CD pipeline, pre-commit ga
 >
 > **Project facts → `AGENTS.md`:** exact workflow files, branch names, deploy targets/hosts, and secret names.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## CI/CD — GitHub Actions
 
 - **One composite setup action** (`.github/actions/setup`): `corepack enable` → `pnpm` + Node (`cache: pnpm`) → `pnpm install --frozen-lockfile` → turbo remote-cache env. Every job reuses it; never re-paste those steps.

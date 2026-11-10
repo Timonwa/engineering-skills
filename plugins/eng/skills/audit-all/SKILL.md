@@ -15,6 +15,13 @@ The **orchestrator** for the house audit family. It figures out what the repo ac
 
 > **The family** (each is its own manually-invoked command): `accessibility-audit`, `seo-audit`, `storybook-audit`, `conventions-audit`, `dependency-audit`, `env-audit`, `frontend-audit`, `performance-audit`, `api-audit`, `rbac-audit`, `firestore-audit`, `redis-audit`, `codebase-audit`, `security-audit`. Firestore/Storage **rule** internals → `firebase-security-rules-auditor`.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Arguments
 
 - `[phase]` — `development` | `production`. Optional; defaults to `production` (assume the app is live until told otherwise). Passed unchanged to every sub-audit.

@@ -12,6 +12,13 @@ Target **WCAG 2.2 level AA** by default. Organize thinking around **POUR**: Perc
 
 > **Pairs with the `semantic-html` skill.** `semantic-html` covers _semantic markup_ (right element, landmarks, headings, `<dl>`, `<fieldset>`/`<legend>`, button-vs-link). This skill assumes that foundation and adds the rest: **contrast, focus, keyboard, ARIA behavior, live regions**, and **how to verify** with tooling + manual testing. Always start from native semantic HTML; reach for ARIA only when no native element fits — an ARIA role you add commits you to its full keyboard contract.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Two modes
 
 1. **Build mode** — writing or reviewing UI. Apply the Checklist as you write. Prefer native elements. Never ship a control that only works with a mouse.

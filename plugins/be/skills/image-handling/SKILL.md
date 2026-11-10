@@ -8,6 +8,13 @@ description: >-
 
 The house pipeline for user-uploaded images, scoped to **Firebase Storage** as the deliberate default store. Four principles run through everything here: the client makes uploads cheap (compression, early validation) but the **server is the only gate**; **access level, not feature, picks the bucket**; heavy work happens **off the request path** in a worker; and every stored byte has an owner record — anything without one gets reaped.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Centralized caps — one constants module
 
 - **Define every cap once, in a shared constants module** — max dimensions per slot, max bytes, compression quality, and the MIME allowlist live in one file that the client validator, the server validator, and the Storage rules all derive from. Never hardcode a pixel size, quality number, or MIME string at a call site — two definitions of "allowed image" will drift.

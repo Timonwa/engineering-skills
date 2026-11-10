@@ -8,6 +8,13 @@ description: >-
 
 Cookie consent is a legal state machine the **user** owns, not a UI widget you own. This skill keeps two layers deliberately separable — the behavioral standard (which survives a library swap) and the `vanilla-cookieconsent` v3 mechanics that implement it. It is engineering guidance for the widely-documented GDPR/ePrivacy requirements, **not legal advice** — the final call on categories, retention, and jurisdictions belongs to the project's counsel.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## The standard — library-agnostic, non-negotiable
 
 - **Three first-layer actions, equal weight** — Accept all, Reject non-essential, and a per-category Customise/Manage entry point. Rejecting must cost the same effort as accepting: same layer, same visual weight, same number of clicks. A prominent "Accept" with a buried reject link or a reject hidden behind "Settings" is a compliance failure, not a design choice.

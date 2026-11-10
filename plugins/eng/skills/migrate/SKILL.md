@@ -10,6 +10,13 @@ allowed-tools: Read, Grep, Glob, Edit, Write, WebSearch, WebFetch, Bash(git stat
 
 Runs a framework, library, or major-dependency migration as a gated workflow: analyze what's installed, research the breaking changes, present a checkpointed plan, and — only after approval — apply it one verified step at a time.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Arguments
 
 - `[from] [to]` — the package and target, e.g. `next 16`, `tailwind 4 5`, `dep firebase 12`, or `latest` as the target.

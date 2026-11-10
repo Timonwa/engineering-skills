@@ -12,6 +12,13 @@ House architecture for Firebase in full-stack apps, grounded in real usage and u
 >
 > **Project facts → `AGENTS.md`:** project ids per env, collection/bucket names, root cookie domain, env var names, chosen host. Whether a project even uses a given product (FCM, Remote Config, App Check, Data Connect, AI Logic) is a project fact — don't assume.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## The access boundary (golden rule)
 
 - **Firestore is deny-all to clients — the API + Admin SDK is the sole read/write path.** The Admin SDK bypasses rules; client access is denied as defense-in-depth. (The client app config — apiKey/projectId/bucket — ships to every browser, so deny-all is what actually closes Firestore/Storage to it.)

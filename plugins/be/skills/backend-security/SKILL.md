@@ -14,6 +14,13 @@ In-depth **server-side / API security** for backends (route handlers, Server Act
 >
 > **Concrete snippets** (ownership check, field allowlist mapper, Server-Side Request Forgery (SSRF) URL guard, JWT verify, rate-limit tiers, safe query) → `references/server-hardening.md`. **A full app review** → the manual **`security-audit`** skill.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## First principle — authorization is the whole game
 
 Across the 2025 web and 2023 API Top 10s, **broken access control is #1** — Broken Object-Level Authorization (BOLA) is consistently the top-reported API vulnerability class. So the backend's core job: **re-authorize every request against the specific object, function, and fields it touches**, from the actor's server-verified identity — never from anything the client sent. Client checks are UX; the API is the gate.

@@ -8,6 +8,13 @@ description: >-
 
 House standard for writing Redis-backed primitives, with **Upstash Redis** (`@upstash/redis` + `@upstash/ratelimit`) as the deliberate default client. One principle: **Redis coordinates and accelerates; it never owns.** Every key comes from a named builder, every key expires, and every primitive declares its failure direction.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Client & transport (Upstash REST)
 
 - **One shared client** — a single module exports one `new Redis({ url, token })` (or `Redis.fromEnv()`); never construct a second client per request, helper, or module. URL and token come from the schema-validated env object so a missing credential fails at boot, not at first use (→ `devops`).

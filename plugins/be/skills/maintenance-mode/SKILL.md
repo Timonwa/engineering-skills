@@ -10,6 +10,13 @@ A platform-wide kill switch built as **two gates reading one flag** — the API 
 
 > **Project facts → `AGENTS.md`:** the flag name, exempt-path list, bypass URL and cookie name, admin/status-page hosts, and the env var holding the bypass token.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## The two layers — which one is load-bearing
 
 - **The API/server gate is the real switch.** It runs in the proxy/middleware in front of every API route and returns 503 before any handler executes. This is what protects data integrity during a migration — direct API calls, stale open tabs, mobile clients, scripts, and curl all hit it whether or not they ever load your frontend.

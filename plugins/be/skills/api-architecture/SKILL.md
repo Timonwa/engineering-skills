@@ -12,6 +12,13 @@ House architecture for the **backend / API layer of a Next.js app** — server e
 >
 > **Delegations:** route handler / Server Action / caching mechanics → `nextjs`; Firestore/Admin-SDK data access, auth token/session, RBAC role model → `firebase`; Zod + schema-shape safety → `typescript`; where files live (`lib/server`, services) → `code-structure`; names → `naming`; the server-side security discipline (authz/Broken Object-Level Authorization (BOLA), injection, Server-Side Request Forgery (SSRF), resource limits, error hygiene) → `backend-security`.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Build order
 
 **schema → service → route.** The schema (validated shape) and service (logic) must exist before the route. Scaffold the trio together where you can. Routes never contain business logic, DB calls, or branching.

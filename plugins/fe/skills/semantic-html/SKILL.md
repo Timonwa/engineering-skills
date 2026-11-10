@@ -10,6 +10,13 @@ Write semantic HTML: pick the element that describes the content, not `<div>`/`<
 
 > **Pairs with the `accessibility` skill.** This skill owns the _markup_ (right element, structure, headings, `<dl>`, forms, media). `accessibility` owns the rest — WCAG, ARIA behavior, contrast, focus, keyboard, live regions, and verification. Start here; go there for a11y depth.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Choosing the right element — decide while writing
 
 Before reaching for `<div>`/`<span>`, ask **"what is this content?"** and pick the element that describes it. `<div>`/`<span>` are last resorts — style hooks with no meaning. If content has structure or meaning, a better element almost always exists. Decide **while writing** the markup, not after review.

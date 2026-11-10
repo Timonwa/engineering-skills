@@ -7,6 +7,13 @@ description: Use when creating or modifying Storybook stories, in any project th
 
 Applies **where Storybook is set up** — a monorepo's `apps/storybook` or a single app's own `.storybook/`, whichever the project uses. **Default to CSF3 + TypeScript.** **CSF Next** (factories, formerly "CSF4") is stable in Storybook 10 and becomes the default in 11 — adopt it per-project when the whole project migrates; don't mix formats in one repo. Until then, CSF3 + `satisfies` is the house default (same rule as `storybook-setup`).
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## Definition of done — the story ships with the component
 
 A UI component isn't done until its story is in sync, **in the same change** (mirroring `reusables`):

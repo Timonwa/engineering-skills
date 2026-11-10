@@ -16,6 +16,13 @@ Producing the brand's own marks. This is a different job from drawing an icon or
 >
 > **Clean up after yourself.** Scratch directories, downloaded fonts, ad-hoc `npm install`s, preview harnesses and temp screenshots are all removed before finishing. The owner ends up with the assets and nothing else — no tooling on their system, no stray files, no half-wired config.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## First: which of the seven logo types is this?
 
 "Logo" is not one shape of asset. The industry taxonomy is seven types — two built from text, three from imagery, two blended — and **the type decides which assets exist at all**, so settle it before drawing anything.

@@ -14,6 +14,13 @@ You own SEO as a discipline **and** the house implementation of it: ship correct
 >
 > **Project facts → `AGENTS.md`:** the site name/url/description, social handles, locales, which routes are noindex, and the framework. This skill is the standard; those are per-project.
 
+## Project specifics first
+
+Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md` closest to the files in question, and any doc they link for this skill's topic. Names, values and choices — budgets, tiers, tokens, voice, paths — come from those files, never from this skill.
+
+- A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
+- A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
+
 ## The house implementation (the standard)
 
 Prescriptive, framework-agnostic in spirit (Next examples shown; Astro maps the same concepts onto `<head>`). Set it up once per app; every page reuses it.
