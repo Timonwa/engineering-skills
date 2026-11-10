@@ -1,0 +1,13 @@
+{
+  "name": "fe",
+  "displayName": "Frontend Skills",
+  "description": "House frontend standards for Next.js and React: React, Next.js, semantic HTML, accessibility, Tailwind, the design system, reusables, Storybook, SEO, frontend security, cookie consent and logos, with an audit per domain.",
+  "version": "1.0.0",
+  "dependencies": ["eng"],
+  "author": {
+    "name": "Timonwa"
+  },
+  "homepage": "https://github.com/Timonwa/engineering-skills",
+  "repository": "https://github.com/Timonwa/engineering-skills",
+  "license": "MIT"
+}

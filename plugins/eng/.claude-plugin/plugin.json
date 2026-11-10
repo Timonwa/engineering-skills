@@ -1,0 +1,12 @@
+{
+  "name": "eng",
+  "displayName": "Engineering Skills",
+  "description": "House engineering standards for Next.js, React, TypeScript and Firebase projects: structure, naming, TypeScript and schemas, monorepo, CI/CD, env, testing, scaffolding, shipping and reviewing changes, and the cross-cutting audits.",
+  "version": "2.0.0",
+  "author": {
+    "name": "Timonwa"
+  },
+  "homepage": "https://github.com/Timonwa/engineering-skills",
+  "repository": "https://github.com/Timonwa/engineering-skills",
+  "license": "MIT"
+}

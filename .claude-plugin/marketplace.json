@@ -3,12 +3,22 @@
   "owner": {
     "name": "Timonwa"
   },
-  "description": "Engineering skills for Next.js + React + Firebase, plus the official Firebase, Upstash and Cloudinary skills they build on.",
+  "description": "Engineering skills for Next.js, React and Firebase projects, in three plugins (eng, fe, be), plus the official Firebase, Upstash and Cloudinary skills they build on.",
   "plugins": [
     {
       "name": "eng",
-      "source": "./",
-      "description": "Opinionated engineering standards for Next.js App Router, React 19 and Firebase — structure, naming, TypeScript, Tailwind, accessibility, security, API architecture, scaffolding, and a red-team audit per domain."
+      "source": "./plugins/eng",
+      "description": "House engineering standards for Next.js, React, TypeScript and Firebase projects: structure, naming, TypeScript and schemas, monorepo, CI/CD, env, testing, scaffolding, shipping and reviewing changes, and the cross-cutting audits."
+    },
+    {
+      "name": "fe",
+      "source": "./plugins/fe",
+      "description": "House frontend standards for Next.js and React: React, Next.js, semantic HTML, accessibility, Tailwind, the design system, reusables, Storybook, SEO, frontend security, cookie consent and logos, with an audit per domain."
+    },
+    {
+      "name": "be",
+      "source": "./plugins/be",
+      "description": "House backend standards for a Next.js API on Firebase: API architecture, the OpenAPI registry, backend security, Firebase, Redis, images, Cloudinary, field encryption, feature flags and maintenance mode, with an audit per domain."
     },
     {
       "name": "extension-to-functions-codebase",
