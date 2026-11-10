@@ -10,7 +10,8 @@
     "format:check": "prettier --check .",
     "validate": "claude plugin validate . --strict",
     "sync:opening": "node scripts/sync-opening.mjs",
-    "check:opening": "node scripts/sync-opening.mjs --check"
+    "check:opening": "node scripts/sync-opening.mjs --check",
+    "check:skills": "node scripts/check-skills.mjs"
   },
   "devDependencies": {
     "prettier": "3.9.6"

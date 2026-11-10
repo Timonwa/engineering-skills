@@ -1,0 +1,39 @@
+// Fails on any skill past the house limits: SKILL.md lines, description length, name length.
+// Tighter than Anthropic's (500 lines, 1,024 characters) to match the writing skills.
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+const MAX_LINES = 200
+const MAX_DESCRIPTION = 550
+const MAX_NAME = 64
+
+function readFrontmatter(content) {
+  const frontmatter = content.split('---')[1] ?? ''
+  const name = frontmatter.match(/^name:\s*(.+)$/m)?.[1].trim() ?? ''
+  const folded = frontmatter.match(/^description:\s*>-?\s*\n((?:[ \t]+.*\n?)+)/m)
+  const inline = frontmatter.match(/^description:\s*(?!>)(.+)$/m)
+  const description = (folded?.[1] ?? inline?.[1] ?? '').split(/\s+/).join(' ').trim()
+  return { name, description }
+}
+
+const problems = readdirSync('plugins').flatMap((plugin) =>
+  readdirSync(join('plugins', plugin, 'skills')).flatMap((skill) => {
+    const file = join('plugins', plugin, 'skills', skill, 'SKILL.md')
+    const content = readFileSync(file, 'utf8')
+    const lineCount = content.split('\n').length - (content.endsWith('\n') ? 1 : 0)
+    const { name, description } = readFrontmatter(content)
+    return [
+      lineCount > MAX_LINES && `${file}: ${lineCount} lines (max ${MAX_LINES})`,
+      description.length > MAX_DESCRIPTION &&
+        `${file}: description ${description.length} characters (max ${MAX_DESCRIPTION})`,
+      !description && `${file}: no description`,
+      name.length > MAX_NAME && `${file}: name ${name.length} characters (max ${MAX_NAME})`,
+    ].filter(Boolean)
+  })
+)
+
+if (problems.length > 0) {
+  console.error(problems.join('\n'))
+  process.exit(1)
+}
+console.log('Every skill is within the limits.')
