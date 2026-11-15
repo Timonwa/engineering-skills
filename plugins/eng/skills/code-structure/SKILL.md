@@ -147,6 +147,7 @@ Skip this section for a single app.
 
 - `error.tsx`, `not-found.tsx` and `loading.tsx` sit beside their segment; private folders (`_components/`) hold route-local pieces that must not become routes.
 - **A route group that needs a URL prefix keeps a real segment inside it.** `(auth)/auth/`: the parentheses buy the shared layout, the inner folder buys the `/auth` prefix. A group that only groups (`(marketing)`, `(legal)`) has no inner segment, because its pages sit at the root of the URL.
+- **A route never repeats its app's name.** One app holding every area divides them by URL: main pages at the root, `/dashboard/...` and `/admin/...` for the other areas. Where each area is its own app, the app already is the area, so its pages sit at the root — the admin app's users page is `/users`, not `/admin/users`. Only an API keeps its prefix (`/api/v1/...`).
 
 ## Entry files
 
