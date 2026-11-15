@@ -1,16 +1,12 @@
 ---
 name: api-architecture
 description: >-
-  The house backend / API-layer architecture for Next.js, data-store-agnostic — thin route handlers over a service layer or Server Actions, the schema then service then route build order, RBAC guards, Zod validation and write-safety, rate-limit tiers, typed errors and shared response builders, cursor pagination, audit logs, and cron/webhook auth. Use when designing or reviewing server endpoints, adding a route or Server Action, or structuring the API layer.
+  How an API route is built in a Next.js API — the fixed order of rate limit, authorise, validate, delegate, audit, respond; thin routes over services; the response envelope and typed errors; cursor pagination; resource paths, versions and state-transition sub-routes; and what every new route ships with. Cron, webhooks and audit logs are references. Use when adding, changing or reviewing a route handler or the API layer's structure.
 ---
 
-# Backend (API layer)
+# API architecture
 
-House architecture for the **backend / API layer of a Next.js app** — server endpoints structured as thin route handlers over a service layer (a dedicated API app `apps/api`, or route handlers as a BFF / for webhooks) or Server Actions in a single app. **Data-store-agnostic:** the route is the thinnest layer, all logic lives in the service layer, and data access is delegated to the data layer (Firestore via the Admin SDK → `firestore`). This skill is the _architecture_; the framework mechanics are `nextjs` and the data mechanics are `firestore`.
-
-> **When this applies:** an app with an actual API/route-handler layer. A **single app** with no separate API usually mutates via **Server Actions** (→ `nextjs`) calling services directly — same service/validation/RBAC rules below, minus the HTTP envelope.
->
-> **Delegations:** route handler / Server Action / caching mechanics → `nextjs`; Firestore/Admin-SDK data access, auth token/session, RBAC role model → `firestore`; Zod + schema-shape safety → `typescript`; where files live (`lib/server`, services) → `code-structure`; names → `naming`; the server-side security discipline (authz/Broken Object-Level Authorization (BOLA), injection, Server-Side Request Forgery (SSRF), resource limits, error hygiene) → `backend-security`.
+A route handler is the HTTP edge and nothing else. Business logic lives in services, so a rule holds in one place whether a route, a cron task or another service triggers it, and every route is short enough to review against one checklist.
 
 ## Project specifics first
 
@@ -19,125 +15,76 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Build order
+## The route, in six steps
 
-**schema → service → route.** The schema (validated shape) and service (logic) must exist before the route. Scaffold the trio together where you can. Routes never contain business logic, DB calls, or branching.
-
-## Route handler pattern
-
-Every mutating handler follows the same sequence — **rate-limit → authorize → validate → delegate → audit → respond**:
+Every handler runs the same sequence, in this order — **rate limit → authorise → validate → delegate → audit → respond**:
 
 ```ts
-export async function POST(request: NextRequest) {
+export async function POST(request: Request, ctx: { params: Promise<{ eventId: string }> }) {
   try {
-    await applyRateLimit(request, RATE_LIMITS.WRITE, "resource:create");
-    const { actor } = await requirePermission(request, "resource.create");
-    const body = await validateBody(request, CreateResourceSchema);
+    await applyRateLimit(request, "WRITE", "events:publish");
+    const { actor, event } = await loadEventWithPermission(request, (await ctx.params).eventId, "event.publish");
+    const input = await validateBody(request, PublishEventSchema);
 
-    const result = await createResource(body, actor);        // one service call
+    const published = await publishEvent(event, input, actor); // one service call
 
-    auditLog(request, actor, { action: "resource.create", targetId: result.id }); // admin routes only
-    return created(result, "Resource created");
+    auditLog(request, actor, { action: "event.publish", targetId: event.id }); // privileged only
+    return ok(published, "Event published");
   } catch (error) {
-    return errorResponse(error);                              // typed errors → status codes
+    return errorResponse(error);
   }
 }
 ```
 
-- **Routes are orchestration only** — one service call, no logic. Next 16: `ctx.params` is a **Promise** — `const { id } = validateParams(await ctx.params, IdParamsSchema)`, never read `ctx.params` raw.
-- **Validate everything** at the boundary with Zod (body, query, **and** route params) — `typescript`.
-- **Always respond via the shared builders** (`ok` / `created` / `errorResponse` / `paginated`) — fixed envelope; never hand-roll a `Response`.
+- **Rate limit first** — an attacker pays before any work is done. Tiers, keys and failure direction are `rate-limiting`'s.
+- **Authorise with a guard** — the guard is the only gate; nothing upstream checks again. Who the caller is → `auth`; what they may do → `rbac`. A guard that loads the resource checks existence before permission, so a caller without access gets 404, never a 403 that confirms the id exists.
+- **Validate body, query, params and form data** with the shared schemas through the project's `validate…` helpers; write schemas are `.pick()` allowlists (`schemas-and-contracts`). `ctx.params` is a Promise — await it, then validate it.
+- **Delegate in one service call.** No business logic, store access or branching in the route.
+- **Audit** every privileged mutation and every security-relevant action, at the platform, organisation or account scope it belongs to, fire-and-forget — see [references/audit-log.md](references/audit-log.md).
+- **Respond through the shared builders**, never a hand-rolled `Response`.
 
-## Service layer
+## The layers
 
-- **One file per resource** (`<resource>.service.ts`); accepts **validated data + the actor**; returns **plain objects, not `Response`s**; throws **typed errors**. All data access lives here (→ `firestore`).
-- **Placement:** logic shared across audiences lives in the resource service; audience-only operations (e.g. admin-only) go in an `admin/` service — **never fork a parallel admin copy** of resource logic. Reuse existing helpers/guards rather than reimplementing.
-- Keep files focused (~200 lines); split by concern.
+- **Routes** call **guards** and **services** only — the server barrel exports nothing else, so a route can't reach the store or a client without going around it, and a reviewer sees that at once (`code-structure`).
+- **Services** hold the logic: one file per resource, taking validated input and the actor, returning plain objects, throwing typed errors. Logic one audience needs (an operator-only action) goes in that audience's service, never a forked copy of the resource's.
+- **Data** modules are the only callers of the store (`firestore`); **clients** are the configured SDKs.
 
-## Validation & write-safety
+## Responses and errors
 
-Zod at the boundary; infer types from schemas (→ `typescript`). **Write schemas are `.pick()` allowlists** of the client-writable fields (`.partial()` for PATCH) — fail-closed: a new schema field can't leak into writes until explicitly picked, and the service writes the validated body wholesale, so the schema is the only gate. **`.omit()` write schemas are the anti-pattern** — fail-open: every unnamed/new field (ownership ids, status, timestamps, counters, roles) stays writable. Responses to a less-privileged audience use a **`.pick()` allow-list + explicit mapper**, never `{ id, ...doc.data() }` (full detail → `firestore` write-safety).
+- **One envelope for every route** — `{ success: true, data, message?, metadata? }` or `{ success: false, error: { code, message, details? } }`, typed in the shared contracts — built only by `ok`, `created`, `noContent`, `paginated` and `errorResponse`. A hand-rolled body breaks every consumer's unwrap.
+- **Expected failures are typed errors** with a status and a stable `code` clients branch on: validation (400, with every failing field in `details`), bad request (400), unauthorised (401), forbidden (403), not found (404), conflict (409), too many requests (429, with `Retry-After`), service unavailable (503). `errorResponse` maps them; an unexpected error is a 500 whose message is hidden outside local.
+- **A missing composite index is a 503 with its own code**, not a 500 or an empty page, so it's obvious in logs and the index is added (`firestore`).
+- **A lock that's already held is a 409**, never a wait.
+- **The API sets no cache policy.** Consumers cache their reads and expire them after a mutation (`nextjs`); the one exception is a file download, sent `no-store`.
 
-## RBAC guards
+## Lists
 
-- Guard at the top of the handler: `requirePlatformPermission(request, perm)` (app-wide) or `requireResourcePermission(request, perm, resourceRole)` (per-resource); prefer a composite `loadResourceWithPermission(request, id, perm)` that decodes the token once, loads the doc, resolves the role, and asserts. Inside a service with an actor already in hand, `requireActor(actor, perm)` asserts without re-verifying the token.
-- Guards resolve the **actor** from the token/claims and Firestore roles; enforcement uses the pure `can()` policy. The role model (claims + Firestore, `can()`) lives in `firestore`.
-- **The API is the only real gate** — the frontend trusts the 403; never rely on client checks.
+**Cursor pagination, never offset.** One shared helper runs the paged query; the service returns the page, its cursors and a total from a stored counter; `paginated` builds the `metadata` (`limit`, `total`, `totalPages`, `nextCursor`, `prevCursor`, `hasNext`, `hasPrevious`). Every ordered query has its composite index committed (`firestore`). A list returns a projection, never whole documents (`schemas-and-contracts`).
 
-## Rate limiting
+## Paths
 
-- **Every handler rate-limits** — no exceptions for "internal" or "cheap" reads. Five presets, picked by **what the route does**, not what it costs; a route whose traffic shape fits none gets its **own** tier (with a comment), not a stretched existing one.
+- **Every route sits under a version** — `app/api/v1/<resource>/…`. A breaking change adds `v2` beside `v1`, never edits `v1` in place, because deployed clients still call it; additive changes go into the current version. Consumers build every path from one version constant (`code-structure`). A retired version is deleted once nothing calls it — the API reference is the inventory to check.
+- **Paths group by resource, not by feature.** Things on the caller's own record nest under one resource (`account/profile`, `account/preferences`) whichever feature edits them; the feature is the route's API-reference tag (`openapi-registry`).
+- **`<resource>/route.ts`** lists and creates; **`<resource>/[id]/route.ts`** reads, updates and deletes.
+- **A state transition is its own `POST` sub-route** — `publish`/`unpublish`, `suspend`/`unsuspend`, `archive` — with its own permission and audit action. `DELETE` removes a thing; it never turns one off.
+- **Routes for the caller's own record need a session, not a permission** — there is no one else's to protect.
 
-| Preset      | Routes                                                              | How to size it                                                                |
-| ----------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `AUTH`      | login / signup / password reset — credential flows                  | Tightest. Per hour, not per minute — a human logs in a handful of times a day |
-| `SENSITIVE` | destructive or costly authed ops (role changes, deletions, uploads) | Near `AUTH`; the cost of the operation sets it, not the traffic               |
-| `WRITE`     | normal authed writes                                                | Between `SENSITIVE` and `READ`                                                |
-| `READ`      | authed reads                                                        | Generous — per minute; a real session bursts while a page loads               |
-| `PUBLIC`    | anonymous reads                                                     | Highest. Shared NAT puts many real users behind one IP                        |
+## Other callers
 
-**The actual numbers are a project fact → `AGENTS.md`**, not a house constant: a budget that fits a busy platform will lock out nobody on a low-traffic site, and one that fits the small site throttles the busy one. Derive each from real traffic — set it above your observed p99 for legitimate use, then watch what trips. Publishing your thresholds tells an attacker exactly what pace to stay under, so treat them like any other operational detail.
+- **Scheduled work** — one scheduler entry hits one dispatcher route that runs the due tasks: [references/cron.md](references/cron.md).
+- **Webhooks** — a provider's signed callbacks, recorded once and forgotten on failure so retries work: [references/webhooks.md](references/webhooks.md).
+- **Health and docs routes** have no user and no permission, but a public one still takes a generous limit of its own, never the user tiers' quota. Health answers only that it's up, never which dependencies it has; a platform probe that must never be throttled reaches it by network or identity, not an open exemption. Docs are served only on the tiers meant to show them.
+- **The proxy runs before every route** — CORS allowlist, the CSRF origin check on mutations, the maintenance gate. It is never authorisation (`backend-security`, `maintenance-mode`).
 
-- **Sliding window, not fixed** — a fixed window resets at the boundary, letting `2× maxRequests` burst by stacking the end of one window with the start of the next; sliding weights the previous window so the worst case stays bounded.
-- **Key per IP**, because most limited endpoints are auth-adjacent or unauthenticated — no user identity exists yet. Consequence: shared-NAT/corporate-proxy users share a counter, which is why `PUBLIC` ceilings are deliberately high.
-- **Key grammar `domain:action`** (`auth:login`, `admin:plans:update`) — each unique prefix is its own counter per identity.
-- **`getClientIp` reads the RIGHTMOST `x-forwarded-for` entry** (the CDN/LB appends the real IP last; the leftmost is client-spoofable), then `x-real-ip`, then `"unknown"` + a warn log.
-- **Rate limits FAIL CLOSED** — no fallback store; the limiter store being down means limited routes 5xx by design (caches fail open, security primitives fail closed).
-- **Only cron, webhooks, and dev routes skip it** (they have their own auth). Credential endpoints add a **login lockout** on top of the IP limit: keyed `(IP, email)`, `INCR` + TTL, `DEL` on successful login.
+## A new route ships with
 
-## Errors & responses
-
-- **Typed error classes** (`NotFoundError`, `ForbiddenError`, `UnauthorizedError`, `BadRequestError`, `ConflictError`, …) thrown from services; a single `errorResponse(error)` maps them to status codes. Never build ad-hoc error bodies.
-- **Shared response builders** with a fixed envelope: `ok` / `created` / `errorResponse` / `paginated`. Consumers depend on the shape — don't invent a new one per route.
-- **The API sets no cache policy.** Consumers cache the fetch (`serverFetch`/`publicFetch` with `tags` + a `revalidate` tier → `nextjs`); after a mutation, the **frontend** owns the matching `revalidateTag`.
-
-## Pagination
-
-**Cursor pagination, never offset** — a shared helper; the base query carries only `.where()` clauses; the cursor token is a doc id; fixed paginated envelope. The Firestore cursor helper + index requirements are in `firestore`.
-
-## Resource routes & state transitions
-
-- **Every route sits under a version segment** — `app/api/v1/<resource>/route.ts`. A breaking change to a response shape or a required field **adds `v2` beside `v1`**; it never edits `v1` in place, because a deployed client is still calling it. Additive changes (a new optional field, a new endpoint) go straight into the current version.
-- **The client names the version once.** `config/endpoints.ts` builds every path from one `API_BASE` constant, so a migration is one edit there and no endpoint can be missed (`code-structure`). Two versions running at once is a small map, not a second copy of the file.
-- **A retired version is deleted, not left to rot.** Before removing `v1`, confirm nothing calls it — the OpenAPI registry, where the project has one, is the inventory to check against.
-- File shape: `<resource>/route.ts` (GET list, POST create) + `<resource>/[id]/route.ts` (GET, PATCH, DELETE).
-- **State transitions are their own POST sub-routes**, mirroring `publish`/`unpublish` — `restrict`/`unrestrict`, `archive`/`unarchive`. **`DELETE` only removes a row** — never use it to "turn something off."
-
-## Auth on the request
-
-Accept **either** a `Bearer <ID token>` header **or** the session cookie; verify with check-revoked; reject unverified email by default (opt-out for pre-verification routes). The token/session/verification mechanics are in `firestore`.
-
-## Cron & webhooks
-
-- **Cron** endpoints are driven by a scheduler and authed by **verifying its OpenID Connect (OIDC) token** (audience + a fixed service-account email), not a session. The house pattern — single dispatcher with per-task cadence gates and error envelopes, retry-backoff sizing, audience derivation, default-deny with a local-only bypass, the two-layer-auth upgrade — lives in **`references/cron.md`**.
-- **Webhooks** verify a **signature** from the sender; both cron and webhooks skip user rate-limiting and must be **idempotent** (dedupe by a deterministic id; guard state transitions).
-
-## Proxy (CORS / CSRF / maintenance)
-
-One `proxy.ts` gates `/api/*`: a **CORS allowlist** (per-env origins, `Allow-Credentials: true` for the cookie), **CSRF** (reject mutating methods whose `Origin` is off the allowlist with 403), and optional **maintenance mode** (503 + `Retry-After` with a bypass). The proxy mechanism itself → `nextjs` (Proxy).
-
-## Audit and activity logs
-
-**Two different logs — don't merge them.** An **audit log** is a security control: append-only, admin-read-only, written for anything a compromise investigation would need. An **activity log** is a product feature: the user's own history, readable by them, deletable with their account. Same event often writes to both; the storage, retention, and access rules differ completely.
-
-**What earns an audit entry** is the sensitivity of the action, not the role of the actor. Every privileged/admin mutation, and every **security-relevant action a user takes on their own account** — email or password change, MFA enrolment or removal, session revocation, API-key issuance, account deletion, permission or ownership transfer. Those are the account-takeover steps; a trail that only covers admins can't reconstruct how an account fell. Ordinary CRUD on a user's own content doesn't need one (it belongs in the activity log, if anywhere).
-
-Entry field contract: **action** (typed union registered in one place — register action types before their feature ships, no ad-hoc values), **actor uid AND denormalized email** (the trail survives user deletion), optional **target id + type**, description, metadata, **originating IP**, **HTTP method + route path**, timestamp.
-
-- **Fire-and-forget is a contract** — never awaited, errors swallowed internally; a failed audit write must never surface to the caller.
-- **The permission guard auto-emits denial entries** (required permission + role in metadata) — routes need no denial code of their own.
-- **Append-only must-nots:** no write/edit/delete endpoint, no non-admin reads, no read-through cache on the audit path. Retention via a TTL field, not manual cleanup.
-- **An activity log is the opposite on every axis** — the user reads it, it can be paginated and cached like ordinary data, and it goes when the account goes. Deleting a user must never delete their audit entries, which is why the actor email is denormalized above.
-- Keep both separate from any per-item version history.
-
-## Boundaries
-
-- **Reuse the sibling's shape, not its mistakes** — mirror how nearby endpoints do auth, validation, pagination, and response _when they follow this skill_; where a sibling deviates, follow the skill and flag the sibling instead of copying it.
-- **No workarounds** — if you reach for one (over-fetching a list to derive a value), add the proper endpoint/service instead.
-- **Preserve existing comments** when editing or rewriting code; remove or update one only when your change made it factually wrong.
-- New routes get **auth + permission guards**; new schemas rebuild before use; validate inputs; secrets stay server-only (→ `firestore`, `nextjs`).
+In the same change: the request and response schemas (`schemas-and-contracts`), the data function and any composite index, the service, the route in six steps, its API-reference entry (`openapi-registry`), a colocated `route.test.ts` calling the exported handler with a real `Request` (`testing`), and the path in each consumer's endpoints file.
 
 ## Do / Don't
 
-- **Do** keep routes thin (rate-limit → authorize → validate → delegate → audit → respond); put logic + data access in services returning plain objects; throw typed errors mapped by `errorResponse`; validate body/query/params with Zod; cursor-paginate; make state transitions their own sub-routes; rate-limit every handler; verify cron OIDC + webhook signatures; audit admin mutations.
-- **Don't** put business logic / DB calls / branching in a route; return a raw `Response` or an ad-hoc envelope; skip rate-limiting; use `DELETE` to toggle state; set cache policy in the API; fork an admin copy of resource logic; read `ctx.params` without awaiting/validating; trust client-side permission checks.
+- **Do** keep the six steps in order; make one service call; throw typed errors; page with cursors; group paths by resource; make transitions sub-routes; ship the reference entry and the test with the route.
+- **Don't** put logic or store access in a route; hand-roll a response; skip the guard on a route that has a user, or the rate limit on any public route; edit `v1` for a breaking change; use `DELETE` to switch something off; await an audit write.
+
+## Related skills
+
+Rate limits `rate-limiting` · sessions `auth` · permissions `rbac` · schemas `schemas-and-contracts` · the store `firestore` · the API reference `openapi-registry` · route tests `testing` · server-side threats `backend-security` · where files live `code-structure`.

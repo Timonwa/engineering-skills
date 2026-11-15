@@ -1,46 +1,38 @@
-# Cron — the house pattern
+# Cron
 
-Scheduled work runs as **route handlers driven by a managed scheduler** (e.g. Cloud Scheduler) hitting the API — task code stays in the service layer instead of being duplicated into platform scheduled functions.
+Scheduled work runs as a route driven by a managed scheduler (Cloud Scheduler, or the host's equivalent) hitting the API, so the task code stays in services instead of being copied into platform scheduled functions.
 
-## Single dispatcher
+## One dispatcher, a declarative task list
 
-- **One scheduler entry per environment**, at the finest cadence any task needs (e.g. every 5 min), hitting **one dispatcher route** (`POST /cron/tick`).
-- **Each task self-gates its own cadence** inside the dispatcher — every tick, hourly (`minute === 0`), daily (`hour === 0 && minute === 0`), weekly (`day === N && hour === 0 && minute === 0`).
-- **Adding a task needs no scheduler change** — it's a new gated block in the dispatcher, shipped with the app rollout.
-- Tasks live in per-domain `*-cron.service.ts` files; the route is a thin dispatcher.
-
-## Error envelope
-
-Wrap each task in its own try/catch and return `{ results, errors }` — one failing task never poisons the rest of the batch:
-
-```ts
-if (minute === 0) {                       // hourly
-  try { results.expireInvites = await expirePendingInvites(); }
-  catch (err) { errors.expireInvites = err instanceof Error ? err.message : "Unknown"; }
-}
-```
-
-## Retry backoff
-
-If the scheduler retries, **max backoff must stay below the schedule period** — the default (1 h) lands retries after the next tick has already run. Min backoff must exceed cold-start (~30 s). Zero retries is fine when tasks are idempotent and the next tick is soon.
-
-| Schedule     | Max backoff |
-| ------------ | ----------- |
-| every 5 min  | 2m          |
-| every 15 min | 5m          |
-| hourly       | 20m         |
-| daily        | 2h          |
+- **One scheduler entry per environment**, at the finest cadence any task needs (every five minutes), calls **one dispatcher route** (`POST /api/v1/cron/tick`).
+- **The tasks are a list in one service**, each `{ name, isDue(now), run }`, with small helpers for the cadence (`everyTick`, `dailyAt(hour, minute)`, `weeklyAt(day, hour)`). A daily minute must be one the tick actually lands on. Adding a task is one entry, shipped with the app — never a scheduler change.
+- **`run` calls the domain's own service function.** The cron service only dispatches; the work lives where the rest of that domain's logic does.
+- **Each task is wrapped**: the dispatcher returns `{ results, errors }`, and one failing task never stops the rest.
+- **`?task=<name>` runs one task whatever the clock says**, rejecting an unknown name with the list of valid ones — so a developer can rerun a recount now instead of writing a second one that drifts.
+- **A heartbeat:** the dispatcher records each scheduled tick (never a by-name run), and a `GET` on the same route answers 503 once two ticks are missed, so an uptime monitor can watch the scheduler itself.
 
 ## Auth
 
-- **Default-deny OpenID Connect (OIDC):** verify the scheduler's token against the platform's public keys; the `aud` claim must equal the target URL **exactly** (no trailing-slash drift); the `email` claim must equal the per-env scheduler service-account email.
-- The expected audience derives from `x-forwarded-host` / `x-forwarded-proto` — if the API sits behind any fronting proxy, verify those headers survive it, or the audience won't match what the scheduler signed.
-- **One env-flag local bypass** (e.g. `CRON_LOCAL_BYPASS=true`) so a local `curl` can exercise the route — it must NEVER be set in a deployed environment.
+- **Default-deny OIDC.** The guard verifies the scheduler's token against the platform's keys; its audience must equal the route's URL exactly (no trailing-slash drift), and its email must be the environment's scheduler service account, with `email_verified` true. The audience derives from the forwarded host and protocol — confirm any fronting proxy keeps those headers.
+- **A local bypass needs two things:** an explicit flag _and_ the local tier. The flag alone on a deployed tier does nothing.
+- **No user rate limit** on the tick — the token is the gate. The heartbeat `GET` is public and takes one.
 
-## Two-layer-auth upgrade
+## Retries
 
-When a task starts handling money or destructive actions: split cron onto its **own compute service**, deploy it `--no-allow-unauthenticated`, grant the invoker role to the scheduler service account only — and keep the app-level OIDC check. Two independent layers: misconfigure either and it still fails closed.
+If the scheduler retries, its maximum backoff stays below the schedule period, or a retry lands after the next tick has already run; its minimum backoff exceeds a cold start. Zero retries is fine when tasks are idempotent and the next tick is minutes away.
 
-## Verification loop
+| Schedule     | Max backoff |
+| ------------ | ----------- |
+| every 5 min  | 2 min       |
+| every 15 min | 5 min       |
+| hourly       | 20 min      |
+| daily        | 2 h         |
 
-Force-run the scheduler job → read the service logs for the per-task results → seed a row the task should change and confirm it changed.
+## Safety
+
+- **Every task is idempotent.** A task that changes state claims its work in a transaction (a status moving from `scheduled` to `sending`), so two overlapping ticks can't do it twice.
+- **When a task starts moving money or deleting**, consider a second layer: run cron on its own service that only the scheduler's account may invoke, and keep the token check too.
+
+## Checking it works
+
+Run one task by name, read the route's `{ results, errors }`, then seed a record the task should change and confirm it changed.
