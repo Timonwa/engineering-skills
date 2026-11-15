@@ -6,11 +6,11 @@ description: >-
 
 # Backend (API layer)
 
-House architecture for the **backend / API layer of a Next.js app** — server endpoints structured as thin route handlers over a service layer (a dedicated API app `apps/api`, or route handlers as a BFF / for webhooks) or Server Actions in a single app. **Data-store-agnostic:** the route is the thinnest layer, all logic lives in the service layer, and data access is delegated to the data layer (Firestore via the Admin SDK → `firebase`). This skill is the _architecture_; the framework mechanics are `nextjs` and the data mechanics are `firebase`.
+House architecture for the **backend / API layer of a Next.js app** — server endpoints structured as thin route handlers over a service layer (a dedicated API app `apps/api`, or route handlers as a BFF / for webhooks) or Server Actions in a single app. **Data-store-agnostic:** the route is the thinnest layer, all logic lives in the service layer, and data access is delegated to the data layer (Firestore via the Admin SDK → `firestore`). This skill is the _architecture_; the framework mechanics are `nextjs` and the data mechanics are `firestore`.
 
 > **When this applies:** an app with an actual API/route-handler layer. A **single app** with no separate API usually mutates via **Server Actions** (→ `nextjs`) calling services directly — same service/validation/RBAC rules below, minus the HTTP envelope.
 >
-> **Delegations:** route handler / Server Action / caching mechanics → `nextjs`; Firestore/Admin-SDK data access, auth token/session, RBAC role model → `firebase`; Zod + schema-shape safety → `typescript`; where files live (`lib/server`, services) → `code-structure`; names → `naming`; the server-side security discipline (authz/Broken Object-Level Authorization (BOLA), injection, Server-Side Request Forgery (SSRF), resource limits, error hygiene) → `backend-security`.
+> **Delegations:** route handler / Server Action / caching mechanics → `nextjs`; Firestore/Admin-SDK data access, auth token/session, RBAC role model → `firestore`; Zod + schema-shape safety → `typescript`; where files live (`lib/server`, services) → `code-structure`; names → `naming`; the server-side security discipline (authz/Broken Object-Level Authorization (BOLA), injection, Server-Side Request Forgery (SSRF), resource limits, error hygiene) → `backend-security`.
 
 ## Project specifics first
 
@@ -50,18 +50,18 @@ export async function POST(request: NextRequest) {
 
 ## Service layer
 
-- **One file per resource** (`<resource>.service.ts`); accepts **validated data + the actor**; returns **plain objects, not `Response`s**; throws **typed errors**. All data access lives here (→ `firebase`).
+- **One file per resource** (`<resource>.service.ts`); accepts **validated data + the actor**; returns **plain objects, not `Response`s**; throws **typed errors**. All data access lives here (→ `firestore`).
 - **Placement:** logic shared across audiences lives in the resource service; audience-only operations (e.g. admin-only) go in an `admin/` service — **never fork a parallel admin copy** of resource logic. Reuse existing helpers/guards rather than reimplementing.
 - Keep files focused (~200 lines); split by concern.
 
 ## Validation & write-safety
 
-Zod at the boundary; infer types from schemas (→ `typescript`). **Write schemas are `.pick()` allowlists** of the client-writable fields (`.partial()` for PATCH) — fail-closed: a new schema field can't leak into writes until explicitly picked, and the service writes the validated body wholesale, so the schema is the only gate. **`.omit()` write schemas are the anti-pattern** — fail-open: every unnamed/new field (ownership ids, status, timestamps, counters, roles) stays writable. Responses to a less-privileged audience use a **`.pick()` allow-list + explicit mapper**, never `{ id, ...doc.data() }` (full detail → `firebase` write-safety).
+Zod at the boundary; infer types from schemas (→ `typescript`). **Write schemas are `.pick()` allowlists** of the client-writable fields (`.partial()` for PATCH) — fail-closed: a new schema field can't leak into writes until explicitly picked, and the service writes the validated body wholesale, so the schema is the only gate. **`.omit()` write schemas are the anti-pattern** — fail-open: every unnamed/new field (ownership ids, status, timestamps, counters, roles) stays writable. Responses to a less-privileged audience use a **`.pick()` allow-list + explicit mapper**, never `{ id, ...doc.data() }` (full detail → `firestore` write-safety).
 
 ## RBAC guards
 
 - Guard at the top of the handler: `requirePlatformPermission(request, perm)` (app-wide) or `requireResourcePermission(request, perm, resourceRole)` (per-resource); prefer a composite `loadResourceWithPermission(request, id, perm)` that decodes the token once, loads the doc, resolves the role, and asserts. Inside a service with an actor already in hand, `requireActor(actor, perm)` asserts without re-verifying the token.
-- Guards resolve the **actor** from the token/claims and Firestore roles; enforcement uses the pure `can()` policy. The role model (claims + Firestore, `can()`) lives in `firebase`.
+- Guards resolve the **actor** from the token/claims and Firestore roles; enforcement uses the pure `can()` policy. The role model (claims + Firestore, `can()`) lives in `firestore`.
 - **The API is the only real gate** — the frontend trusts the 403; never rely on client checks.
 
 ## Rate limiting
@@ -93,7 +93,7 @@ Zod at the boundary; infer types from schemas (→ `typescript`). **Write schema
 
 ## Pagination
 
-**Cursor pagination, never offset** — a shared helper; the base query carries only `.where()` clauses; the cursor token is a doc id; fixed paginated envelope. The Firestore cursor helper + index requirements are in `firebase`.
+**Cursor pagination, never offset** — a shared helper; the base query carries only `.where()` clauses; the cursor token is a doc id; fixed paginated envelope. The Firestore cursor helper + index requirements are in `firestore`.
 
 ## Resource routes & state transitions
 
@@ -105,7 +105,7 @@ Zod at the boundary; infer types from schemas (→ `typescript`). **Write schema
 
 ## Auth on the request
 
-Accept **either** a `Bearer <ID token>` header **or** the session cookie; verify with check-revoked; reject unverified email by default (opt-out for pre-verification routes). The token/session/verification mechanics are in `firebase`.
+Accept **either** a `Bearer <ID token>` header **or** the session cookie; verify with check-revoked; reject unverified email by default (opt-out for pre-verification routes). The token/session/verification mechanics are in `firestore`.
 
 ## Cron & webhooks
 
@@ -135,7 +135,7 @@ Entry field contract: **action** (typed union registered in one place — regist
 - **Reuse the sibling's shape, not its mistakes** — mirror how nearby endpoints do auth, validation, pagination, and response _when they follow this skill_; where a sibling deviates, follow the skill and flag the sibling instead of copying it.
 - **No workarounds** — if you reach for one (over-fetching a list to derive a value), add the proper endpoint/service instead.
 - **Preserve existing comments** when editing or rewriting code; remove or update one only when your change made it factually wrong.
-- New routes get **auth + permission guards**; new schemas rebuild before use; validate inputs; secrets stay server-only (→ `firebase`, `nextjs`).
+- New routes get **auth + permission guards**; new schemas rebuild before use; validate inputs; secrets stay server-only (→ `firestore`, `nextjs`).
 
 ## Do / Don't
 

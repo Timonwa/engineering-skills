@@ -51,7 +51,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **A stored document is read with a tolerant schema, and written with an exact one.** Data at rest outlives the code that wrote it: a list of enum values can hold an option the product has since retired, and one stale entry shouldn't fail the whole record. The read schema extends the full schema, replacing each such list with one that drops unknown entries; the full schema stays for building a new document. The same applies to a frontend checking what an API sends back, which during a rollout can run on older contracts than the API.
 - **A list returns a projection, never the whole document.** Each list shape is a `.pick()` of the full schema naming exactly what its card or row renders, and the data layer parses every document through it, so a key the pick doesn't name is dropped. That keeps payloads small and keeps sensitive fields out: a field added to the document can't leak into a list, because the pick doesn't name it. A detail read returns the full document; a sensitive field never appears in a list or public shape.
 - **A projection that needs a derived, summarised or decrypted value** (a payout account shown as its last four digits) is built in the service layer, which can produce the value, then parsed through its schema the same way.
-- Selecting fields at the query, to save bytes on the wire, is a separate decision and doesn't replace the pick; that's `firebase`'s.
+- Selecting fields at the query, to save bytes on the wire, is a separate decision and doesn't replace the pick; that's `firestore`'s.
 
 ## Shared primitives
 

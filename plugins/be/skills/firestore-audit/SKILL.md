@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team Firestore audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/firestore-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`firebase`** (Firestore/Storage rules → **`firebase-security-rules-auditor`**) ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`firestore`** (Firestore/Storage rules → **`firebase-security-rules-auditor`**) ARE present, also apply their house-specific rules as an enhancement.
 
 ## Project specifics first
 
@@ -106,7 +106,7 @@ Every run produces two things:
 
 ## Checklist
 
-Trace each endpoint through route → service → helper, counting Firestore operations. Each item below is self-sufficient; where the `firebase` skill is installed, its patterns (+ `references/patterns.md`) are the recommended fix target.
+Trace each endpoint through route → service → helper, counting Firestore operations. Each item below is self-sufficient; where the `firestore` skill is installed, its patterns (+ `references/patterns.md`) are the recommended fix target.
 
 ### Reads
 
@@ -137,7 +137,7 @@ Trace each endpoint through route → service → helper, counting Firestore ope
 
 ### Caching
 
-- **Server-side cache tiers on hot reads** — repeated identical hot reads sit behind a server cache tier (hot/warm/cold) so they don't re-hit Firestore each request; cached identity/config reads are deduped and tagged for invalidation on the relevant mutation (→ `nextjs` caching + `firebase`).
+- **Server-side cache tiers on hot reads** — repeated identical hot reads sit behind a server cache tier (hot/warm/cold) so they don't re-hit Firestore each request; cached identity/config reads are deduped and tagged for invalidation on the relevant mutation (→ `nextjs` caching + `firestore`).
 
 ### Pagination
 

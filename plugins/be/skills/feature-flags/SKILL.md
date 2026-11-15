@@ -135,7 +135,7 @@ function NewDashboardGate({ children }: { children: ReactNode }) {
 - The shared cache tier itself — namespaces, TTL constants, invalidation helpers, what belongs in Redis → `redis`.
 - Maintenance mode is this system's most privileged flag with extra rules ordinary flags don't get (the edge-gate mirror, 503 semantics, operator bypass, exempt paths) → `maintenance-mode`.
 - Route→service architecture, the state-transition sub-route pattern, RBAC guards, rate limiting, audit logging → `api-architecture`; why authorization must never be a flag → `backend-security`.
-- Store mechanics for the reference implementation — Admin SDK access, collections module, timestamps, write-safety → `firebase`. Remote Config as a vendor alternative → `firebase-remote-config-basics`.
+- Store mechanics for the reference implementation — Admin SDK access, collections module, timestamps, write-safety → `firestore`. Remote Config as a vendor alternative → `firebase-remote-config-basics`.
 - Server/Client component boundary, React `cache()`, fetch tags, `revalidateTag`, `router.refresh()` → `nextjs`; `as const` unions and Zod schemas → `typescript`.
 - The env-var vs runtime-config split and secret handling → `devops`; auditing env usage → `env-audit`.
 - Project facts — the chosen store, collection/table name, real flag names, cache TTL overrides, cron cadence — live in the consuming project's `AGENTS.md`, never here.

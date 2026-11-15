@@ -77,7 +77,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Automatic rollouts off** where every backend tracks the same branch, so a push doesn't rebuild every app; a deploy is a manual rollout of only the backends that changed.
 - **Before a manual deploy:** format, lint and types pass; the app being deployed builds; every secret it reads exists in the target project, and the backend has access to each. How secrets are granted is `env`'s.
 - **When CI does deploy,** it authenticates to the cloud with short-lived OIDC (Workload Identity Federation), never a long-lived service-account key stored as a CI secret, and gates on a post-deploy health check with rollback one step away.
-- Functions, security rules and indexes deploy from a machine with the Firebase CLI; how is `firebase`'s.
+- Functions, security rules and indexes deploy from a machine with the Firebase CLI, never from CI. Rules and indexes are `firestore`'s; each worker's deploy is in its own README.
 
 ## Gates to add when a project needs them
 

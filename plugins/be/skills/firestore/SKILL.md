@@ -1,5 +1,5 @@
 ---
-name: firebase
+name: firestore
 description: >-
   The house Firebase architecture for full-stack apps — the Admin-SDK access boundary, sign-in to ID token to httpOnly session cookie auth, hybrid RBAC across custom claims and Firestore, data access and write-safety (cursor pagination, transactions, serverTimestamp, denormalized counters, indexes-as-code), least-privilege rules, Storage buckets by access level, App Check, the emulator suite, and per-env deploy. Use when designing or reviewing anything Firebase.
 ---

@@ -21,7 +21,7 @@ Ask with `AskUserQuestion` in batches of at most four, the house default first i
 
    With route handlers, also ask whether the API publishes a browsable reference (default no); yes adds the docs route and the OpenAPI registry (`openapi-registry`).
 
-4. **Data store and auth** — none (default) · Firebase · other. Firebase turns on the Firebase client folder and the data paths (`firebase`, `auth`).
+4. **Data store and auth** — none (default) · Firebase · other. Firebase turns on the Firebase client folder and the data paths (`firestore`, `auth`).
 
 **Batch 2 — foundations**
 
