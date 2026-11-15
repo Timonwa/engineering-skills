@@ -1,14 +1,14 @@
 ---
 name: scaffold-feature
 description: >-
-  Scaffolds a new feature end-to-end in the house structure — schema, service, route handler or Server Action, page and components, and stories, with project facts like paths, aliases and helpers read from AGENTS.md and sibling code. Use when asked to scaffold, bootstrap or spin up a feature, endpoint, page, CRUD slice, schema or hook. Proposes the file plan first, writes compile-ready boilerplate with TODOs, and never invents business logic.
+  Scaffolds one feature slice inside an existing app — schema, the server layer for the app's shape, page and components, skeletons, stories and tests — with paths and helpers read from AGENTS.md and the code. Plans the file list first, writes compile-ready stubs with TODOs, and never invents business logic. Use when asked to scaffold or spin up a feature, endpoint, page, CRUD slice, schema or hook.
 argument-hint: "[feature-name] [scope hints]"
-allowed-tools: Read, Grep, Glob, Write, Edit, Bash(ls:*), Bash(pnpm:*), Bash(npm:*), Bash(yarn:*), Bash(npx:*)
+allowed-tools: Read, Grep, Glob, Write, Edit, Bash(ls:*), Bash(pnpm:*), Bash(npx:*)
 ---
 
 # Scaffold feature
 
-Creates a new feature's files in the right places with the right imports from day one — by following the owning skill for each layer (rather than restating conventions here), and by reading the project's `AGENTS.md` and existing code for the facts those skills can't know.
+Creates one feature's files in the right places with the right imports from day one. This skill only sequences the work: every convention comes from the skill that owns that layer, and every fact (paths, aliases, helper names) from the project's `AGENTS.md` and its code.
 
 ## Project specifics first
 
@@ -19,79 +19,71 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[feature-name]` — the feature/resource to scaffold, e.g. `notifications`.
-- `[scope hints]` — optional subset or context, e.g. `api only`, `page + action`, `schema`, `hook`, `component`, or which app in a monorepo. Omitted → plan the full slice and confirm scope in the plan.
+- `[feature-name]` — the feature or resource, e.g. `notifications`.
+- `[scope hints]` — a subset or context: `api only`, `page + action`, `schema`, `hook`, `component`, or which app in a workspace. Omitted → plan the full slice and confirm its scope in the plan.
 
-## Guardrails — read first
+## Guardrails
 
-- **Plan before files.** Present the full file list (create + modify) and wait for confirmation before writing anything.
-- **The standard wins; siblings supply only the facts.** Structure, naming, layering, and schema shape come from the owning skills below — never inferred from existing code. Read siblings for _project facts_ the skills can't know: real paths and aliases, which helper wrappers exist, how this repo names its barrels. Read **two or three** of them, not one, and take the dominant pattern; a single sibling may be the outlier.
-- **Never propagate a violation.** If the siblings disagree, or the dominant pattern contradicts an owning skill, follow the skill and note the deviation in the plan — scaffolding a copy of existing drift multiplies it once per feature.
-- **Boilerplate only.** Generated bodies are compile-ready stubs with `// TODO:` markers; never invent business logic, copy, or data models the user didn't describe.
-- **Never `git commit` or `git push`** — committing the scaffold → `ship-changes`.
-
-## Owning skills — delegate, don't restate
-
-This skill only sequences the work; every convention lives in its owning skill. When generating a layer, follow that skill's rules in full:
-
-| Layer                                                       | Owning skill              |
-| ----------------------------------------------------------- | ------------------------- |
-| Folder placement, thin pages, sections, `lib/` layout       | `code-structure`          |
-| Route handlers, services, Server Actions, guards, responses | `api-architecture`        |
-| Zod schemas + inferred types                                | `typescript`              |
-| Every identifier and file name                              | `naming`                  |
-| Reusable components and hooks                               | `reusables`               |
-| Stories                                                     | `storybook-story-writing` |
+- **Plan before files.** Present the full list of files to create and modify, and wait for approval.
+- **The skills set the shape; the code supplies the facts.** Read two or three neighbouring features for real paths, aliases and which helpers exist, and take the dominant pattern. Where they disagree with each other or with an owning skill, follow the skill and say so in the plan — copying drift multiplies it once per feature.
+- **Stubs only.** Compile-ready bodies with `// TODO:` markers; never invent business logic, copy or a data model the owner didn't describe.
+- **Use what exists.** Helpers and hooks come from the project's packages first — including the house packages where the project uses them — then its own `lib/`. A new one is written only after checking they lack it.
+- **No new dependency without approval.** A feature that needs a package lists it in the plan.
+- **Never commits** — committing is `ship-changes`'.
 
 ## Step 0 — Orient
 
-Read the project's `AGENTS.md` for the facts that shape the plan: monorepo or single app; whether the API layer is a dedicated API app/BFF or Server Actions; where schemas, hooks, and UI live (shared packages vs app-local `lib/`); path aliases; whether Storybook exists. Then sample two or three siblings per layer you'll generate — for the facts above, not for the conventions — and note any that already deviate from their owning skill so the plan can say so.
+From `AGENTS.md` and the code: single app or workspace, and **the app's shape** — an app with its own backend, a frontend over a separate API, or the API app itself (`code-structure`). Also: where schemas live (the app's `lib/schemas/` or a shared contracts package), whether Storybook and tests exist, and which route group or area the feature belongs to.
 
 ## Step 1 — Plan the slice
 
-From the arguments, decide which artifacts the feature needs — the full slice is `schema → service → route (or Server Action) → page + components → stories`, but a hint may reduce it to a subset. Present the plan as a file list with a one-line purpose each, flag any files that will be modified (barrels, route constants), and wait for approval.
+The slice follows the app's shape:
+
+| Shape                       | The slice                                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------- |
+| An app with its own backend | schema → service → data → Server Action (or route) → page and components                 |
+| A frontend over an API      | schema (or the contract's) → API read in `data/` and Server Action → page and components |
+| The API app                 | schema → service → data → route, with its docs entry                                     |
+
+A scope hint can cut it down. Present the plan: each file with a one-line purpose, the files modified (barrels, route and endpoint constants, the docs registry), and any package the feature needs. Wait for approval.
 
 ## Step 2 — Schema
 
-Per `typescript`: the create/document/update schema set with inferred types, in the project's schema location (shared package or app `lib/`), exported through its barrel. Add a constants file only if the schema needs enums/status arrays. Shared-vs-app placement follows where the schema will be consumed.
+Per `schemas-and-contracts`: the full schema with its inferred type, a `.pick()` write schema, a partial-update schema built so omitted fields keep their values, and a list projection if the feature lists things. **Placement by consumer count** — the app's own `lib/schemas/` while one app uses it; the shared contracts package only once a second does.
 
-## Step 3 — Service
+## Step 3 — The server layer
 
-Per `api-architecture`: one service file per resource, grouping its functions; typed errors; no route/transport concerns inside.
+Per `api-architecture` and `nextjs`, for the app's shape:
 
-## Step 4 — Route handler or Server Action
+- **Service and data** (own backend, API app) — one service file per resource holding the business logic, the only caller of its `data/` file; typed errors, no transport concerns.
+- **Route** (API app) — the house route order, a guard, a rate limit, a docs entry (`openapi-registry`) and a colocated `route.test.ts`, in the same change.
+- **API read** (frontend over an API) — a `data/` read through the project's typed fetcher, cached per `nextjs`.
+- **Server Action** — validates with the schema and answers with an action result, never a thrown error; every mutation calls `updateTag` on what it changed and `refresh()` beside it. In an app with its own backend the action checks the caller itself; over a separate API, the API's guard is the real check (`rbac`).
 
-Which one is a project fact (`AGENTS.md`). Per `api-architecture`:
+## Step 4 — Page and components
 
-- **Route handler** — thin: validate input, resolve the actor, guard permissions, call the service, return via the shared response builders.
-- **Server Action** — `safeParse` the input, re-resolve the actor and re-check permissions server-side (never trust client-supplied identity), call the fetch/service layer, revalidate affected cache tags, return a discriminated success/failure result.
+Per `code-structure`: the route constant first, then a thin `page.tsx` in the right group or area rendering a `…PageContent`, sections one per file in the feature's product-area folder, and client parts isolated in small `"use client"` leaves. Anything that waits on data gets a `<Component>Skeleton` and its own `<Suspense>`. Metadata matches the audience — public pages indexable, signed-in pages noindex (`seo`).
 
-## Step 5 — Page + components
+## Step 5 — Stories and tests
 
-Per `code-structure`: add the route constant, a thin `page.tsx` in the correct route group (so the right layout/auth guard applies) that renders a `…PageContent`, sections split one-per-file, client parts isolated behind `"use client"` leaves. Metadata matches the audience — public pages indexable, internal pages noindex (details → `seo`). Reads go through the project's server fetchers; never fetch from a Client Component.
+- **A new reusable component ships its story** in the same change (`storybook`).
+- **Tests per `testing`:** a spec beside each new service, data module, action, route and hook, covering the success path and each refusal as `// TODO:` cases; only the I/O boundaries are mocked.
 
-## Step 6 — Stories
+## Step 6 — Verify and hand off
 
-If the project has Storybook, ship the story for any new reusable component in the same change, per `storybook-story-writing`.
+Run the project's type check and the test suites the slice reaches, and report the real output. Then list every file created or modified, and keep only the follow-ups that apply:
 
-## Step 7 — Verify and hand off
-
-Run the project's type check (repo-wide in a monorepo). Then report every file created/modified plus the follow-up checklist, keeping only the items relevant to what was scaffolded:
-
-- Rate limiting for sensitive operations, audit logging for admin operations, and RBAC/permission registration if the route is gated (→ `api-architecture`).
-- Schema placement double-checked — move to the shared package if a second consumer appears.
-- Route constant added and the page sits in the route group whose layout carries the right guard.
-- SEO/noindex matches the page's audience.
-- The `// TODO:` markers left to implement, listed.
+- rate limits on sensitive operations, audit logging on privileged ones, and a permission registered for a gated route (`api-architecture`, `rbac`);
+- the schema moved to the contracts package if a second consumer appears;
+- the page in the area whose layout carries the right gate;
+- every `// TODO:` left to implement.
 
 ## Output
 
-The approved file plan, the created/modified file list, the type-check result, and the remaining-TODOs checklist — all in chat. No report file; the scaffold itself is the artifact. Uncommitted changes are left for `ship-changes`.
+In chat: the approved plan, the files created and modified, the type-check and test output, and the remaining TODOs. Nothing committed; that's `ship-changes`'.
 
 ## Boundaries
 
-- **Sequencing only** — structure → `code-structure`, API layer → `api-architecture`, schemas → `typescript`, names → `naming`, reusables → `reusables`, stories → `storybook-story-writing`.
-- **Never commits** → `ship-changes`.
+- **Features inside an existing app only.** A new project is shaped first by `scaffold-app`.
 - **Never implements business logic** — it scaffolds the shape and stops.
-- **Features inside an existing project only** — a brand-new repo needs its structure, configs, and tooling first → `scaffold-next-app` (one app) or `scaffold-monorepo` (a workspace).
-- Project facts it reads (`AGENTS.md`) are produced by `agents-md`; large framework/version moves → `migrate`.
+- Owning skills: placement `code-structure` · API layer `api-architecture` · caching and actions `nextjs` · schemas `schemas-and-contracts` · names `naming` · components `reusables` · stories `storybook` · tests `testing` · permissions `rbac`. Framework or major-version moves → `migrate`.
