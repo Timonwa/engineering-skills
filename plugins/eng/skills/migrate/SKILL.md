@@ -1,14 +1,14 @@
 ---
 name: migrate
 description: >-
-  Guided framework and major-version migrations — analyse the current setup, produce a step-by-step plan with checkpoints, then apply changes incrementally with verification after every step, stopping at breakage. Use when asked to migrate or upgrade a framework or major dependency (Next.js, React, Tailwind, Storybook, a major package bump), or move from one library to another. Plans first and never migrates in one shot.
-argument-hint: "[from] [to] | [migration description]"
-allowed-tools: Read, Grep, Glob, Edit, Write, WebSearch, WebFetch, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(ls:*), Bash(pnpm:*), Bash(npm:*), Bash(yarn:*), Bash(npx:*)
+  Guided framework, major-version and library-to-library migrations — read the target version's own docs, plan in checkpoints, run the official codemods, then apply and verify one step at a time, stopping at the first breakage. Use when asked to migrate or upgrade Next.js, React, Tailwind, Storybook, pnpm or any major dependency, or to move from one library to another. Plans first and never migrates in one shot.
+argument-hint: "[package] [target] | [migration description]"
+allowed-tools: Read, Grep, Glob, Edit, Write, WebSearch, WebFetch, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git switch:*), Bash(ls:*), Bash(pnpm:*), Bash(npx:*)
 ---
 
-# Migrate framework
+# Migrate
 
-Runs a framework, library, or major-dependency migration as a gated workflow: analyze what's installed, research the breaking changes, present a checkpointed plan, and — only after approval — apply it one verified step at a time.
+Runs a framework, major-version or library-to-library migration as a gated workflow: work out what's installed, read what changed, present a checkpointed plan, and only after approval apply it one verified step at a time.
 
 ## Project specifics first
 
@@ -19,100 +19,64 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[from] [to]` — the package and target, e.g. `next 16`, `tailwind 4 5`, `dep firebase 12`, or `latest` as the target.
-- `[migration description]` — free-form for library-to-library moves or custom migrations, e.g. `"styled-components to tailwind"`.
-- No arguments → show the supported forms above with one example each and ask what to migrate.
+- `[package] [target]` — `next 17`, `tailwind 5`, `pnpm 11`, or `latest` as the target.
+- `[migration description]` — a library-to-library move, e.g. `"styled-components to tailwind"`.
+- None → show the forms with one example each and ask.
 
-## Guardrails — read first
+## Guardrails
 
-- **Never migrate the whole codebase in one shot.** The only allowed path is plan → explicit approval → small increments, each verified before the next.
-- **Presenting the plan is not approval.** Do not touch a single file until the user has approved the plan; if the plan changes mid-migration, re-present the changed part.
-- **Stop at breakage.** If a step fails verification, stop, report the error and a suggested fix, and wait for user input — never plow through a red step to "fix it later".
-- **Never `git commit` or `git push`.** When the migration is done, hand off to `ship-changes`.
-- **"Upgrade X" authorizes analysis and planning only** — applying changes always needs the plan approved first.
+- **Never in one shot.** Plan → explicit approval → small increments, each verified before the next. Presenting the plan is not approval; "upgrade X" approves analysis and planning only. A plan that changes midway is presented again.
+- **Stop at the first breakage.** A step that fails verification stops the run: report the error and a suggested fix, then wait.
+- **Never start, stop or restart a dev server, or kill a process.** Ask the owner to run it and report back.
+- **No install without approval**, and never commits — that's `ship-changes`'.
 
 ## Step 0 — Orient
 
-Detect, never assume:
+**The branch, first** (`git branch --show-current`), named in the plan the owner approves:
 
-1. Read the project's `AGENTS.md` for facts: monorepo or single app, which apps/packages exist, framework, package manager, verify commands.
-2. Confirm the package manager from the lockfile (`pnpm-lock.yaml` / `package-lock.json` / `yarn.lock`).
-3. `git status` — warn if the tree is dirty; a migration should start from a clean state so failures are revertible.
-4. Read the root (and per-app, if monorepo) `package.json` to pin down current versions of the packages involved.
+- **A protected branch** (the default and tier branches `AGENTS.md` names) → propose a branch for the move, cut from the up-to-date default branch and named for it (`chore/upgrade-next-17`), and create it once approved.
+- **A work branch for something else** → a migration is unrelated work, so ask whether to migrate there or on a new branch; recommend a new one, since a migration touches files everywhere and should be reviewable and revertable on its own. Never decide alone.
+- **A branch already made for this migration** → keep working on it.
 
-## Step 1 — Analyze current state
+From `AGENTS.md` and the repo: single app or workspace, the package manager and its major (the lockfile and `packageManager`), the current versions of everything involved (the catalog in a workspace, every `package.json` otherwise), and the project's own verify commands. Check `git status` — a migration starts from a clean tree so every step can be undone.
 
-1. **Configuration** — read the configs the migration touches (e.g. `next.config.*`, the CSS/Tailwind entry, `tsconfig.json`, `.storybook/main.*`).
-2. **Usage patterns** — grep for APIs the target version deprecates or removes, and count affected files.
-3. **Breaking changes** — research the official migration guide / changelog between the current and target versions (WebSearch/WebFetch); never work from memory for version-specific behavior. Note any official codemods.
+## Step 1 — Read what changed
 
-## Step 2 — Generate the migration plan
+- **The target version's own docs come first.** Next.js ships version-matched docs in `node_modules/next/dist/docs/` once the target is installed in a scratch branch or read from the release's docs; other projects publish an upgrade guide per major. Read the guide between the current and target versions before the web, and never work from memory for version-specific behaviour.
+- **Official codemods and skills.** Note every codemod the maintainers ship — `npx @next/codemod`, the Storybook and Tailwind upgrade tools, pnpm's `pnpm-v10-to-v11` — and any official skill for the move (turning on Cache Components → `next-cache-components-adoption`).
+- **Usage** — grep for the APIs the target deprecates or removes, and count the affected files.
 
-Produce a step-by-step plan where every step states: **what** changes (specific files/patterns), **why** (which breaking change or deprecation drives it), **risk** (low/medium/high), and whether it's **automated** (codemod/find-replace) or needs manual review. Group steps into **checkpoints** — after each checkpoint the project must type-check and build green. Include:
+## Step 2 — Plan in checkpoints
 
-1. Pre-migration checks (clean git state, current verify commands passing).
-2. Dependency bumps (which packages, which versions, in which workspaces).
-3. Config changes.
-4. Code changes, with file locations and counts.
-5. Post-migration verification (Step 5's list, tailored to this migration).
+Every step says **what** changes (files and patterns), **why** (the breaking change behind it), its **risk**, and whether a **codemod** does it or it's manual. Steps group into **checkpoints**; after each, the project type-checks, lints and builds. The plan covers:
 
-## Step 3 — Approval gate
+1. Pre-checks — a clean tree, the current verify commands green.
+2. Dependency bumps — which packages, which versions, which workspaces.
+3. Codemods first, then the config changes, then the manual code changes with file counts.
+4. The workspace traps that apply (below).
+5. The final verification, tailored to this migration.
 
-Present the plan and wait for explicit approval. The plan must be clear enough for the user to judge scope and risk. Offer to trim scope (e.g. one app at a time in a monorepo).
+Present it and wait for approval. Offer to narrow the scope — one app at a time in a workspace.
 
-## Step 4 — Apply incrementally
+## Workspace traps
 
-For each step, in order: make the change → verify it compiles (`tsc --noEmit` or the project's check task) → run relevant tests if they exist → report status → move on. On failure: stop, report, suggest a fix, wait (see Guardrails).
+- **Bump the catalog and every recorded exact pin together.** A dependency a host can't read as `catalog:` is pinned in each app; it moves in the same change, or the apps drift (`monorepo`).
+- **Workers pin resolved versions** in their own manifests; bump those too.
+- **Rebuild every package that builds to `dist/`** after a change that touches it, and ask the owner to restart whatever runs from it — a stale server reports the new shape as an error.
+- **Registry-installed files** (a component library installed as source): a reinstall with `--overwrite` replaces local edits. List the project's edits before reinstalling and re-apply them after.
+- **Lint toolchains lag majors.** A linter whose parser doesn't support the new major yet gets an aliased older version, recorded with its reason, until it catches up (`typescript`).
 
-## Step 5 — Post-migration verification
+## Step 3 — Apply, one step at a time
 
-1. Full type check (repo-wide in a monorepo).
-2. Run the existing test suite(s).
-3. Start the dev server(s) for affected apps and confirm they boot.
-4. Storybook builds, if UI packages changed.
-5. Grep for leftovers: removed APIs, old version strings, codemod artifacts.
+For each step: make the change, then run the project's type check and lint, and the test suites the step reaches (two at a time). Report the result, then move to the next. On failure: stop, report, suggest, wait.
 
-## Step 6 — Report
+## Step 4 — Final verification
 
-Write `_reports/migration-report.md` (overwrite) and show it in chat:
-
-```markdown
-# Migration report
-
-**Date:** <YYYY-MM-DD> · **Migration:** <description> · **From:** <version/state> · **To:** <version/state>
-
-## Scope
-| App/package | Status |
-| --- | --- |
-| <name> | UPDATED / SKIPPED / FAILED |
-
-## Changes applied
-### Step <n> — <description>
-- <file>: <what changed>
-- **Verification:** passed/failed
-
-## Breaking changes handled
-| Change | Resolution |
-| --- | --- |
-
-## Post-migration checklist
-- [ ] Type check passes
-- [ ] Tests pass
-- [ ] Dev servers start
-- [ ] Visual spot-check in browser
-- [ ] Storybook builds (if UI changed)
-
-## Known issues
-<anything unresolved that needs manual attention>
-```
+- The type check, lint and build across every affected app and package.
+- The test suites, and the Storybook tests if UI changed.
+- A grep for leftovers: removed APIs, old version strings, codemod artifacts, the old package name.
+- The owner checks it running: ask them to start the dev servers for the affected apps and confirm each boots and its main pages render. Never start them yourself.
 
 ## Output
 
-The report file at `_reports/migration-report.md`, the same content posted in chat, and a closing note listing any manual follow-ups. Uncommitted changes are left for the user to review and commit via `ship-changes`.
-
-## Boundaries
-
-- **Never commits or pushes** — committing the migration → `ship-changes`.
-- Structure and naming of any code it rewrites follow `code-structure` and `naming`.
-- Monorepo task-graph/caching fallout → `monorepo`; CI pipeline updates the migration requires → `devops`.
-- A post-migration health sweep → the audit family via `audit-all`.
+In chat: the migration and its scope, each step with what changed and its verification result, the breaking changes handled and how, anything left unresolved, and the manual follow-ups (servers to restart, docs to update). No report file; the diff is the artifact. Committing is `ship-changes`'; CI or workflow changes the migration needs are `devops`'.
