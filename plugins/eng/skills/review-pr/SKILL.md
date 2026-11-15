@@ -1,18 +1,19 @@
 ---
 name: review-pr
 description: >-
-  Project-aware review of a pull request or branch diff — hunts bugs and quality issues across many angles in parallel, verifies each finding to drop false positives, checks the changes against this project's own documented conventions, and writes a numbered report. Use when asked to review a PR, review a branch before merge, self-review, or run a code review. Never commits or pushes without per-change approval.
-argument-hint: "[pr-number | pr-url | base...head] [--comment] [--fix] [--deep]"
+  Manually invoked. Reviews a pull request or a branch against what it set out to do and the project's own rules, plus real bugs — runs or reads the checks, hunts by angle, proves every finding, and reports a severity table. Read-only unless asked to comment on the PR or fix findings. A project with its own review skill uses that instead.
+argument-hint: "[pr-number | pr-url | branch] [--comment] [--fix] [extra focus]"
 model: opus
 effort: high
-allowed-tools: Read, Grep, Glob, Task, Write, Edit, Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git status:*), Bash(git symbolic-ref:*), Bash(git merge-base:*), Bash(git add:*), Bash(git commit:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(gh repo view:*), Bash(gh pr comment:*), Bash(pnpm run:*), Bash(npm run:*), Bash(yarn run:*), Bash(bun run:*)
+disable-model-invocation: true
+allowed-tools: Read, Grep, Glob, Task, Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git status:*), Bash(git merge-base:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr review:*), Bash(gh issue view:*), Bash(gh repo view:*), Bash(pnpm:*)
 ---
 
-# PR review
+# Review a pull request
 
-A complete, standalone review pipeline for a pull request or a branch diff. It finds real bugs and quality problems, proves each one before reporting it, and judges the change against the conventions the project documents about itself. It depends on nothing but `git`, `gh` (optional), and your own tools — no built-in reviewer.
+A review exists to catch what would hurt after merge — a bug, a security hole, a broken rule the next feature would copy — and to say so in a way the author can act on in one pass. Every finding is proved before it's reported; a short true list beats a long padded one.
 
-`$ARGUMENTS` may contain a PR number/URL, an explicit `base...head` range, and any of the flags `--comment` (post findings to the PR), `--fix` (apply findings after review), `--deep` (widen the hunt). Parse them out; treat leftover text as extra focus for the review.
+**This is the generic review.** A project that keeps its own review skill — with where its specs live, its extra rules and angles — uses that one instead; this is the base such a skill is built from.
 
 ## Project specifics first
 
@@ -21,95 +22,75 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Guardrails — read first
+## Rules that never bend
 
-- **Read-only by default.** Steps 0–5 never modify code. Fixes happen only in Step 6, on explicit request.
-- **Never `git commit` or `git push` on your own.** Committing happens only when the user says to, and each such instruction is a **one-time approval covering only that specific set of changes** — it never authorizes future commits.
-- **Report findings; don't silently fix them.** Even with `--fix`, apply only what the user confirmed and then stop for review.
+- **Read-only by default.** No edits, commits, pushes, PR comments, approvals or merges unless asked for that specific thing. Commenting (`--comment`) and fixing (`--fix`) are separate requests.
+- **Prove it or drop it.** A finding names the file and line, quotes the code, and states the situation that goes wrong. "Might be an issue" is not a finding.
+- **Judge the change, not the codebase.** Only lines the PR adds, removes or depends on. A problem already on the base branch is mentioned once at the end, never as a blocker.
+- **The project's rules win where it states them;** where it says nothing, the house skills are the standard.
 
-## Step 0 — Orient (project-aware setup)
+## Step 1 — Gather
 
-Detect the project's shape instead of assuming it. Run these once and reuse the results:
+1. **The PR:** `gh pr view <n> --json title,body,author,baseRefName,headRefName,files,commits` and `gh pr diff <n>`. A branch with no PR: the diff and log against its base (`git merge-base`).
+2. **The intent:** the PR body and every issue it links (`gh issue view`), with their acceptance criteria, and any spec or doc it references. Review against what the change was meant to do, not only against style.
+3. **The rules:** `AGENTS.md` (root and closest), the guides it links for the areas the diff touches, and the project's own skills.
+4. **Skip** lockfiles, build output and binaries beyond noting they changed. A large mechanical change (a rename, a reinstall) is spot-checked, and the report says so.
+5. **The checks:** if CI ran, read its result (`gh pr checks`) and don't repeat what it covered. Otherwise run the project's type check, lint and the tests the diff reaches. A failing check is the first finding.
 
-1. **Base branch:** try `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; else `git symbolic-ref --quiet --short refs/remotes/origin/HEAD` (strip `origin/`); else fall back to the first that exists of `main`, `master`, `dev`. If a `base...head` range was passed, use it verbatim.
-2. **Package manager & scripts:** read the nearest `package.json` (and root, in a monorepo) — note the lockfile (`pnpm-lock.yaml` / `yarn.lock` / `package-lock.json` / `bun.lockb`) and the available `scripts` (typecheck, lint, test). Use these exact commands later; never hardcode `pnpm check-types`.
-3. **Workspace layout:** treat it as a monorepo **only** if `package.json` has `workspaces`, or `pnpm-workspace.yaml` actually declares a `packages:` list, or there's an `apps/` + `packages/` layout — a bare `pnpm-workspace.yaml` holding only pnpm settings is still a single app. If it's a monorepo, list the workspace packages and their import aliases (these are what "reuse"/"shared code" mean below); otherwise note the single-app `src/` layout and its path alias (e.g. `@/*`).
-4. **Load conventions = the global standard (always) + this project's facts.** The **global standard applies regardless of what the repo documents**: Conventional Commits; type/schema naming (`Props` / `Schema` / clean PascalCase type names, no `Type` suffix); kind-first `lib/` + feature-first `components/` (`ui/`, `_shared/`, `layout/`) + `@/*` alias + import order; comments-only-when-non-obvious; reuse the shared layer; semantic HTML + a11y; no scope creep. Then read the project's `AGENTS.md` (via `CLAUDE.md → @AGENTS.md`), `CONTRIBUTING.md`, and config (`tsconfig`, ESLint/Biome, Prettier) for its **project facts**: framework, framework-specific structure/routing/rendering, auth, data model, env. Build one checklist = standard + facts.
+## Step 2 — Hunt, angle by angle
 
-## Step 1 — Gather the diff
+Read every changed line, then look at it from each angle. On a diff over a few hundred lines, run the angles as parallel subagents so they don't share blind spots; each returns its findings with file, line, quote and failure scenario.
 
-1. If a PR number/URL was given: `gh pr view {n} --json title,body,files,additions,deletions,baseRefName,headRefName` for metadata and `gh pr diff {n}` for the full diff.
-2. Otherwise: `git diff {base}...HEAD` for the diff and `git log {base}..HEAD --oneline` for intent. (Use `git merge-base` if a three-dot range misbehaves.)
-3. **Exclude generated and vendored content from the hunt:** lockfiles, `dist/`/`build/`/`.next/`/`plugins/` and other generated output, minified bundles, binaries, and vendored third-party code. Note their presence in one line if relevant (e.g. "lockfile updated"), never review them line-by-line.
-4. **Very large diffs (>~3000 changed lines):** don't dilute the hunt evenly. Prioritize by risk — server/auth/data-mutation code first, then shared packages, then UI; sample mechanical bulk changes (renames, codemods) by spot-checking a few instances and verifying the pattern instead of every line. Say in the report's Overview what was prioritized and what was sampled.
-5. Identify every changed file and read the surrounding code where a hunk isn't self-explanatory. Do **not** dump the file list into the report.
+1. **Correctness** — wrong conditions, off-by-one, null and undefined, a missing `await`, `0` or `""` treated as missing, swallowed errors, a state that can't be reached or left, a loading or error state never shown.
+2. **Removed behaviour** — for every deleted or replaced line, what it guaranteed and where the new code still guarantees it. A dropped guard, error path or validation is a finding.
+3. **Callers** — every changed export: who imports it, and does each caller still hold (a new required prop, a changed return shape, a renamed field).
+4. **The intent** — does the change do what its issue or spec asked, all of it, and nothing it shouldn't?
+5. **The project's rules** — structure, naming, data and caching, API and auth, styling and the design system, as `AGENTS.md`, its guides and the house skills (`code-structure`, `naming`, `api-architecture`, `nextjs`, `design-system`) state them.
+6. **Reuse** — new helpers, hooks, schemas and constants checked against the project's packages (including the house packages it uses) and its own `lib/`. Name what it duplicates.
+7. **Security** — secrets reaching the client, input that skips validation, a missing guard or ownership check, unsafe HTML, an open redirect (`frontend-security`, `backend-security`, `rbac`).
+8. **Tests** — new shared code, services, routes, actions and hooks have specs beside them, mocking only the I/O boundaries; nothing weakened or deleted to go green (`testing`).
+9. **Docs** — an `AGENTS.md`, README or guide the change now contradicts, or a new command, route, env value or convention not written down, with the line to update.
+10. **The PR itself** — the branch, small Conventional commits, the template filled in honestly, issues linked (`ship-changes`). A promotion PR (a tier branch into the next) is checked only for green checks, no stray commits and the merge method (`devops`), never re-reviewed line by line.
 
-## Step 2 — Hunt in parallel (spawn one subagent per angle)
+Then a simplification pass: state that could be derived, copy-pasted variants, dead code, effects syncing what could be computed, hand-written memoisation the compiler makes redundant.
 
-Run these angles **simultaneously** via the Task tool so they don't share bias. Each returns up to 6 potential issues (up to 12 with `--deep`), and every issue must carry: `file`, `line`, `category`, `severity` (error / warning / info), `summary` (one sentence), and `failure_scenario` (a concrete trigger → the wrong output or cost).
+## Step 3 — Verify every finding
 
-- **A — Line-by-line scan.** Read every changed line literally: inverted/wrong conditions, off-by-one, null/undefined deref, missing `await`, falsy-zero checks, wrong-variable copy-paste, swallowed errors.
-- **B — Removed-behaviour audit.** For each deleted/replaced line, name the invariant it enforced and find where the new code re-establishes it. A dropped guard, error path, or narrowed validation is a finding.
-- **C — Cross-file tracer.** For each changed function, grep its callers/callees; flag any call site broken by a new precondition, changed return shape, or timing dependency.
-- **D — Reuse.** Flag new code that re-implements something the repo already has; name the existing helper/shared package (from Step 0).
-- **E — Simplification.** Flag redundant/derivable state, copy-paste variants, dead code, deep nesting; name the simpler form.
-- **F — Efficiency.** Flag redundant computation, repeated I/O, needless sequential work that could be parallel, expensive work on hot/startup paths; name the cheaper alternative.
-- **G — Altitude.** Check each change is at the right depth — special-case bandaids on shared infrastructure signal a too-shallow fix. Prefer generalizing the mechanism.
-- **H — Conventions & standard.** Check the diff against the Step 0.4 checklist. Enforce the **global standard even when the project's existing code or docs disagree** — a `Type`-suffixed type, a re-implemented shared util, a broken `lib/`/`components/` placement, a non-standard alias, or an `AGENTS.md` rule that contradicts the standard are all findings (flag the stale doc too). Then check the project facts (framework structure, auth, data model, env). Cite the rule you're applying.
-- **I — Security.** Flag injection, secrets/keys in code, missing authz, unsafe deserialization, `dangerouslySetInnerHTML` without sanitization, Server-Side Request Forgery (SSRF), path traversal, and dependency risks introduced by the diff.
-- **J — Coverage** _(only if the project requires tests/stories)_. New shared components without a Storybook story; new shared functions / API routes without tests. Skip cleanly if the project doesn't require these.
-- **K — Documentation impact.** Does the change leave the app's docs stale or something undocumented? Flag, with the exact file+line to update: (1) statements in `README`, `AGENTS.md` / `CLAUDE.md`, or `_docs/` / `docs/` that the diff now **contradicts** — renamed/removed/behaviour-changed things still described the old way; (2) new user- or dev-facing surface not reflected where it should be — commands/scripts, config/env vars (and `.env.example`), public APIs, component props, routes, features; (3) **convention changes that should update `AGENTS.md` itself**. Read the relevant docs to confirm staleness before flagging — don't assume.
+Merge findings that point at the same mechanism. For each, try to break it — read the surrounding code, the caller, the test, the docs. Keep it only if it is:
 
-## Step 3 — Verify (kill false positives)
+- **Confirmed** — the exact input or state that triggers it and the wrong result, with the line quoted; or
+- **Likely** — a real mechanism with an uncertain trigger, labelled as likely, with what would confirm it.
 
-Dedup issues pointing at the same line/mechanism, keeping the most concrete failure scenario. Then, for each remaining issue, spawn a verifier subagent that returns exactly one verdict:
+Drop anything guarded elsewhere, already handled, or a matter of taste no rule decides.
 
-- **CONFIRMED** — can name the exact inputs/state that trigger it and the wrong result; quotes the line.
-- **PLAUSIBLE** — real mechanism, uncertain trigger (timing/env/config); states what would confirm it.
-- **REFUTED** — factually wrong or guarded elsewhere; quotes the line that proves it.
+## Step 4 — Report
 
-Drop REFUTED. Keep CONFIRMED and PLAUSIBLE — these are the final findings. Default to REFUTED when the verifier can't substantiate the claim; a smaller true report beats a padded one.
-
-## Step 4 — Write the report
-
-Write to `_reports/PR_REVIEW_REPORT.md` (create the folder if needed). If a previous report exists, read it first and note in the Overview which prior findings are now fixed and which are still open, then overwrite. Also print the findings table to the chat.
+In chat:
 
 ```markdown
-# PR Review Report
+## Review of #<n> — <title>
 
-**Date:** {YYYY-MM-DD} · **Branch:** {head} · **Base:** {base} · **PR:** {link or "none"}
+**Read:** what the PR does and whether it meets its intent, in two or three sentences.
+**Checks:** format ✓ · types ✓ · lint ✓ · tests ✗ (1 failing) · build ✓
 
-## Overview
+| #   | Severity   | Area | Where        | Finding        | Fix            |
+| --- | ---------- | ---- | ------------ | -------------- | -------------- |
+| 1   | Must fix   | API  | `file.ts:41` | One sentence.  | One sentence.  |
+| 2   | Should fix | Reuse | `file.ts:3` | One sentence.  | One sentence.  |
+| 3   | Nit        | Naming | `file.tsx:12` | One sentence. | One sentence. |
 
-{2–3 sentences on what the change does and your overall read. No file list.}
+**Details** — each finding's failure scenario in full, the quoted line, and the fix.
 
-## Findings
-
-| #   | Severity | Category | File | Line | Issue | Suggestion |
-| --- | -------- | -------- | ---- | ---- | ----- | ---------- |
-| 1   | error    | Bug      | `path` | 23 | {one line} | {one line} |
-
-{If nothing: "No issues found."}
-
-## Failure scenarios
-
-**#1** — {summary}
-> {full failure_scenario}
+**Already on the base branch** (not this PR's to fix): …
 ```
 
-Rules: one flat findings table (no per-category tables); numbers are sequential and never restart; severities are `error` (must fix) / `warning` (should fix) / `info` (nice to fix); categories are Bug · Convention · Architecture · Reuse · Simplification · Efficiency · Security · Coverage · Docs. Mark PLAUSIBLE findings as such in the Issue cell. No "Verdict"/"Summary" section.
+- **Must fix** — a bug, a security issue, a failing check, a broken contract, or a rule the project states as never or always. Blocks merge.
+- **Should fix** — a convention the next feature would copy, missing tests or stories, duplication, stale docs.
+- **Nit** — naming, wording, small simplifications. Never blocks.
 
-## Step 5 — Post PR comment (only with `--comment`, or if a PR exists and the user asked)
+Likely findings say so in the Finding cell. Nothing found → say so plainly, with what was checked. Praise only what is worth repeating, in one line.
 
-Post with `gh pr comment {n} --body "..."` using a condensed version of the findings table (drop the Suggestion column), a 2–3 sentence overview, and a footer: `_Reply with finding numbers to fix (e.g. "fix #1, #3"). Full report: _reports/PR_REVIEW_REPORT.md_`. Posting a comment is an outward action — confirm before posting unless `--comment` was explicitly passed.
+## Step 5 — Only when asked
 
-## Step 6 — Apply fixes (only with `--fix`, or when the user says "fix #1, #3")
-
-1. Apply **only** the requested findings — don't touch the others.
-2. Run the project's typecheck (and lint, if relevant) commands detected in Step 0 to verify the fixes are clean.
-3. Report in chat only (do not rewrite the report file): **Fixed** (numbered, one line each) and **Remaining** (numbered). End with "Needs your review before continuing."
-4. Stop. Do **not** commit.
-
-## Step 7 — Commit (only on explicit instruction)
-
-When the user says to commit: commit only the current applied set, with a Conventional Commits message (see the `ship-changes` skill for the format). This approval covers this one commit only; anything after needs a fresh instruction. Never push. After committing, report what was committed and stop.
+- **`--comment`** — confirm, then post the table and details as one review (`gh pr review <n> --comment`, or `--request-changes` when there's a Must fix and the owner agrees). Never approve or merge unless told to.
+- **`--fix`, or "fix #1 and #3"** — on the PR's branch, change only those findings, re-run the checks they touch, report what changed, and stop. Committing is `ship-changes`'.
