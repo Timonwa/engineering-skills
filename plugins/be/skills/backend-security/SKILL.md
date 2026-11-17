@@ -53,7 +53,7 @@ Broken access control is the top risk in both lists, and object-level authorisat
 
 ## Stored rich HTML
 
-- **Sanitise on the server, at write time,** with an allowlist policy — the tags, attributes and URL schemes allowed (`http`, `https`, `mailto`) — from a maintained sanitiser (`sanitize-html`, or DOMPurify on the server). Everything else is stripped before the value is stored.
+- **Sanitise on the server, at write time,** with one allowlist policy shared with the browser's sanitiser (`RICH_TEXT_POLICY` in the contracts) — the tags, the attributes per tag, and the URL schemes (`http`, `https`, the same rule as `z.httpUrl()`) — from a maintained sanitiser (`sanitize-html`, or DOMPurify on the server). Everything else is stripped before the value is stored.
 - **One policy, shared:** the allowlist sits in the shared constants, so the editor, the server's sanitiser and the browser's second pass (`frontend-security`) agree.
 - **Plain text stays plain** — React escapes it when rendering; a field that isn't meant to hold HTML never goes through `dangerouslySetInnerHTML`.
 
@@ -79,7 +79,7 @@ When the server fetches a URL a user gave it — an import, a link preview, a cu
 - **Cookie-authenticated mutations are checked in the proxy:** the `Origin` header must be on the allowlist, falling back to `Referer` when `Origin` is absent, and anything else is a 403. OWASP now adds **Fetch Metadata**: refuse a mutation whose `Sec-Fetch-Site` is `cross-site`. `SameSite=Lax` on the session cookie is a layer, not the defence (`auth`).
 - **A `Bearer` request isn't open to CSRF** — the browser never attaches it on its own — but the same route still runs the origin check when a cookie is present.
 - **A `GET` never changes state**, so no check is needed on it.
-- **A Server Action is a public `POST` endpoint**: it authorises and validates on its own, every time, like a route. Next compares its `Origin` with `Host`; set `serverActions.allowedOrigins` only for a known proxy, and never treat the encrypted closure as a place to keep a secret.
+- **A Server Action is a public `POST` endpoint**: it authorises and validates on its own, every time, like a route. Next compares its `Origin` with `Host`; set `experimental.serverActions.allowedOrigins` only for a known proxy, and never treat the encrypted closure as a place to keep a secret.
 - **Responses that vary on `Origin` or `Sec-Fetch-Site`** send `Vary` with those headers, so a cache can't serve one caller's answer to another.
 
 ## Firebase's public surface

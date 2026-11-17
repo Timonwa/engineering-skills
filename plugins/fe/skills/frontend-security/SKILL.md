@@ -1,16 +1,12 @@
 ---
 name: frontend-security
 description: >-
-  Client-side browser security for React and Next.js, mapped to OWASP Top 10 2025 — XSS and safe rendering (JSX escaping, DOMPurify, DOM sinks, Trusted Types), a strict nonce-based Content Security Policy, clickjacking, postMessage and iframe isolation, SRI and third-party scripts, client secrets and token storage, open redirects, and prototype pollution. Use when building or reviewing frontend code for security.
+  Browser-side security for React and Next.js apps, mapped to OWASP — XSS and safe rendering with one sanitiser policy shared with the server, the security headers every app sends from its own config, a Content Security Policy and how strict it can be with Cache Components, Trusted Types, framing and postMessage, third-party scripts and SRI, secrets and tokens in the client, open redirects, and the other client pitfalls. Use when building or reviewing frontend code, a page's headers, or a third-party script.
 ---
 
 # Frontend security
 
-In-depth **client-side / browser security** for web UIs (React / Next.js). The browser is a hostile, fully-inspectable environment — this skill owns the discipline for everything that runs there. Its sibling **`backend-security`** owns the server; a full-stack app applies both, a static/marketing site may apply only this one.
-
-> **Delegations:** the whole server side (access control, injection, Server-Side Request Forgery (SSRF), auth/session, rate limiting, secrets, error hygiene) → **`backend-security`**; header / Content Security Policy (CSP) / env plumbing in Next → `nextjs`; component & file structure → `code-structure` / `reusables`; focus/contrast/reduced-motion a11y → `accessibility`; input schemas → `typescript`.
->
-> **Concrete snippets** (nonce CSP, DOMPurify wrapper, postMessage guard, sandboxed iframe, Subresource Integrity (SRI), safe redirect, token storage) → `references/frontend-hardening.md`. **A full app review** → the manual **`security-audit`** skill.
+Everything shipped to the browser can be read and edited: the source, every public value, the state in memory, every network call. So the client never enforces anything — the server re-decides it all (`backend-security`) — and nothing sensitive lives there. What the client does own is not running someone else's code: escaping and sanitising what it renders, and sending headers that tell the browser what it may run, frame and fetch.
 
 ## Project specifics first
 
@@ -19,71 +15,94 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## First principle — the client is untrusted and inspectable
+## The OWASP slice that runs in the browser
 
-Everything shipped to the browser is **readable and editable**: source, `NEXT_PUBLIC_*` values, in-memory state, and every network call. Two consequences that drive the rest of this skill:
+- **A05 Injection → XSS**, the main browser risk: safe rendering and the CSP below.
+- **A02 Security Misconfiguration**: missing headers, a CSP full of `unsafe-*`, production source maps, verbose client errors.
+- **A03 Software Supply Chain Failures**: npm packages and third-party scripts running with the page's privileges (SRI and third parties below; dependency gates are `devops`').
+- **A01 Broken Access Control** is enforced on the server; the client's only duty is never to rely on its own checks.
 
-- **Client-side checks are UX, never enforcement.** Hiding a button, disabling a field, or validating a form in the browser improves experience — it does not secure anything. The server re-decides everything (→ `backend-security`). Assume an attacker calls your API directly with the button removed.
-- **Nothing sensitive lives in the client.** No real secrets, no privileged keys, no data the user isn't allowed to see — because they _can_ see it.
+## XSS and safe rendering
 
-## OWASP Top 10 2025 — the client-relevant slice
+- **Let React escape.** Interpolated text is escaped, and React 19 turns a `javascript:` URL in `href`, `src`, `action` or `formAction` into one that does nothing. The danger is where React doesn't reach — `data:` and other schemes, `style`, spread props from untrusted objects, `dangerouslySetInnerHTML`, and sinks outside React (`location`, `router.push`, `window.open`).
+- **HTML is rendered only through one sanitising component** (DOMPurify), the only place `dangerouslySetInnerHTML` appears. It reads the same policy the server applies when it saves rich text — `RICH_TEXT_POLICY` from the shared contracts: tags, attributes per tag and URL schemes (`backend-security`): the server is the authority, and the client sanitises again because what it renders may not have come through that save.
+- **Know the DOM sinks** — `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, string `setTimeout`/`setInterval`, `on…` attributes, assignments to `location`, `href` or `src`. No untrusted input reaches them, and `eval` and `new Function` aren't used at all.
+- **A user-supplied link is `z.httpUrl()`** — `http:` and `https:` only (`schemas-and-contracts`); `mailto:` and `tel:` appear only in links the app builds itself. `javascript:`, `data:`, `blob:` and `vbscript:` never pass.
+- **Every source is untrusted** — search params, route params, `location`, `document.referrer`, `postMessage` data, API responses, and pasted or dropped HTML (`getData("text/html")`).
+- **Server rendering doesn't sanitise.** Data a Server Component puts into a hand-built HTML string is as dangerous as any other; render through JSX, and sanitise any HTML string wherever it renders.
+- **DOM clobbering:** sanitised HTML can still carry `id` and `name` values that shadow globals — keep DOMPurify's `SANITIZE_DOM` on, add `SANITIZE_NAMED_PROPS`, and never look up user HTML by name.
+- **JSON-LD** goes through `seo`'s component, which escapes `<` so a value can't close the script tag.
 
-- **A05 Injection → XSS** — the dominant frontend risk (safe rendering + CSP below).
-- **A02 Security Misconfiguration** — missing/weak CSP and security headers, exposed source maps, verbose client errors.
-- **A03 Software Supply Chain Failures** — malicious npm packages and third-party scripts running in your bundle (SRI + third-party below; deps → `devops`).
-- **A01 Broken Access Control** — the _enforcement_ is server-side (`backend-security`); the frontend must simply never rely on its own checks.
+## Security headers
 
-## XSS & safe rendering
+**Each app sends the same baseline on every response, from its own `next.config` `headers()`, matched on `/:path*`.** The block is written out in each app and changed in all of them in the same change, so no app drifts; an app adds only what's its own (`X-Robots-Tag`, `seo`).
 
-XSS is untrusted data reaching a place the browser executes. Defenses are layered — escape, sanitize, and CSP as the backstop.
+| Header                         | Value                                                                      | Why                                                                                   |
+| ------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `Strict-Transport-Security`    | `max-age=63072000; includeSubDomains` (`preload` once decided)             | HTTPS only, for two years; preloading commits every subdomain, so it's a decision     |
+| `X-Content-Type-Options`       | `nosniff`                                                                  | a response is never sniffed into a script                                             |
+| `Referrer-Policy`              | `strict-origin-when-cross-origin`, or stricter                             | paths and queries don't leak to other sites                                           |
+| `X-Frame-Options`              | `DENY`                                                                     | for browsers without `frame-ancestors`                                                |
+| `Permissions-Policy`           | every unused feature off (`camera=(), microphone=(), geolocation=()`)      | an app grants a feature only for the page that uses it; an injected script can use it |
+| `Cross-Origin-Opener-Policy`   | `same-origin-allow-popups` where sign-in opens a popup, else `same-origin` | another window can't hold a reference to the page                                     |
+| `Cross-Origin-Resource-Policy` | `same-site`                                                                | another site can't embed the app's responses                                          |
+| `Content-Security-Policy`      | below                                                                      | what the page may run, load and connect to                                            |
 
-- **Let the framework escape.** JSX/React auto-escapes interpolated text — that's the safe default; don't defeat it. The danger is where escaping _doesn't_ apply: `href`/`src` (a `javascript:` URL), inline event handlers, `style`, `dangerouslySetInnerHTML`, and any raw DOM write.
-- **`dangerouslySetInnerHTML` only on sanitized HTML** — pass it through **DOMPurify** behind a single shared `<SafeHtml>` wrapper (→ `references/frontend-hardening.md`); never hand it raw user/CMS/markdown-rendered content. Same rule for direct `innerHTML`.
-- **Know the DOM sinks** — `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `setTimeout`/`setInterval` with a string, `element.setAttribute("on…")`, assigning to `location`/`href`/`src`. Never feed any of them untrusted input. **No `eval`/`new Function`** at all.
-- **React has escape hatches beyond `dangerouslySetInnerHTML`** — don't spread untrusted objects into JSX props (`{...userData}`), and never build a `style` string, attribute name, or `href`/`src` from user input; these bypass JSX escaping just like a raw DOM write.
-- **Enforce a URL-scheme allowlist** on any user-controlled `href`/`src`/redirect — allow `https:`/`mailto:`/`tel:` and **reject `javascript:`, `data:`, `blob:`, `vbscript:`** (React does _not_ block a `javascript:` href).
-- **DOM clobbering** — attacker `id`/`name` attributes in sanitized HTML can shadow globals/properties (`window.config`, `document.getElementById`); don't trust named DOM lookups on user HTML, and enable DOMPurify's `SANITIZE_NAMED_PROPS`/`SANITIZE_DOM`.
-- **SSR & Server Components are XSS vectors too** — server-fetched data interpolated into hand-built HTML bypasses client escaping. Render through JSX; sanitize any HTML _string_ regardless of where it renders.
-- **Untrusted sources** — `useSearchParams()`, `params`, `location.*`, `document.referrer`, `postMessage` payloads, API responses, and **clipboard `paste` / `drop` HTML** (`getData("text/html")`) are all untrusted; validate/encode/sanitize before rendering, navigating, or writing to the DOM.
-- **Trusted Types** (`require-trusted-types-for 'script'`) turn DOM-XSS sinks into typed, guarded operations — React supports it, Next has rough edges, so treat it as a hardening upgrade.
+- **Signed-in responses send `Cache-Control: no-store`**, so a shared or back-button cache never holds them.
+- **`X-XSS-Protection` is not sent** (or sent as `0`): the old filter it controlled caused vulnerabilities of its own. **`poweredByHeader: false`** removes `X-Powered-By`.
+- **Check each tier** with Mozilla Observatory after a header change.
 
-## Content Security Policy — the XSS backstop
+## Content Security Policy
 
-Even if something slips through, a strict CSP stops the browser executing it.
+A CSP tells the browser what a page may run, load and connect to, so script that slipped through doesn't run. How strict the script part can be depends on how the app renders:
 
-- **Strict + nonce-based** — `default-src 'self'`, a per-request **nonce** for scripts/styles, and **no `unsafe-inline` / `unsafe-eval`** (those defeat the whole point). Add `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors` (clickjacking), a **tight `connect-src`** (your exact API + `wss://` origins — a loose one lets injected script exfiltrate), and a `report-to` endpoint. Policy is here; the nonce plumbing is `nextjs` (→ `references/frontend-hardening.md`).
-- **Trusted Types, done right** — if you set `require-trusted-types-for 'script'`, also declare a **`trusted-types`** directive naming the allowed policy (e.g. your DOMPurify policy) and route sink writes through it; otherwise every DOM write throws.
-- **Roll out in `Report-Only` first**, watch violations, then enforce. Evaluate with Google's CSP Evaluator. A CSP full of `unsafe-*` is theatre — flag it as such.
+- **With Cache Components (the house model, `nextjs`), a strict script policy isn't available yet.** A nonce needs the request's headers, which a static shell doesn't have (Next.js: Partial Prerendering is incompatible with nonces); a hash through `experimental.sri` covers external scripts but not Next's inline flight scripts, so a strict `script-src` blocks hydration (vercel/next.js#95354). Such an app sends every other directive strictly and `script-src 'self' 'unsafe-inline'`, recorded as a known gap and reviewed when Next supports a strict policy with Cache Components.
+- **An app that renders every page per request, without Cache Components,** can use a nonce: `proxy.ts` makes one per request, sets it in the header and in `x-nonce`, and the layout reads `x-nonce` from `headers()` and passes it to every `<Script nonce>`. The cost is that nothing is static or cached at the CDN.
 
-## Clickjacking, framing & cross-window messaging
+Either way:
 
-- **Deny framing** with CSP `frame-ancestors 'none'` (+ legacy `X-Frame-Options: DENY`) unless the app is meant to be embedded — then allowlist specific ancestors. Header baseline → `devops`.
-- **`postMessage`** — always **check `event.origin` against an allowlist** _and_ validate the payload shape (Zod) before acting; never `postMessage(data, "*")`. Treat every inbound message as attacker-controlled.
-- **Third-party embeds** run in a **sandboxed iframe** (grant only needed tokens; avoid `allow-scripts` + `allow-same-origin` together, which re-opens the sandbox) and communicate over origin-checked `postMessage`.
+- **Directives:** `default-src 'self'`; `object-src 'none'`; `base-uri 'none'`; `form-action 'self'`; `frame-ancestors 'none'` unless the app is meant to be embedded; `upgrade-insecure-requests`; and explicit lists for `connect-src`, `img-src` and `frame-src` — the API, the image CDN, and Firebase Auth (`identitytoolkit.googleapis.com` and `securetoken.googleapis.com` in `connect-src`, the auth domain in `frame-src` for the sign-in popup). A loose `connect-src` lets injected script send data anywhere.
+- **`'unsafe-eval'` never ships.** Local development needs it for React's error overlay, and `style-src 'unsafe-inline'`; branch on the local tier (`APP_ENV`), never `NODE_ENV` (`env`). Server-rendered `style="…"` attributes need `style-src-attr 'unsafe-inline'` in production too, a far smaller risk than script; record it when used.
+- **Roll out as `Content-Security-Policy-Report-Only`**, reporting through `Reporting-Endpoints` and `report-to`, plus `report-uri` for browsers that lack `report-to`; enforce once the reports are clean, and keep reporting after.
+- **The proxy skips prefetch requests** (the `missing` matcher on `next-router-prefetch` and `purpose: prefetch`), so a nonce isn't minted for them.
+- **Trusted Types** (`require-trusted-types-for 'script'`) turn every DOM sink into a checked operation, and every major browser supports it. It stays report-only until everything that writes to a sink has a policy: React 19.3 or later, the sanitiser returning TrustedHTML (DOMPurify's `RETURN_TRUSTED_TYPE`, policy `dompurify`), Next's runtime, and libraries such as the consent banner, which writes `innerHTML` without one.
 
-## Third-party scripts, SRI & bundle surface
+The headers block, both CSP setups and the sanitiser are in [references/frontend-hardening.md](references/frontend-hardening.md).
 
-- **Every third-party script runs with your privileges** — analytics, tag managers, chat widgets can inject arbitrary code and read the DOM/cookies. Minimize them, prefer self-hosting, and isolate risky ones in a sandboxed iframe.
-- **SRI** (`integrity` + `crossorigin`) on every CDN `<script>`/`<link>`, with pinned versions. Dynamic-import chunks that SRI can't cover lean on the CSP + lockfile + supply-chain gates (→ `devops`).
-- **Bundle analysis is security-adjacent** — dead deps and unused code enlarge the attack surface and the supply-chain blast radius; prune them.
+## Framing and messages
 
-## Secrets & auth tokens in the client
+- **Framing is denied** (`frame-ancestors 'none'` and `X-Frame-Options: DENY`) unless the app is built to be embedded, and then only named ancestors are allowed.
+- **`postMessage`:** every received message checks `event.origin` against an allowlist and parses the payload with a schema before acting; every sent message names its target origin, never `"*"`.
+- **Third-party embeds sit in a sandboxed iframe** with only the permissions they need. `allow-scripts` with `allow-same-origin` undoes the sandbox only for a document from your own origin — never give both to one — while a cross-origin embed (a video, a map) often needs both and can't reach your origin. Embeds that set cookies load only after consent (`cookie-consent`).
 
-- **No real secrets in frontend code.** `NEXT_PUBLIC_*` and anything in the bundle is **public** — privileged API keys, signing secrets, and admin creds stay server-side (→ `nextjs`, `backend-security`). A key that must ship to the client (e.g. a public analytics key) must be safe to expose _and_ locked down by origin/referrer at the provider.
-- **Token storage** — the session belongs in an **httpOnly, Secure, SameSite cookie** (set server-side → `backend-security`); JS can't read it, so XSS can't steal it. **Never** put auth tokens in `localStorage`/`sessionStorage`. If a short-lived access token must be in JS, keep it **in memory only** and refresh from the cookie.
-- **Don't leak sensitive data client-side** — no PII/secrets in URLs (they hit history, logs, referrers), `localStorage`, analytics payloads, `console`, or Redux/devtools state; gate or strip **production source maps**; set `autoComplete="off"` on sensitive fields where appropriate; avoid caching private responses in a service worker.
+## Third-party scripts
 
-## Navigation & other client pitfalls
+- **Every third-party script runs with the page's privileges** — it can read the DOM, the form fields and any readable cookie. Keep few, self-host where possible, and isolate risky ones in a sandboxed iframe.
+- **Analytics and marketing scripts load only after consent** (`cookie-consent`), and their origins are named in the CSP.
+- **SRI (`integrity` and `crossorigin`) on every fixed, versioned file from a CDN**, so a changed file fails to load instead of running. Scripts whose content changes by design — Google's tags — can't take SRI; they load only after consent, from origins named in the CSP.
+- **Prune the bundle:** an unused dependency is attack surface and supply-chain risk for nothing.
 
-- **Open redirects** — validate any `?next=`/`returnTo` against an allowlist or force same-origin relative paths; never redirect to a raw user value (→ `references/frontend-hardening.md`).
-- **Reverse tabnabbing** — `target="_blank"` links carry **`rel="noopener noreferrer"`** (blocks `window.opener` hijack + referrer leak).
-- **Client-side prototype pollution** — deep-merge/`Object.assign` from untrusted JSON can poison `__proto__`; use safe parsers and guard merges (a common vector in vulnerable frontend deps).
-- **CSRF** — for cookie-based auth, protection is `SameSite` cookies + a server origin check (enforced in `backend-security`); the frontend's part is sending requests same-origin and not defeating `SameSite`.
-- **File uploads** — client type/size checks are UX only (the server re-validates → `backend-security`); for previews use `URL.createObjectURL` + `revokeObjectURL`, and **never render an uploaded SVG inline** (it executes script) — treat it as an `<img src>` or sanitize it.
-- **Service workers** — register from a tight scope, never cache authenticated/PII responses, and treat an XSS-registerable SW as a persistent foothold (be able to `unregister` + purge caches).
-- **CORS & header leakage (client side)** — don't paper over CORS with `mode: "no-cors"`; send `credentials: "include"` only to your own origins. Set a strict `Referrer-Policy` (`strict-origin-when-cross-origin` or tighter) so path/query values don't leak in `Referer`, and a locked-down `Permissions-Policy` (header baseline → `devops`).
+## Secrets and tokens in the client
+
+- **Nothing secret ships.** A public variable and anything in the bundle is readable; per-tier public facts are constants (`env`), and a key that must be in the client (a public analytics or maps key) is safe to expose and restricted by origin at its provider.
+- **The session is an httpOnly, Secure, SameSite cookie** the API sets (`auth`): script can't read it, so XSS can't steal it. No token goes in `localStorage` or `sessionStorage`; a short-lived token the client SDK needs lives in memory only.
+- **No personal data or tokens** in URLs, `localStorage`, analytics payloads, `console` or devtools-visible state; production source maps aren't served publicly; a service worker never caches signed-in responses.
+
+## Other pitfalls
+
+- **Open redirects:** a `?redirect=` is followed only when it's a same-origin path (`safeRedirectPath`, `auth`).
+- **Sign-out** clears what the browser kept with `Clear-Site-Data` (`auth`).
+- **`target="_blank"`** links carry `rel="noopener noreferrer"`.
+- **Prototype pollution:** untrusted JSON never goes through a deep merge that follows `__proto__` or `constructor`.
+- **CSRF** is stopped on the server (`backend-security`); the client sends requests same-origin, never defeats `SameSite`, and treats a Server Action as a public endpoint like any route.
+- **Uploads:** browser checks are for the person; previews use `URL.createObjectURL` and revoke it; an uploaded SVG is never rendered inline (`image-handling`).
+- **CORS:** never paper over it with `mode: "no-cors"`; `credentials: "include"` goes only to the product's own origins.
 
 ## Do / Don't
 
-- **Do** treat the client as untrusted and inspectable; escape by default and sanitize all HTML with DOMPurify behind one wrapper; ship a strict nonce-based CSP (no `unsafe-*`) with `frame-ancestors`; origin-check + schema-validate every `postMessage`; sandbox third-party embeds; SRI + pin CDN assets; keep the session in an httpOnly cookie; validate redirect targets; add `rel="noopener"`; prune the bundle.
-- **Don't** rely on client checks for authorization; pass raw HTML/user input to `dangerouslySetInnerHTML`/`innerHTML` or any DOM sink; use `unsafe-inline`/`unsafe-eval`/`eval`/`new Function`; store auth tokens in `localStorage`; put real secrets in `NEXT_PUBLIC_*` or the bundle; `postMessage(data, "*")` or skip origin checks; ship source maps/verbose errors to prod; redirect to an unvalidated URL; deep-merge untrusted JSON.
+- **Do** let React escape; sanitise HTML in one component with the server's allowlist; check every user URL's scheme; send the header baseline from every app, changed together; send every CSP directive strictly and record the script gap under Cache Components; roll out in report-only; check `postMessage` origins; sandbox embeds; SRI on CDN files; keep the session in an httpOnly cookie.
+- **Don't** rely on client checks; pass raw HTML to a sink; ship `unsafe-eval`; use the hash route with an App Router app (it blocks hydration); set a nonce CSP without knowing it makes every page dynamic; grant a permission an app doesn't use; store a token in web storage; ship a secret in a public variable; `postMessage` to `"*"`; follow an unchecked redirect; load a tracking script before consent.
+
+## Related skills
+
+Server-side threats, CSRF and Server Actions `backend-security` · the session cookie `auth` · public values and tiers `env` · the safe URL schema `schemas-and-contracts` · consent before scripts `cookie-consent` · proxy and rendering `nextjs` · indexing headers `seo` · uploads `image-handling` · dependency gates `devops` · a full review `security-audit`.

@@ -75,7 +75,7 @@ Query strings, route params, form data and env values arrive as strings, or not 
 
 Keep the primitives every domain reuses in one `shared.schema.ts` — email, phone, country code, timestamps, pagination queries, safe URLs — and build domain schemas from them.
 
-- **A URL a page will render as a link is `z.httpUrl()`**, which allows only `http:` and `https:`. Plain `z.url()` accepts `javascript:` and `data:`, and a rendered `href` would execute the first.
+- **A user-supplied URL a page will render as a link is `z.httpUrl()`**, which allows only `http:` and `https:` — the rule the sanitisers share (`frontend-security`, `backend-security`). Plain `z.url()` accepts `javascript:` and `data:`. `mailto:` and `tel:` appear only in links the app builds itself.
 - **Ids that are easy to mix up are branded** (`z.string().brand<"EventId">()`), so passing a user id where an event id belongs fails the type check.
 
 ## On the wire

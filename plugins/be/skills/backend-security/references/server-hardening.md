@@ -93,15 +93,16 @@ function isCrossSiteMutation(request: Request): boolean {
 ```ts
 import sanitizeHtml from "sanitize-html";
 
-// The allowlist lives in the shared constants, so the editor and the browser's pass agree.
-const RICH_TEXT_POLICY: sanitizeHtml.IOptions = {
-  allowedTags: [...RICH_TEXT_ALLOWED_TAGS],
-  allowedAttributes: { a: ["href", "title", "rel"] }, // rel listed, or the transform's rel is stripped
-  allowedSchemes: ["http", "https", "mailto"],
+import { RICH_TEXT_POLICY } from "@org/contracts"; // tags, attributes per tag (a: href, title, rel) and schemes (http, https); the browser's sanitiser reads the same
+
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [...RICH_TEXT_POLICY.allowedTags],
+  allowedAttributes: RICH_TEXT_POLICY.allowedAttributes, // rel listed, or the transform's rel is stripped
+  allowedSchemes: [...RICH_TEXT_POLICY.allowedSchemes],
   transformTags: { a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer nofollow" }) },
 };
 
-export const sanitiseRichText = (html: string) => sanitizeHtml(html, RICH_TEXT_POLICY); // at write time
+export const sanitiseRichText = (html: string) => sanitizeHtml(html, SANITIZE_OPTIONS); // at write time
 ```
 
 ## Parameterised queries

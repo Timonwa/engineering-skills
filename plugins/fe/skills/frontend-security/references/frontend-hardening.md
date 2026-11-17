@@ -1,118 +1,197 @@
-# Frontend hardening — concrete patterns
+# Frontend hardening — patterns
 
-Companion to the `frontend-security` skill. Copy-adaptable snippets for the client-side controls it mandates. Header/Content Security Policy (CSP) plumbing specifics live in `nextjs`; these show the _shape_ to aim for.
+The headers block, the two CSP setups and the client-side guards behind `SKILL.md`.
 
-## Sanitized HTML — one `<SafeHtml>` wrapper
+## Contents
 
-Never call `dangerouslySetInnerHTML` inline. Route all rich/CMS/user HTML through a single sanitizing component so the allowlist lives in one place.
+- [The headers block](#the-headers-block)
+- [CSP with Cache Components](#csp-with-cache-components)
+- [CSP by nonce](#csp-by-nonce)
+- [The sanitising component](#the-sanitising-component)
+- [Origin-checked postMessage](#origin-checked-postmessage)
+- [Sandboxed embed](#sandboxed-embed)
+- [SRI on a CDN file](#sri-on-a-cdn-file)
+
+## The headers block
+
+Written out in every app's `next.config.ts`, and changed in all of them together:
+
+```ts
+const SECURITY_HEADERS = [
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }, // add preload once decided
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }, // grant per app, per need
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" }, // same-origin where nothing opens a sign-in popup
+  { key: "Cross-Origin-Resource-Policy", value: "same-site" },
+];
+
+const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
+};
+```
+
+## CSP with Cache Components
+
+In `next.config.ts`, beside the headers block. Every directive is strict except `script-src`, which needs `'unsafe-inline'` until Next supports a strict policy with Cache Components (vercel/next.js#89754, #95354) — record it as a known gap.
+
+```ts
+const isLocal = APP_ENV === "local"; // never NODE_ENV
+
+const CONTENT_SECURITY_POLICY = [
+  `default-src 'self'`,
+  `script-src 'self' 'unsafe-inline'${isLocal ? " 'unsafe-eval'" : ""}`, // the recorded gap
+  `style-src 'self'${isLocal ? " 'unsafe-inline'" : ""}`,
+  `style-src-attr 'unsafe-inline'`, // only if server-rendered style="" attributes are used
+  `img-src 'self' blob: data: https://<image-cdn>`,
+  `connect-src 'self' https://<api-origin> https://identitytoolkit.googleapis.com https://securetoken.googleapis.com`,
+  `frame-src https://<auth-domain>`, // Firebase Auth's sign-in popup
+  `font-src 'self'`,
+  `object-src 'none'`,
+  `base-uri 'none'`,
+  `form-action 'self'`,
+  `frame-ancestors 'none'`,
+  `upgrade-insecure-requests`,
+  `report-to csp`,
+  `report-uri https://<report-endpoint>`, // for browsers without report-to
+].join("; ");
+
+// in headers(): first as Content-Security-Policy-Report-Only, then Content-Security-Policy
+// { key: "Content-Security-Policy-Report-Only", value: CONTENT_SECURITY_POLICY },
+// { key: "Reporting-Endpoints", value: `csp="https://<report-endpoint>"` },
+```
+
+## CSP by nonce
+
+For an app that renders every page per request, without Cache Components. In the app's `proxy.ts`:
+
+```ts
+export function proxy(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isLocal = APP_ENV === "local"; // React's error overlay needs eval locally; never NODE_ENV
+
+  const csp = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isLocal ? " 'unsafe-eval'" : ""}`,
+    `style-src 'self' ${isLocal ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    `img-src 'self' blob: data: https://<image-cdn>`,
+    `connect-src 'self' https://<api-origin> https://identitytoolkit.googleapis.com https://securetoken.googleapis.com`,
+    `frame-src https://<auth-domain>`,
+    `font-src 'self'`,
+    `object-src 'none'`,
+    `base-uri 'none'`,
+    `form-action 'self'`,
+    `frame-ancestors 'none'`,
+    `upgrade-insecure-requests`,
+    `report-to csp`,
+    `report-uri https://<report-endpoint>`,
+  ].join("; ");
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp); // Next reads the nonce from here while rendering
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy-Report-Only", csp); // switch to Content-Security-Policy once reports are clean
+  response.headers.set("Reporting-Endpoints", `csp="https://<report-endpoint>"`);
+  return response;
+}
+
+export const config = {
+  matcher: [
+    {
+      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+  ],
+};
+```
+
+Next puts the nonce on its own scripts; every `<Script>` you add takes it explicitly:
+
+```tsx
+import { headers } from "next/headers";
+import Script from "next/script";
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Script src="https://<provider>/script.js" strategy="afterInteractive" nonce={nonce} />
+      </body>
+    </html>
+  );
+}
+```
+
+## The sanitising component
+
+The only place `dangerouslySetInnerHTML` appears. It reads `RICH_TEXT_POLICY` from the shared contracts — the policy the server applies on save — so the tags, the attributes per tag and the URL schemes match.
 
 ```tsx
 import DOMPurify from "isomorphic-dompurify";
+import { RICH_TEXT_POLICY } from "@org/contracts"; // { allowedTags, allowedAttributes: { a: ["href", "title", "rel"] }, allowedSchemes: ["http", "https"] }
+
+const ALLOWED_URI = new RegExp(`^(?:${RICH_TEXT_POLICY.allowedSchemes.join("|")}):`, "i");
+
+DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+  const allowed = RICH_TEXT_POLICY.allowedAttributes[node.nodeName.toLowerCase()] ?? [];
+  if (!allowed.includes(data.attrName)) data.keepAttr = false; // attributes are allowed per tag, as on the server
+});
 
 type SafeHtmlProps = { html: string; className?: string };
 
-// The ONLY place dangerouslySetInnerHTML is allowed. Everything untrusted goes through here.
 export function SafeHtml({ html, className }: SafeHtmlProps) {
-  const clean = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+  const clean = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: RICH_TEXT_POLICY.allowedTags,
+    ALLOWED_URI_REGEXP: ALLOWED_URI, // DOMPurify's default also lets tel:, sms:, ftp: and others through
+    SANITIZE_NAMED_PROPS: true,
+  });
   return <div className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 }
 ```
 
-Tighten the config per use (`ALLOWED_TAGS`/`ALLOWED_ATTR`) for comments vs. articles. Sanitize server-rendered HTML strings too — SSR does not escape hand-built markup.
+Under Trusted Types, the same call passes `RETURN_TRUSTED_TYPE: true` so the sink receives TrustedHTML.
 
-## Strict, nonce-based CSP
-
-Generate a per-request nonce in the Proxy, expose it, and reference it in `script-src`. Plumbing → `nextjs`; the **policy** below is the point.
-
-```ts
-// per request: const nonce = crypto.randomUUID() (or base64 of random bytes)
-const csp = [
-  `default-src 'self'`,
-  `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-  `style-src 'self' 'nonce-${nonce}'`,
-  `img-src 'self' data: https:`,
-  `connect-src 'self' https://<your-api>`,
-  `frame-ancestors 'none'`,          // clickjacking — most apps deny framing
-  `object-src 'none'`,
-  `base-uri 'self'`,
-  `form-action 'self'`,
-  `require-trusted-types-for 'script'`, // hardening upgrade; verify app compat first
-  `trusted-types app dompurify`,        // MUST accompany require-trusted-types-for — names the allowed policies; without it every DOM sink write throws
-  `report-to csp-endpoint`,
-].join("; ");
-// report-to needs a named endpoint — send this header alongside the CSP:
-// Reporting-Endpoints: csp-endpoint="https://example.com/csp-reports"
-```
-
-Rules: **no `unsafe-inline`, no `unsafe-eval`.** Roll out as `Content-Security-Policy-Report-Only` first, review reports, then switch to enforcing. Evaluate with Google's CSP Evaluator.
-
-## Origin-checked `postMessage`
+## Origin-checked postMessage
 
 ```ts
 const ALLOWED_ORIGINS = new Set(["https://widget.example.com"]);
 
 window.addEventListener("message", (event) => {
-  if (!ALLOWED_ORIGINS.has(event.origin)) return;          // never trust an unlisted origin
-  const parsed = WidgetMessageSchema.safeParse(event.data); // validate shape (Zod)
+  if (!ALLOWED_ORIGINS.has(event.origin)) return;
+  const parsed = WidgetMessageSchema.safeParse(event.data);
   if (!parsed.success) return;
   handleWidgetMessage(parsed.data);
 });
 
-// sending: target a specific origin, never "*"
-iframeRef.current?.contentWindow?.postMessage(payload, "https://widget.example.com");
+iframeRef.current?.contentWindow?.postMessage(payload, "https://widget.example.com"); // never "*"
 ```
 
-## Sandboxed third-party embed
+## Sandboxed embed
 
 ```tsx
-// grant only what's needed; avoid allow-scripts + allow-same-origin together (that re-opens the sandbox)
 <iframe
   src="https://third-party.example.com/widget"
-  sandbox="allow-scripts allow-forms"
+  sandbox="allow-scripts allow-forms" // a same-origin document never gets allow-scripts with allow-same-origin
   referrerPolicy="no-referrer"
   title="Third-party widget"
 />
 ```
 
-## Subresource Integrity (SRI) on CDN assets
+## SRI on a CDN file
 
 ```html
-<script
-  src="https://cdn.example.com/lib@1.2.3/lib.min.js"
-  integrity="sha384-<hash>"
-  crossorigin="anonymous"
-></script>
+<script src="https://cdn.example.com/lib@1.2.3/lib.min.js" integrity="sha384-<hash>" crossorigin="anonymous"></script>
 ```
 
-Pin the version and regenerate the hash on upgrade. Prefer self-hosting; if you must use a CDN, SRI is mandatory.
-
-## Safe external link
-
-```tsx
-<a href={url} target="_blank" rel="noopener noreferrer">…</a>
-```
-
-`noopener` blocks `window.opener` hijacking; `noreferrer` stops referrer leakage.
-
-## Open-redirect-safe navigation
-
-```ts
-// Only allow same-origin targets. Naive string checks miss "/\evil.com", "/%2F%2Fevil.com",
-// backslash and protocol-relative bypasses that browsers normalize off-site — resolve against
-// the origin and compare the resulting origin instead.
-export function safeRedirectTarget(next: string | null): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return "/";
-  try {
-    const url = new URL(next, window.location.origin);
-    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/";
-  } catch {
-    return "/";
-  }
-}
-```
-
-## Auth-token storage (house model)
-
-- Session lives in an **httpOnly + Secure + SameSite cookie** (set server-side → `backend-security`). JS can't read it, so XSS can't exfiltrate it.
-- **Never** `localStorage`/`sessionStorage` for auth tokens. If a short-lived access token must be in JS, keep it **in a module variable (memory)** only, and refresh via the cookie.
-- No secrets, PII, or tokens in URLs, `console` logs, analytics payloads, or devtools-visible state; gate production source maps.
+Pin the version and regenerate the hash on every upgrade; self-hosting avoids the question. Files that change by design, such as Google's tags, can't take SRI.
