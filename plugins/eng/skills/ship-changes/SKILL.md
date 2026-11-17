@@ -3,7 +3,7 @@ name: ship-changes
 description: >-
   Commits work as small Conventional Commits, one approved group at a time, and opens the pull request only when asked — staying on the current work branch, grouping changes by layer, feature or area with at most three changes per commit, and messages whose length follows their content. Use when asked to commit, commit in stages, push, or open a PR.
 argument-hint: "[commit | pr | both] [grouping hint]"
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git restore --staged:*), Bash(git commit:*), Bash(git branch:*), Bash(git switch:*), Bash(git rev-parse:*), Bash(git push:*), Bash(gh pr:*), Bash(gh issue:*), Bash(awk:*)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git restore --staged:*), Bash(git apply --cached:*), Bash(git commit:*), Bash(git fetch:*), Bash(git merge:*), Bash(git branch:*), Bash(git switch:*), Bash(git rev-parse:*), Bash(git push:*), Bash(gh pr:*), Bash(gh issue:*), Bash(awk:*)
 ---
 
 # Ship changes
@@ -20,7 +20,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Rules that never bend
 
 - **One approval, one commit.** A yes approves the one commit just shown — its files and its message — and nothing else. It is not standing approval for the rest of the turn or the next group, and a yes given earlier in the conversation never counts again: every commit is shown and waits for its own fresh yes. "Commit everything in stages" approves the process, never an unattended commit.
-- **Stage at commit time, by path, and name the paths in the commit.** `git add <paths>` only when presenting that group, and `git commit -- <paths>` so nothing else already staged can slip in. Never `git add -A` or `git add .`.
+- **Stage at commit time, by path, and name the paths in the commit.** `git add <paths>` only when presenting that group, and `git commit -- <paths>` so nothing else already staged can slip in — the one exception is a partly staged file (Step 2). Never `git add -A` or `git add .`.
 - **Never** `--no-verify`, `--amend` on an approved commit, a rebase of pushed commits, or a force-push. A failing hook is a fix to make, then the commit is presented again.
 - **Never stage** `.env*` (except `.env.example`), credentials, logs, build output or scratch files, or a file changed before this work unless the owner asks.
 - **Never commit on a protected branch** — the default and tier branches `AGENTS.md` names, typically `main`, `dev`, `staging` — unless the owner explicitly asks, for that commit.
@@ -47,7 +47,7 @@ Then present the plan — each group's files and its subject — before staging 
 - **A pile of separate changes** (review fixes, cleanup) — **never one file per commit.** Group by where they live (the same app, package or layer) or by what they are (copy fixes, type fixes, renames). A tiny change rides along in a neighbouring commit as a body line; it never gets a commit of its own.
 - **No count of edits per commit.** A commit can hold many small edits that belong together — every typo fix, every rename. What limits it is whether its message can describe it (Step 3).
 - **Order** so every commit builds on its own: shared packages before the apps that use them, a token before the component that reads it, a schema before its service.
-- **Partial files:** when one file holds two concerns, stage the hunks that belong to this commit rather than lumping the file into the wrong one.
+- **Partial files:** when one file holds two concerns, either commit it whole with the group it mostly belongs to and say so in the plan, or stage only this commit's hunks (`git apply --cached` with those hunks; `git add -p` needs a person at the keyboard). A partly staged file is committed with plain `git commit`, after `git diff --cached --name-only` shows only this group — `git commit -- <path>` commits the whole working file, unstaged hunks included.
 
 ## Step 3 — Write each message
 
@@ -63,6 +63,7 @@ The number of lines comes out of these steps, never from a target:
 - **Scope:** the one app or package changed, from the scopes `AGENTS.md` lists; two or more → no scope.
 - **Subject:** starts lowercase, imperative ("add", "fix", not "added"), no full stop, says what changed for the reader — never "update files".
 - **Body:** the changes or the why, never a file list (the diff has it), in the project's spelling.
+- **Footers**, after the body and not counted in its three lines: `BREAKING CHANGE: <what breaks and what to do>` beside the `!`, and `Refs: #n` for an issue the commit advances.
 
 ## Step 4 — Commit, one at a time
 
@@ -76,14 +77,16 @@ Then, for each group: stage its paths, show `git diff --cached --stat` and the m
 
 ## Step 5 — The pull request (only when asked)
 
-1. The checks pass, without repeating any that a pre-push hook or CI runs: only those the project's docs ask for before pushing, or a quick lint and type check when there are no hooks or CI.
-2. Check the branch again (`git branch --show-current`) — it may have changed during the session — then push it (`git push -u origin <branch>`), never a protected branch.
-3. `gh pr create` against the branch `AGENTS.md` names as the target, with:
+1. **Review the branch's whole diff yourself** (`git diff <base>...HEAD`) for debug leftovers, commented-out code, secrets and changes that don't belong, and fix them first. If the base has moved on and conflicts, fetch it and merge it into the branch (`git merge origin/<base>`) as its own approved commit — never rebase pushed commits or force-push.
+2. The checks pass, without repeating any that a pre-push hook or CI runs: only those the project's docs ask for before pushing, or a quick lint and type check when there are no hooks or CI.
+3. Check the branch again (`git branch --show-current`) — it may have changed during the session — then push it (`git push -u origin <branch>`), never a protected branch.
+4. `gh pr create` against the branch `AGENTS.md` names as the target, with:
    - **a title** in the same Conventional Commits format, for the whole branch;
    - **a body** from the repo's PR template, filled in honestly — what changed as short bullets (one per idea, not per file), how it was tested, screenshots for UI changes, deferred work and known gaps listed rather than hidden;
    - **linked issues** — `Closes #n` for each issue the PR completes, `Part of #n` for one it only advances; ask when unclear;
-   - **the author assigned** (`--assignee @me`).
-4. Report the PR URL, the issues linked and the assignee. How the PR merges (a merge commit for promotions) is `devops`'.
+   - **the author assigned** (`--assignee @me`), and **reviewers** from `AGENTS.md` (`--reviewer`) unless a `CODEOWNERS` file requests them already;
+   - **`--draft`** when the work isn't ready for review or the owner asks — marked ready later with `gh pr ready`.
+5. Report the PR URL, whether it's a draft, the issues linked, the assignee and the reviewers. How the PR merges (a merge commit for promotions) is `devops`'.
 
 ## Output
 
