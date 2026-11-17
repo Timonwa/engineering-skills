@@ -28,6 +28,10 @@ If the scheduler retries, its maximum backoff stays below the schedule period, o
 | hourly       | 20 min      |
 | daily        | 2 h         |
 
+## Time limits
+
+The scheduler waits for an answer only up to its attempt deadline (Cloud Scheduler: 3 minutes by default for HTTP targets, 30 at most), and the host has its own request timeout. A timed-out attempt counts as failed and may be retried while the first is still running. Keep each tick well inside both: a task with an unbounded amount of work processes a bounded batch per tick and leaves the rest for the next, or enqueues jobs that run on their own.
+
 ## Safety
 
 - **Every task is idempotent.** A task that changes state claims its work in a transaction (a status moving from `scheduled` to `sending`), so two overlapping ticks can't do it twice.

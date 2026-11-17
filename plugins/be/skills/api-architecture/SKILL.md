@@ -1,7 +1,7 @@
 ---
 name: api-architecture
 description: >-
-  How an API route is built in a Next.js API — the fixed order of rate limit, authorise, validate, delegate, audit, respond; thin routes over services; the response envelope and typed errors; cursor pagination; resource paths, versions and state-transition sub-routes; and what every new route ships with. Cron, webhooks and audit logs are references. Use when adding, changing or reviewing a route handler or the API layer's structure.
+  How an API route is built in a Next.js API — the fixed order of rate limit, authorise, validate, delegate, audit, respond; thin routes over services; the response envelope and typed errors; caching headers; concurrent edits; long-running work; cursor pagination and allowlisted sorts; resource paths, versions, deprecation and state-transition sub-routes; and what every new route ships with. Cron, webhooks and audit logs are references. Use when adding, changing or reviewing a route handler or the API layer's structure.
 ---
 
 # API architecture
@@ -52,18 +52,28 @@ export async function POST(request: Request, ctx: { params: Promise<{ eventId: s
 ## Responses and errors
 
 - **One envelope for every route** — `{ success: true, data, message?, metadata? }` or `{ success: false, error: { code, message, details? } }`, typed in the shared contracts — built only by `ok`, `created`, `noContent`, `paginated` and `errorResponse`. A hand-rolled body breaks every consumer's unwrap.
-- **Expected failures are typed errors** with a status and a stable `code` clients branch on: validation (400, with every failing field in `details`), bad request (400), unauthorised (401), forbidden (403), not found (404), conflict (409), too many requests (429, with `Retry-After`), service unavailable (503). `errorResponse` maps them; an unexpected error is a 500 whose message is hidden outside local.
+- **Expected failures are typed errors** with a status and a stable `code` clients branch on: validation (400, with every failing field in `details`), bad request (400), unauthorised (401), forbidden (403), not found (404), conflict (409), precondition failed (412), too many requests (429, with `Retry-After`), service unavailable (503). `errorResponse` maps them; an unexpected error is a 500 whose message is hidden outside local.
 - **A missing composite index is a 503 with its own code**, not a 500 or an empty page, so it's obvious in logs and the index is added (`firestore`).
 - **A lock that's already held is a 409**, never a wait.
-- **The API sets no cache policy.** Consumers cache their reads and expire them after a mutation (`nextjs`); the one exception is a file download, sent `no-store`.
+- **Every response is `Cache-Control: no-store`** (OWASP), set once in the shared builders, so no browser or shared cache keeps a copy of someone's data. Consumers cache reads in their own server cache and expire them after a mutation (`nextjs`). A public read with nothing personal in it may opt into a shared-cache policy, deliberately and per route.
+
+## Concurrent edits
+
+Two people editing the same record must not silently overwrite each other. A read returns the record's version — an `ETag`, or a `version` field the store increments on every write — and an update sends it back, in `If-Match` or the body. The service compares it in the same transaction as the write: a mismatch is a 412 for `If-Match`, a 409 for a body field, and the client reloads and shows what changed. Counters and toggles that can't conflict use atomic increments instead (`firestore`).
+
+## Long-running work
+
+A request that can outlast the host's timeout — an export, a bulk import, a report — answers **202** with the id of an operation record and its path; the work runs from a queue, and the client polls the operation (`status`, `progress`, the result or an error) until it's done. Never hold a request open waiting for it.
 
 ## Lists
 
 **Cursor pagination, never offset.** One shared helper runs the paged query; the service returns the page, its cursors and a total from a stored counter; `paginated` builds the `metadata` (`limit`, `total`, `totalPages`, `nextCursor`, `prevCursor`, `hasNext`, `hasPrevious`). Every ordered query has its composite index committed (`firestore`). A list returns a projection, never whole documents (`schemas-and-contracts`).
 
+**Sort and filter only on allowlisted fields**, each an enum in the list's query schema with its index committed; an unknown field is a 400. A client's field name never reaches the query unchecked.
+
 ## Paths
 
-- **Every route sits under a version** — `app/api/v1/<resource>/…`. A breaking change adds `v2` beside `v1`, never edits `v1` in place, because deployed clients still call it; additive changes go into the current version. Consumers build every path from one version constant (`code-structure`). A retired version is deleted once nothing calls it — the API reference is the inventory to check.
+- **Every route sits under a version** — `app/api/v1/<resource>/…`. A breaking change adds `v2` beside `v1`, never edits `v1` in place, because deployed clients still call it; additive changes go into the current version. Consumers build every path from one version constant (`code-structure`). Before a version is retired, its responses send `Deprecation` (RFC 9745) and `Sunset` (RFC 8594) with a `Link` to the migration notes, and integrators are told; it's deleted after the sunset date, once nothing calls it — the API reference is the inventory to check.
 - **Paths group by resource, not by feature.** Things on the caller's own record nest under one resource (`account/profile`, `account/preferences`) whichever feature edits them; the feature is the route's API-reference tag (`openapi-registry`).
 - **`<resource>/route.ts`** lists and creates; **`<resource>/[id]/route.ts`** reads, updates and deletes.
 - **A state transition is its own `POST` sub-route** — `publish`/`unpublish`, `suspend`/`unsuspend`, `archive` — with its own permission and audit action. `DELETE` removes a thing; it never turns one off.
@@ -73,6 +83,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ eventId: s
 
 - **Scheduled work** — one scheduler entry hits one dispatcher route that runs the due tasks: [references/cron.md](references/cron.md).
 - **Webhooks** — a provider's signed callbacks, recorded once and forgotten on failure so retries work: [references/webhooks.md](references/webhooks.md).
+- **Queued jobs** — a task queue calling a worker route is gated like the scheduler, by the queue's OIDC token, and each job is idempotent on its own id ([references/cron.md](references/cron.md)).
 - **Health and docs routes** have no user and no permission, but a public one still takes a generous limit of its own, never the user tiers' quota. Health answers only that it's up, never which dependencies it has; a platform probe that must never be throttled reaches it by network or identity, not an open exemption. Docs are served only on the tiers meant to show them.
 - **The proxy runs before every route** — CORS allowlist, the CSRF origin check on mutations, the maintenance gate. It is never authorisation (`backend-security`, `maintenance-mode`).
 
@@ -82,8 +93,8 @@ In the same change: the request and response schemas (`schemas-and-contracts`), 
 
 ## Do / Don't
 
-- **Do** keep the six steps in order; make one service call; throw typed errors; page with cursors; group paths by resource; make transitions sub-routes; ship the reference entry and the test with the route.
-- **Don't** put logic or store access in a route; hand-roll a response; skip the guard on a route that has a user, or the rate limit on any public route; edit `v1` for a breaking change; use `DELETE` to switch something off; await an audit write.
+- **Do** keep the six steps in order; make one service call; throw typed errors; send `no-store`; check the version on every update; answer slow work with 202 and an operation; page with cursors; allowlist sort and filter fields; announce a version's sunset; group paths by resource; make transitions sub-routes; ship the reference entry and the test with the route.
+- **Don't** put logic or store access in a route; hand-roll a response; skip the guard on a route that has a user, or the rate limit on any public route; edit `v1` for a breaking change; let a stale edit overwrite a newer one; hold a request open for slow work; use `DELETE` to switch something off; await an audit write.
 
 ## Related skills
 

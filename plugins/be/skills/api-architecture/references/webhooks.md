@@ -31,9 +31,15 @@ export async function GET(request: Request) {
 ## The service
 
 1. **Verify the signature over the raw body**, before parsing anything, with a constant-time comparison (`backend-security`). Read the body as text; a parsed and re-serialised body no longer matches what was signed. A bad or missing signature is a 401.
+   - **Refuse a replay:** when the provider signs a timestamp with the body, refuse one outside a short tolerance (five minutes is common). The event-id record catches a repeat inside it.
+   - **During a secret rotation**, accept a signature from either the old or the new secret until the provider has switched; then remove the old one.
 2. **Record the event once**, keyed by the provider's event id (or a hash of the body when it has none), in a transaction that refuses a duplicate. A repeat delivery returns 200 and does nothing.
 3. **Handle it.** State changes are guarded so the same event can't move a record twice.
 4. **On failure, forget the event and fail the request**, so the provider's retry is handled rather than skipped as a duplicate.
+
+## Answering in time
+
+Providers wait only seconds for an answer before counting a delivery as failed and retrying it. Handle inline only work that is quick and touches nothing slow. Otherwise, verify, record the event, answer 2xx, and process it from a queue — the queue's retries then replace the provider's, so a failure marks the record for retry instead of forgetting it.
 
 Keep the full provider payload in the record — it's the evidence when a dispute or reconciliation needs what the provider actually sent.
 
