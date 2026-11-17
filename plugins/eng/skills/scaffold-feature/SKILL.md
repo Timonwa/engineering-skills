@@ -86,7 +86,7 @@ Per `code-structure`: the route constant first, then a thin `page.tsx` in the ri
 
 Run the project's type check and the test suites the slice reaches, and report the real output. Then list every file created or modified, and keep only the follow-ups that apply:
 
-- rate limits on sensitive operations, audit logging on privileged ones, and a permission registered for a gated route (`api-architecture`, `access-control`);
+- rate limits on sensitive operations, audit logging on privileged ones, and a permission registered for a gated route (`api-architecture`, `audit-log`, `access-control`);
 - the rules and indexes deployed before the code that needs them;
 - the schema moved to the contracts package if a second consumer appears;
 - the page in the area whose layout carries the right gate;

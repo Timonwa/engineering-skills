@@ -100,7 +100,7 @@ When the server fetches a URL a user gave it — an import, a link preview, a cu
 - **Fail closed** (A10): a `catch` around a check denies, never allows. A timeout on a security check is a failure (`redis`, `rate-limiting`).
 - **The client gets a generic message, a stable code and a correlation id**; the stack, the query, internal paths and which check failed stay in the server log (`api-architecture`).
 - **Never log secrets, tokens or passwords**, and never put them in a URL, which proxies and browsers log. **Personal data** — an email, an IP — goes only into the access-controlled audit and security logs, with a retention period, never the general application log.
-- **Privileged acts go to the audit log**, every other refusal to the security log with actor, method, path and IP, and spikes alert someone (`api-architecture`, `rate-limiting`).
+- **Privileged acts go to the audit log**, every other refusal to the security log with actor, method, path and IP, and spikes alert someone (`audit-log`, `rate-limiting`).
 
 ## Data in transit and at rest
 

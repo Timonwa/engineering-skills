@@ -109,7 +109,7 @@ A feature that's switched off answers as if the route didn't exist, before any o
 - **"May this member manage that one?"** is a rank check beside the verbs: a member may invite, change or remove only a role strictly below their own. A co-owner can't remove the owner or another co-owner.
 - **Nobody grants themselves** a role, or grants a role above their own.
 - **The last holder of the top role** can't be removed or demoted, so a scope never ends up with no one able to administer it.
-- Role changes on platform roles are audited (`api-architecture`'s audit log).
+- Role changes on platform roles are audited (`audit-log`).
 
 ## Invitations
 

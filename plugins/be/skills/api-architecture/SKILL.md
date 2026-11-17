@@ -40,7 +40,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ eventId: s
 - **Authorise with a guard** — the guard is the only gate; nothing upstream checks again. Who the caller is → `auth`; what they may do → `access-control`. A guard that loads the resource checks existence before permission, so a caller without access gets 404, never a 403 that confirms the id exists.
 - **Validate body, query, params and form data** with the shared schemas through the project's `validate…` helpers; write schemas are `.pick()` allowlists (`schemas-and-contracts`). `ctx.params` is a Promise — await it, then validate it.
 - **Delegate in one service call.** No business logic, store access or branching in the route.
-- **Audit** every privileged mutation and every security-relevant action, at the platform, organisation or account scope it belongs to, fire-and-forget — see [references/audit-log.md](references/audit-log.md).
+- **Audit** every privileged mutation and every security-relevant action, at the platform, organisation or account scope it belongs to, after the response or in the change's transaction, never failing the request (`audit-log`).
 - **Respond through the shared builders**, never a hand-rolled `Response`.
 
 ## The layers
@@ -94,8 +94,8 @@ In the same change: the request and response schemas (`schemas-and-contracts`), 
 ## Do / Don't
 
 - **Do** keep the six steps in order; make one service call; throw typed errors; send `no-store`; check the version on every update; answer slow work with 202 and an operation; page with cursors; allowlist sort and filter fields; announce a version's sunset; group paths by resource; make transitions sub-routes; ship the reference entry and the test with the route.
-- **Don't** put logic or store access in a route; hand-roll a response; skip the guard on a route that has a user, or the rate limit on any public route; edit `v1` for a breaking change; let a stale edit overwrite a newer one; hold a request open for slow work; use `DELETE` to switch something off; await an audit write.
+- **Don't** put logic or store access in a route; hand-roll a response; skip the guard on a route that has a user, or the rate limit on any public route; edit `v1` for a breaking change; let a stale edit overwrite a newer one; hold a request open for slow work; use `DELETE` to switch something off; let an audit write fail the request.
 
 ## Related skills
 
-Rate limits `rate-limiting` · sessions `auth` · permissions `access-control` · schemas `schemas-and-contracts` · the store `firestore` · the API reference `openapi-registry` · route tests `testing` · server-side threats `backend-security` · where files live `code-structure`.
+Rate limits `rate-limiting` · sessions `auth` · permissions `access-control` · schemas `schemas-and-contracts` · the store `firestore` · the API reference `openapi-registry` · route tests `testing` · server-side threats `backend-security` · the audit log `audit-log` · where files live `code-structure`.
