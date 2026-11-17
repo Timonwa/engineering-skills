@@ -64,6 +64,8 @@ The tree is drawn for the default UI foundation, Tailwind only. Lines marked **(
 |    |___ extensions.json                # recommends the Prettier and ESLint extensions
 |    |___ settings.json                  # format-on-save with Prettier
 |___ public/                             # Next serves this at the root; the subfolders are ours
+|    |___ .well-known/security.txt       # a public site: where to report a vulnerability
+|    |                                   # (RFC 9116); its Expires date is renewed yearly
 |    |___ docs/                          # downloadables - press kit, whitepapers
 |    |___ video/                         # streamed by URL; long-form belongs on a CDN
 |    |___ android-chrome-192x192.png     # manifest icon, 192px
@@ -92,7 +94,8 @@ The tree is drawn for the default UI foundation, Tailwind only. Lines marked **(
 |    |___ styles/                        # the only CSS in the project - see below
 |    |___ testing/                       # fixtures and fakes the tests share - see below
 |    |___ ui/                            # the app's own reusable UI - see below
-|    |___ instrumentation.ts             # OpenTelemetry hooks; only if you wire tracing
+|    |___ instrumentation.ts             # register() starts error tracking or tracing, and
+|    |                                   # onRequestError reports server errors; only if chosen
 |    |___ proxy.ts                       # the kill-switch gate and header rewrites; beside app/
 |___ .editorconfig                       # whitespace rules every editor honours
 |___ .env.example                        # every key the app reads, names only - no values, no comments
@@ -103,6 +106,8 @@ The tree is drawn for the default UI foundation, Tailwind only. Lines marked **(
 |___ AGENTS.md                           # conventions for agents
 |___ commitlint.config.ts                # Conventional Commits via commit-msg; only if team-maintained
 |___ components.json                     # (Adire) the registry CLI's config, so an install writes here
+|___ .gitattributes                      # * text=auto eol=lf - the same line endings on every OS
+|___ CODE_OF_CONDUCT.md                  # only if the repo takes outside contributions
 |___ CONTRIBUTING.md                     # only if the repo takes outside contributions
 |___ eslint.config.mjs                   # the starter's flat config + eslint-config-prettier and only-warn
 |___ LICENSE                             # required the moment the repo goes public

@@ -439,13 +439,16 @@ Four consequences worth stating, because they are where a monorepo actually diff
 |                                        # exists only in YAML silently applies to nothing
 |___ .editorconfig                       # whitespace rules every editor honours
 |___ .firebaserc                         # project alias per tier; the deploy target map
+|___ .gitattributes                      # * text=auto eol=lf - the same line endings on every OS
 |___ .gitignore                          # includes .env*, build output, .turbo
 |___ .npmrc                              # engine-strict and workspace linking
 |___ .nvmrc                              # 24 - one Node version for devs, CI, and the host
 |___ .prettierignore                     # build output, deploy/, and the lockfile
 |___ .prettierrc.json                    # Prettier formats every file type; proseWrap preserve
 |___ AGENTS.md                           # workspace-wide conventions for agents
+|___ CODE_OF_CONDUCT.md                  # only if the repo takes outside contributions
 |___ commitlint.config.ts                # Conventional Commits via commit-msg; only if team-maintained
+|___ CONTRIBUTING.md                     # only if the repo takes outside contributions
 |___ firebase.json                       # only when the backend is Firebase: which codebase
 |                                        # each functions/ folder is, the rules and index files
 |                                        # below, emulator ports, and the hosting targets
@@ -453,6 +456,7 @@ Four consequences worth stating, because they are where a monorepo actually diff
 |                                        # needs one fails in production until it is deployed
 |___ firestore.rules                     # deny by default; the client reads nothing the
 |                                        # service layer should be reading for it
+|___ LICENSE                             # required the moment the repo goes public
 |___ lint-staged.config.mjs              # what pre-commit runs: prettier --write, staged files only
 |___ package.json                        # root scripts and tooling only - never app dependencies.
 |                                        # Exact pnpm 11 packageManager, engines.node >=24, and
@@ -464,6 +468,7 @@ Four consequences worth stating, because they are where a monorepo actually diff
 |___ pnpm-workspace.yaml                 # workspace globs, the catalog, the allowBuilds map
 |___ README.md                           # the map: what each app and package is
 |___ renovate.json                       # dependency updates; only if updates = Renovate
+|___ SECURITY.md                         # public repos - how to report a hole privately
 |___ storage.public.rules                # one rules file per bucket, named for the bucket -
 |___ storage.uploads.rules               # public reads and authenticated writes have nothing
 |                                        # in common, and one file for both means the looser

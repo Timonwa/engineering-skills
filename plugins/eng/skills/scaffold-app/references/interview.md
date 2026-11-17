@@ -36,14 +36,15 @@ Ask with `AskUserQuestion` in batches of at most four, the house default first i
 **Batch 3 — repo** (standalone only; in a workspace the root owns these, so state that instead)
 
 1. **CI, hooks and dependency updates** — yes to CI and hooks (default); Dependabot (default) · Renovate · none, never both.
-2. **Visibility and maintainership** — private (default) · public; solo (default) · team. Public adds `LICENSE`, `SECURITY.md` and `CONTRIBUTING.md`. Team asks which to enable: CODEOWNERS, the commitlint hook, the PR-title check (all default on). Solo gets none of them.
+2. **Visibility and maintainership** — private (default) · public; solo (default) · team. Public adds `LICENSE` and `SECURITY.md`, and asks whether it takes outside contributions — yes adds `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`. Team asks which to enable: CODEOWNERS, the commitlint hook, the PR-title check (all default on). Solo gets none of them.
 
 **Batch 4 — integrations** (multi-select; every default off)
 
 1. **Images** — none · Firebase Storage uploads (`image-handling`) · Cloudinary delivery (`cloudinary`).
 2. **Shared cache and rate limiting** — Redis (`redis`, `rate-limiting`).
 3. **Runtime toggles** — feature flags (`feature-flags`) · a maintenance kill switch (`maintenance-mode`) · cookie consent (`cookie-consent`).
-4. **Extras** — MDX content · transactional email (`transactional-email`) · field encryption (`field-encryption`) · SEO beyond the defaults (`seo`).
+4. **Error tracking** — none · Sentry · another the owner names: its SDK started in `instrumentation.ts` (`register()`), server errors reported from `onRequestError`, and the client's own init.
+5. **Extras** — MDX content · transactional email (`transactional-email`) · field encryption (`field-encryption`) · SEO beyond the defaults (`seo`).
 
 **Batch 5 — product features** (only for an app with its own backend; a frontend over someone else's API leaves these to that backend)
 
@@ -83,12 +84,13 @@ Create a package only when a second app will use it on day one; otherwise its co
 
 **Batch 4 — automation**
 
-| Question   | Options (default first)                                   |
-| ---------- | --------------------------------------------------------- |
-| CI         | GitHub Actions per `devops` · none                        |
-| Git hooks  | husky + lint-staged + commitlint · none                   |
-| CODEOWNERS | yes for a team · no                                       |
-| Deploys    | each app's target named only; CI never deploys (`devops`) |
+| Question   | Options (default first)                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| CI         | GitHub Actions per `devops` · none                                                                                  |
+| Git hooks  | husky + lint-staged + commitlint · none                                                                             |
+| CODEOWNERS | yes for a team · no                                                                                                 |
+| Visibility | private · public (`LICENSE`, `SECURITY.md`; with outside contributions, `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`) |
+| Deploys    | each app's target named only; CI never deploys (`devops`)                                                           |
 
 ## Add-run
 
