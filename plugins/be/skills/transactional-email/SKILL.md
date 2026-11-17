@@ -6,7 +6,7 @@ description: >-
 
 # Transactional email
 
-The API sends every email the product owes someone — a receipt, a sign-in link, an alert — through the project's own provider, from code that can be tested and previewed. A send never decides whether the work that caused it succeeds, never reaches an address that bounced or complained, and never goes twice. What the email says is the project's email-writing guide's; this skill is how it gets there.
+The API sends every email the product owes someone — a receipt, a sign-in link, an alert — through the project's own provider, from code that can be tested and previewed. A send never decides whether the work that caused it succeeds, never reaches an address that bounced or complained, and never goes twice. What the email says is `emails`'; this skill is how it gets there.
 
 ## Project specifics first
 
@@ -62,7 +62,7 @@ From [Gmail's sender guidelines](https://support.google.com/a/answer/81126) and 
 - **HTML that survives mail clients:** a table layout about 600 px wide, inline styles, live text rather than images of text, `alt` on every meaningful image, `lang` on the root, and buttons made of text. Accessibility checks are `accessibility`'s.
 - **A plain-text part** beside the HTML (`multipart/alternative`), generated from the same content.
 - **A preheader** — the hidden first line inboxes show beside the subject — set on purpose, or the inbox fills it with the first text it finds.
-- **Images are PNG or JPEG on absolute HTTPS URLs**, with `width` and `height`; no SVG, which major clients don't render. Logos sit on a solid shape or carry a light outline, so they show on light and dark backgrounds.
+- **Images are PNG or JPEG on absolute HTTPS URLs**, with `width` and `height`; no SVG, which major clients don't render. Logos sit on a solid plate, never an added outline, so they show on light and dark backgrounds (`logos-and-icons`).
 - **A palette that survives dark mode:** clients invert colours on their own, so avoid pure black on white, test both, and declare `color-scheme` for the clients that honour it.
 - **No tracking pixel or rewritten links on security and auth mail.** Link rewriting can expose a sign-in token to a third party and break single-use links.
 
@@ -92,4 +92,4 @@ From [Gmail's sender guidelines](https://support.google.com/a/answer/81126) and 
 
 ## Related skills
 
-Auth links and which emails auth sends `auth` · per-recipient budgets `rate-limiting` · claims `redis` · provider webhooks `api-architecture` · tokens and per-tier constants `env` · the safe URL schema `schemas-and-contracts` · the fetch mock `testing` · email accessibility `accessibility` · what the email says — the project's email-writing guide.
+Auth links and which emails auth sends `auth` · per-recipient budgets `rate-limiting` · claims `redis` · provider webhooks `api-architecture` · tokens and per-tier constants `env` · the safe URL schema `schemas-and-contracts` · the fetch mock `testing` · email accessibility `accessibility` · what the email says `emails` · its voice `copywriting`.
