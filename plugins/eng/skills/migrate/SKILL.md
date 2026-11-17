@@ -1,7 +1,7 @@
 ---
 name: migrate
 description: >-
-  Guided framework, major-version and library-to-library migrations — read the target version's own docs, plan in checkpoints, run the official codemods, then apply and verify one step at a time, stopping at the first breakage. Use when asked to migrate or upgrade Next.js, React, Tailwind, Storybook, pnpm or any major dependency, or to move from one library to another. Plans first and never migrates in one shot.
+  Guided framework, major-version and library-to-library migrations — read the target version's own docs, go one major at a time, check runtime minimums and peer dependencies, plan in checkpoints, run the official codemods, then apply and verify one step at a time, stopping at the first breakage. Use when asked to migrate or upgrade Next.js, React, Tailwind, Storybook, pnpm or any major dependency, or to move from one library to another. Plans first and never migrates in one shot.
 argument-hint: "[package] [target] | [migration description]"
 allowed-tools: Read, Grep, Glob, Edit, Write, WebSearch, WebFetch, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git switch:*), Bash(ls:*), Bash(pnpm:*), Bash(npx:*)
 ---
@@ -40,10 +40,16 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 From `AGENTS.md` and the repo: single app or workspace, the package manager and its major (the lockfile and `packageManager`), the current versions of everything involved (the catalog in a workspace, every `package.json` otherwise), and the project's own verify commands. Check `git status` — a migration starts from a clean tree so every step can be undone.
 
+- **The runtime the target needs:** its minimum Node and TypeScript, against `.nvmrc`, `engines`, the CI image and the host's runtime. Any of them below the minimum is the first step of the plan.
+- **The host's support:** a deploy adapter that hasn't released support for the target blocks the deploy, whatever passes locally. Check before planning.
+- **Peer dependencies:** every package that declares the framework as a peer (a UI library, an auth SDK, a test renderer) and whether it supports the target yet. `pnpm why <package>` shows who pulls in what.
+
 ## Step 1 — Read what changed
 
+- **One major at a time.** First move to the latest minor of the current major and clear every deprecation warning it prints — those are the next major's removals, announced. Then one major per checkpoint, never two jumps in one step, each built and verified before the next.
+
 - **The target version's own docs come first.** Next.js ships version-matched docs in `node_modules/next/dist/docs/` once the target is installed in a scratch branch or read from the release's docs; other projects publish an upgrade guide per major. Read the guide between the current and target versions before the web, and never work from memory for version-specific behaviour.
-- **Official codemods and skills.** Note every codemod the maintainers ship — `npx @next/codemod`, the Storybook and Tailwind upgrade tools, pnpm's `pnpm-v10-to-v11` — and any official skill for the move (turning on Cache Components → `next-cache-components-adoption`).
+- **Official codemods and skills.** Note every codemod the maintainers ship — `npx @next/codemod`, the Storybook and Tailwind upgrade tools, pnpm's `pnpm-v10-to-v11` — and any official skill for the move (turning on Cache Components → `next-cache-components-adoption`). Read what each covers: Next's `upgrade` codemod doesn't run every migration (synchronous `params`, `cookies()` and `headers()` from the 15 period need `next-async-request-api` on its own), and its upgrade guide has a prompt written for agents doing the move.
 - **Usage** — grep for the APIs the target deprecates or removes, and count the affected files.
 
 ## Step 2 — Plan in checkpoints
@@ -64,7 +70,12 @@ Present it and wait for approval. Offer to narrow the scope — one app at a tim
 - **Workers pin resolved versions** in their own manifests; bump those too.
 - **Rebuild every package that builds to `dist/`** after a change that touches it, and ask the owner to restart whatever runs from it — a stale server reports the new shape as an error.
 - **Registry-installed files** (a component library installed as source): a reinstall with `--overwrite` replaces local edits. List the project's edits before reinstalling and re-apply them after.
+- **One copy of the framework.** After the bump, `pnpm why react` (and the framework itself) must show one version; two copies break hooks and context with no type error. `pnpm dedupe` fixes a duplicate the lockfile allows.
 - **Lint toolchains lag majors.** A linter whose parser doesn't support the new major yet gets an aliased older version, recorded with its reason, until it catches up (`typescript`).
+
+## Library to library
+
+A move from one library to another (one styling system or state library to another) doesn't happen in one change. Install the new one beside the old, move one area at a time with both working, and remove the old one only when a search finds no use of it. Each area is its own checkpoint, so the app ships at any point in between.
 
 ## Step 3 — Apply, one step at a time
 
@@ -75,6 +86,7 @@ For each step: make the change, then run the project's type check and lint, and 
 - The type check, lint and build across every affected app and package.
 - The test suites, and the Storybook tests if UI changed.
 - A grep for leftovers: removed APIs, old version strings, codemod artifacts, the old package name.
+- **The way back:** the previous release stays deployable until the new one has run in production, and the plan names how to roll back — the host's previous rollout, and the lockfile on the base branch. A data or config change the new version made is rolled back too, or written down as one-way.
 - The owner checks it running: ask them to start the dev servers for the affected apps and confirm each boots and its main pages render. Never start them yourself.
 
 ## Output
