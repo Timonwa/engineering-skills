@@ -1,14 +1,12 @@
 ---
 name: maintenance-mode
 description: >-
-  A maintenance mode or kill switch for a web app — the two-layer gate (API load-bearing, frontend presentational), the exempt-path allowlist that never gates the incident surface, the 503 and Retry-After contract, an operator bypass that 404s on a bad token, per-layer failure direction when the flag store is down, and activation and exit hygiene. Use on "maintenance mode", "kill switch", "downtime", "503", "bypass token", "take the site offline".
+  A kill switch for a web app — one flag read by two gates (the API's, which protects the data, and the pages', which explains), never on the admin app or the paths that end an outage, a 503 with Retry-After and no-store, the maintenance page served from the proxy, robots.txt left reachable, a bypass URL that 404s on a bad token, both gates failing open, scheduled windows and notice, read-only mode as the gentler option, and the drill. Use when building, changing or running maintenance mode.
 ---
 
 # Maintenance mode
 
-A platform-wide kill switch built as **two gates reading one flag** — the API layer refuses non-exempt traffic with a 503, the frontend renders a branded maintenance page. The two principles behind everything here: **the server gate is the one that protects your data**, and **the switch must never lock out the people who turn it off**.
-
-> **Project facts → `AGENTS.md`:** the flag name, exempt-path list, bypass URL and cookie name, admin/status-page hosts, and the env var holding the bypass token.
+One flag takes the product offline for users while operators keep working. **Two gates read it**: the API's refuses requests with a 503, which is what protects the data; the pages' answers with a maintenance page, which is what people see. And the switch **never locks out the people who turn it off**.
 
 ## Project specifics first
 
@@ -17,143 +15,68 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## The two layers — which one is load-bearing
+## The flag and its two gates
 
-- **The API/server gate is the real switch.** It runs in the proxy/middleware in front of every API route and returns 503 before any handler executes. This is what protects data integrity during a migration — direct API calls, stale open tabs, mobile clients, scripts, and curl all hit it whether or not they ever load your frontend.
-- **A frontend-only maintenance mode is theatre.** The page layer is presentation — a branded explanation with the expected restore time. Anyone who skips the page (or already has it open) still lands writes on the API. Never ship the page gate without the API gate.
-- **Both gates read the same flag.** Maintenance mode is a single feature flag (→ `feature-flags`) — one source of truth, one audit trail. When the server gate runs at the edge and can't reach the flag store directly, mirror the flag state (`{ enabled, startsAt, endsAt }`) into a fast store the gate can read on every request.
-- **No TTL on the mirrored state.** The mirror is rewritten on every flag mutation; a TTL would silently expire the gate mid-window. Staleness is fixed by writing on mutation, not by expiry.
-- **Gate the frontend server-side** (root layout or proxy), never in client JS — a client-side gate flashes real content, breaks on the very API errors it should explain, and is disabled by turning off JavaScript.
+- **One flag**, with the lifecycle and audit trail of any flag (`feature-flags`), and a window (`startsAt`, `endsAt`).
+- **The API's gate is the real switch.** It runs in the API's proxy, before any handler, so scripts, open tabs, mobile clients and integrators all meet it whether or not they load a page. A gate on the pages alone is theatre.
+- **The pages' gate explains.** It runs server-side, in each frontend's proxy — never in client code, which flashes real content and fails on the very errors it should explain.
+- **The proxy reads a mirror, not the store.** Every write to the flag copies `{ enabled, startsAt, endsAt }` to one fast key (`redis`), with no TTL — it's rewritten on every change, and an expiry would end maintenance mid-window. A frontend with no access to that key reads the API's public window instead, kept in memory for a few seconds with a short timeout.
 
-## Never gate the incident surface
+## Never gate the way out
 
-If maintenance mode can block the tools you need to end maintenance, you have built a self-inflicted lockout. These stay reachable, always:
+These answer during maintenance, always:
 
-- **The admin/ops app — no maintenance check at all** on its layout or its API namespace. It is where the switch gets turned off.
-- **The auth path** (sign-in, session refresh, sign-out) on both layers. An operator whose session expires mid-incident must be able to get back in.
-- **The health endpoint and status page.** Monitors must be able to tell "in maintenance" from "down"; a health check that 503s during planned maintenance pages the on-call for nothing (health-check wiring → `devops`).
-- **The bypass-issuance endpoint** (below) and **the endpoints the maintenance page itself calls** (the flag/window read) — otherwise the page can't render its own restore time.
+- **The admin app** — no gate at all. It's the control plane, where the switch is turned off.
+- **The API routes the admin app needs** — operator sign-in and session, the operator's own profile, the flag routes, never customer sign-up or sign-in, which would write accounts mid-migration — and **the public window read** the maintenance page shows.
+- **Health and cron.** A monitor must tell "in maintenance" from "down", and the scheduler keeps ticking — but every task except the window reconciler skips its run while maintenance is on, so nothing writes under a migration.
+- **Inbound webhooks**, which accept and record the event, and process it only once maintenance ends — a 503 spends the provider's retries, and the delivery can be lost for good (`api-architecture`).
+- **`robots.txt` and other static files.** A 5xx on `robots.txt` makes Google stop crawling the whole site.
+- **The bypass route.**
 
-## The exempt-path allowlist
+The allowlist is prefix matches, checked before the flag is read, so exempt paths pay nothing. A path joins it only because ending the outage, keeping data, the maintenance page or the infrastructure needs it; everything else is gated by default.
 
-- **Exemptions are prefix matches checked before the flag read** — cheap, and always-allowed namespaces skip the store round-trip entirely.
-- **A path earns an exemption only by one of four tests** — (1) it is needed to end the maintenance (admin, auth, bypass); (2) gating it loses data you cannot get back (inbound webhooks — providers retry on a finite budget, then drop the delivery for good); (3) the maintenance experience itself depends on it (the flag/window endpoints, legal pages linked from the maintenance page); (4) it is infrastructure that must keep ticking (health, cron).
-- **Exempt webhooks must accept-and-queue, not process.** If writes are unsafe during the migration, the exempted handler persists the raw event and returns 2xx, deferring processing — a 503 spends the provider's retry budget and can lose the delivery permanently.
-- **Keep the list short and reviewed.** Every exemption is a hole in the gate; anything that doesn't pass a test above goes behind the 503.
+## The response
 
-## The HTTP contract — 503 + Retry-After
+- **503 with `Retry-After`** — the seconds until `endsAt`, or a default (30 minutes is a starting point) — and `Cache-Control: no-store`, so no cache keeps the outage. Never a 200: a crawler would index the maintenance page in place of the content, and a monitor would read it as healthy.
+- **The API's body is the shared error envelope** (`api-architecture`) with a stable code, a message and the window, so a client can show when service resumes. CORS headers go on it too, or a browser can't read it.
+- **The pages' gate serves the maintenance page's HTML itself, with the 503.** Rewriting to the page loses the status — a prerendered page carries its own 200 — so the proxy fetches the page, keeps it in memory briefly, and returns it with the 503 and the window. Non-`GET` requests get a bare 503. If the page can't be fetched, a line of plain text goes out with the 503 instead.
+- **Keep it short for search.** Google treats a 503 as temporary for a day or two; a site down longer needs an indexable page that says what's happening, not a wall of 503s.
 
-- **Return 503, never 200 with a maintenance page.** A 200 tells crawlers the maintenance page IS your content (it gets indexed and your real pages get soft-dropped), tells uptime monitors you're healthy, and lets HTTP caches store the outage. 503 is the standard "temporarily unavailable, come back" signal (crawler behavior → `seo`).
-- **Always send `Retry-After`.** Compute seconds until `endsAt` when a scheduled window is set; otherwise use a static default — **1800 seconds (30 minutes) is the starting point**, tune to your typical window. Well-behaved clients and crawlers use it to back off instead of hammering.
-- **The API body is machine-readable** — the shared error envelope (→ `api-architecture`) with a stable error code (e.g. `MAINTENANCE`), a human message, and `{ startsAt, endsAt }` metadata so clients can render a countdown and distinguish maintenance from a crash.
-- **Include CORS headers on the 503** for allowed origins — otherwise browser clients can't read the body and show a generic network error instead of your maintenance message.
-- **The frontend maintenance page should also respond 503** where the framework allows (set the status in the proxy, not just render a shell from the layout). If your framework forces a 200 on a layout-rendered shell, treat that as a known gap — at minimum the page must be `noindex`.
+## The bypass
 
-## Operator bypass
+- **One URL**, `/maintenance-bypass?token=…`, sets an `httpOnly`, `Secure`, `SameSite=Lax` cookie for 24 hours and redirects home. Both gates accept it, so an operator or a developer can use the live product while everyone else sees the page.
+- **A wrong or missing token is a 404**, never a 401 or 403, which would confirm the route exists. Compare it in constant time; an unset token disables the bypass rather than opening it.
+- **The cookie must reach the API**, so the apps and the API share its domain — and a frontend's server-side calls to the API forward it, or an operator past the page gate still gets a 503 on every read.
+- **The token sits in a URL once**, so it reaches access logs and history; the route redirects to a clean URL, and the token is rotated after every use.
+- **The token is 32 random bytes or more**, set on every deployed tier, and rotated after every use — it gets pasted into chats.
+- **Staff use the URL too.** Letting a staff session through would cost a profile read per request in the proxy.
 
-- **One bypass URL, cookie-based.** `GET /maintenance-bypass?token=<secret>` validates the token against a server env secret, sets an `httpOnly`, `secure` (in production), `sameSite=lax` cookie with **`maxAge` 86400 (24 hours)**, and redirects to `/`. Both gates honor the cookie, so a designated person browses the live site while everyone else sees the page.
-- **A bad, missing, or expired token returns 404 — never 401/403.** A 401/403 confirms the endpoint exists and hands probers a lock to pick; a 404 makes the bypass path indistinguishable from a route that was never there (enumeration resistance → `backend-security`).
-- **Compare tokens timing-safely** — on issuance and on every cookie check. A plain `===` leaks match-prefix timing.
-- **An unset token disables the bypass entirely** (the check fails closed) — a missing env var must not turn into an open door.
-- **The token is a high-entropy server secret (32+ random bytes), rotated after every incident** — it gets shared over chat with non-admin helpers, so treat it as burned once maintenance ends.
-- **Signed-in platform staff auto-bypass the frontend gate** without the token — wire the staff check into the layout gate, don't make your own admins fish for the URL.
+## When the flag can't be read
 
-## Per-layer failure direction
+- **Both gates fall back in order** — the mirror, then the store, then the last value they read (kept in memory), and only with nothing read, "not in maintenance" — with a log and an alert, the same ladder as every flag (`feature-flags`). Maintenance is off almost always, so failing closed would turn every store blip into an outage of its own (`redis`: a timeout is a failure).
+- **Failing open has a cost:** if the store dies mid-window, the gate drops. When the window protects a migration that must not race with writes, back it at the data layer as well — the database read-only, or the app's write access removed — and restore it after.
 
-Decide — and write down — what each gate does when the flag store is unreachable. Never inherit whatever the client library throws; an unhandled exception is an accidental failure direction.
+## Read-only mode
 
-- **API gate — fail open, loudly.** Store unreachable → treat as disabled, pass traffic, log and alert. Maintenance is off almost all of the time; failing closed turns every flag-store blip into a full self-inflicted outage.
-- **Frontend gate — also fail open, for a different reason.** The flag fetch failing must not paint a maintenance page over a working API; if the API really is down, users see truthful error states instead. Catch the fetch error and default the flag to `false` — a crash-to-error-page is an accidental fail-closed.
-- **The two directions need not match — reason each one from its blast radius.** The frontend failing closed costs UX on a healthy platform; the API failing closed costs the whole platform. Here both land on open, but by different arguments — state each one in the code.
-- **Fail-open has a real cost — back-stop destructive migrations at the data layer.** If the store dies mid-window, the gate silently drops. When maintenance protects a migration that must not race with writes, don't trust the flag alone — also make the database read-only or revoke the app's write credentials for the window, and restore afterwards.
+The gentler option, often the better one: reads keep working and only writes are refused, with a 503 and a code of their own so the UI can disable the forms and say why. It suits a migration of one area, a provider outage, or a slow move to new infrastructure. It's a second state of the same switch, never a second mechanism.
 
-## Activation, audit, and exit
+## Running it
 
-- **Two privilege tiers.** Admins flip the switch and set scheduled windows; only super-admins manage the bypass token and the flag's lifecycle. Every flip is audit-logged (actor, timestamp, before/after) via the flag system's trail (→ `feature-flags`).
-- **Scheduled windows are minute-aligned** `startsAt`/`endsAt`; a cron reconciler activates/deactivates within one tick (**5 minutes or less**). A manual disable mid-window is authoritative — the reconciler must never re-engage a window an operator ended early.
-- **Know your propagation delay and include it in the window.** Frontend flag reads are cached — cap revalidation at **30 seconds** so a flip lands without a redeploy, and remember the worst case when timing a migration start.
-- **Emergency activation is the same switch** — the manual toggle, no separate code path. One mechanism means the drill you ran is the mechanism you use at 3am.
-- **Exit checklist:** smoke the critical flows and the health endpoint while still gated (via bypass) → disable the flag → confirm with a fresh un-bypassed request that the 503s stopped and the page is gone → rotate the bypass token → drain/replay the queued webhook deliveries → write the postmortem note if it was an emergency.
-- **Drill the whole path in staging before you need it.** An untested kill switch is the worst kind — the bypass token must already exist in every deployed environment, and the flip → page → 503 → bypass → exit loop must have been exercised end-to-end at least once.
+- **Admins flip the switch and set windows**; every flip is audited with the actor, the time and the change (`feature-flags`).
+- **Scheduled windows** are applied by the cron reconciler on each tick, so an edge can land up to one tick late. Inside a window the reconciler turns maintenance on, so **ending early means clearing the window** as well as switching off — or the next tick switches it back on.
+- **Tell people first:** announce a planned window ahead — a banner, and an email for a long one — in the reader's own timezone, at the quietest hours. A status page on separate infrastructure carries live updates, and the maintenance page links to it.
+- **Emergencies use the same switch**, never a second path, so the drill is what you'll use at 3am.
+- **Know the delay:** each cache between the flag and the gate adds to how long a flip takes; time a migration's start from the worst case.
+- **The exit:** check the critical flows through the bypass while still gated; switch off and clear the window; confirm with a fresh request that the 503s have stopped; rotate the bypass token; replay any queued webhook events; write up an emergency.
+- **Drill it on staging** — flip, page, 503, bypass, exit — before it's needed. An untested kill switch fails when it matters.
 
-## Example
+The two gates and the bypass route, in code, are in [references/gates.md](references/gates.md).
 
-The load-bearing gate, in the API's proxy, following every rule above:
+## Do / Don't
 
-```ts
-// proxy.ts — runs in front of every /api/* route.
-const MAINTENANCE_EXEMPT_PREFIXES = [
-  "/api/v1/auth/", //     operators must be able to sign in mid-incident
-  "/api/v1/admin/", //    the surface that turns maintenance off
-  "/api/v1/public/maintenance-window", // the maintenance page renders this
-  "/api/v1/health", //    monitors must see the truth
-  "/api/v1/webhooks/", // handlers accept-and-queue during maintenance
-  "/api/v1/cron/",
-];
+- **Do** gate the API as well as the pages; exempt the way out; send 503 with `Retry-After` and `no-store`; serve the page's HTML from the proxy; 404 a bad bypass token; fail both gates open and back a risky migration at the data layer; clear the window when ending early; announce planned windows; drill it.
+- **Don't** gate the admin app, health, cron, webhooks or `robots.txt`; answer maintenance with a 200; rewrite to a prerendered page; return 401 or 403 from the bypass; give the mirror a TTL; build a second switch for emergencies; keep the site behind 503s for days.
 
-function hasValidBypassCookie(request: NextRequest): boolean {
-  const token = env.MAINTENANCE_BYPASS_TOKEN;
-  if (!token) return false; // unset secret = bypass disabled, not open
-  const cookieValue = request.cookies.get(MAINTENANCE_BYPASS_COOKIE)?.value;
-  return Boolean(cookieValue) && timingSafeStringEqual(cookieValue!, token);
-}
+## Related skills
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const exempt = MAINTENANCE_EXEMPT_PREFIXES.some((p) => pathname.startsWith(p));
-
-  if (!exempt && !hasValidBypassCookie(request)) {
-    // Fails open to { enabled: false } and alerts when the store is unreachable —
-    // a flag-store blip must not become a platform outage.
-    const state = await getMaintenanceState();
-    if (state.enabled) {
-      let retryAfter = 1800; // starting point when no window is scheduled
-      if (state.endsAt) {
-        const seconds = Math.ceil((state.endsAt - Date.now()) / 1000);
-        if (seconds > 0) retryAfter = seconds;
-      }
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: "MAINTENANCE", message: "Briefly offline for scheduled maintenance. Please retry shortly." },
-          metadata: { startsAt: state.startsAt, endsAt: state.endsAt },
-        },
-        { status: 503, headers: { "Retry-After": String(retryAfter) /* …CORS headers for allowed origins */ } }
-      );
-    }
-  }
-  return NextResponse.next();
-}
-```
-
-And the bypass issuance route — a bad token is indistinguishable from a route that doesn't exist:
-
-```ts
-// app/maintenance-bypass/route.ts
-export async function GET(request: NextRequest) {
-  const expected = env.MAINTENANCE_BYPASS_TOKEN;
-  const provided = request.nextUrl.searchParams.get("token");
-  if (!expected || !provided || !timingSafeStringEqual(provided, expected)) {
-    return new NextResponse("Not Found", { status: 404 }); // never 401/403 — don't confirm the path exists
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set(MAINTENANCE_BYPASS_COOKIE, expected, {
-    httpOnly: true,
-    secure: env.isProd,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 86_400, // 24h — rotate the token after the incident anyway
-  });
-  return NextResponse.redirect(new URL("/", request.url));
-}
-```
-
-## Boundaries
-
-- **The flag machinery** — lifecycle (publish/archive), evaluation, caching tiers, schedule storage, the admin UI → `feature-flags`. Maintenance mode is that system's most privileged flag with rules ordinary flags don't get — a no-TTL fast-store mirror for the edge gate, a bypass cookie, an exempt-path allowlist, 503 semantics, and a stated failure direction; `feature-flags` points here for those.
-- **Route architecture, typed errors, and the shared response envelope** the 503 body uses → `api-architecture`.
-- **Proxy (formerly Middleware) and route-handler mechanics** (matchers, cookies, redirects) → `nextjs`.
-- **Deploy orchestration, health-check wiring, and rollback** → `devops` — a bad deploy is a rollback, not a maintenance flip; this skill only rules that health stays un-gated.
-- **Why the bypass returns 404, timing-safe comparison, and authz for the flip** → `backend-security`.
-- **Crawler and indexing behavior around 503 vs 200** → `seo`.
+The flag's lifecycle and schedule `feature-flags` · the error envelope, webhooks and cron `api-architecture` · the mirror and failure directions `redis` · proxy and route-handler mechanics `nextjs` · constant-time comparison and the 404 `backend-security` · the bypass token as a secret `env` · deploys and rollback, which are not a maintenance flip `devops` · crawlers and 503 `seo`.
