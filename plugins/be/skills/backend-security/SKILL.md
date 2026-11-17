@@ -10,7 +10,7 @@ effort: high
 
 In-depth **server-side / API security** for backends (route handlers, Server Actions, services, cron, webhooks). The server is the **only real trust boundary** — every control the client can't be trusted to enforce lives here. Its sibling **`frontend-security`** owns the browser; a full-stack app applies both, an API-only service may apply only this one.
 
-> **Delegations:** the client side (XSS, Content Security Policy (CSP), token storage, third-party scripts) → **`frontend-security`**; API _architecture_ (thin route → service, RBAC guard shape, rate-limit tiers, typed errors + response builders, cursor pagination, cron/webhook wiring) → `api-architecture`; Firebase auth/session-cookie/rules/RBAC-role model/App Check → `firestore` (+ `firebase-security-rules-auditor`); Server Action / Proxy / route-handler mechanics → `nextjs`; Zod schemas → `typescript`; secrets, supply-chain hardening, security headers in CI → `devops`.
+> **Delegations:** the client side (XSS, Content Security Policy (CSP), token storage, third-party scripts) → **`frontend-security`**; API _architecture_ (thin route → service, RBAC guard shape, rate-limit tiers, typed errors + response builders, cursor pagination, cron/webhook wiring) → `api-architecture`; sessions → `auth`; the role model → `access-control`; Firestore rules → `firestore` (+ `firebase-security-rules-auditor`); App Check → [references/app-check.md](references/app-check.md); Server Action / Proxy / route-handler mechanics → `nextjs`; Zod schemas → `typescript`; secrets, supply-chain hardening, security headers in CI → `devops`.
 >
 > **Concrete snippets** (ownership check, field allowlist mapper, Server-Side Request Forgery (SSRF) URL guard, JWT verify, rate-limit tiers, safe query) → `references/server-hardening.md`. **A full app review** → the manual **`security-audit`** skill.
 
@@ -52,7 +52,7 @@ Across the 2025 web and 2023 API Top 10s, **broken access control is #1** — Br
 
 ## Authentication & sessions (A07 / API2)
 
-- **House flow** — client sign-in → ID token → **httpOnly, Secure, SameSite session cookie**, verified server-side with check-revoked; reject unverified email by default (→ `firestore`). Accept `Bearer <ID token>` _or_ the cookie on the API (→ `api-architecture`).
+- **House flow** — client sign-in → ID token → **httpOnly, Secure, SameSite session cookie**, verified server-side with check-revoked; reject unverified email by default (→ `auth`). Accept `Bearer <ID token>` _or_ the cookie on the API (→ `api-architecture`).
 - **Tokens** — short-lived access tokens + **refresh rotation**; maintain a **revocation/blocklist** (a JWT can't otherwise be invalidated). **Verify signature, `iss`, `aud`, and `exp`** on every token; reject `alg: none` and unexpected algorithms. **JWTs are signed, not encrypted** — no secrets/PII in the payload.
 - **Passwords & accounts** — hash with **bcrypt/argon2/scrypt** (never fast hashes); enforce a **login lockout** on `(IP, email)` + rate limits to blunt credential stuffing; keep auth responses **uniform** to avoid account enumeration; offer/enforce **MFA** for privileged accounts.
 - **Reset / verification / magic-link tokens** (a top takeover vector) — high-entropy (CSPRNG), **single-use, short-TTL, hashed at rest**, invalidated on use or password change; never leak them in logs/URLs, and **don't build the reset link from a client `Host` header** (host-header poisoning) — use a configured base URL.
@@ -104,7 +104,7 @@ When the server fetches a **user-supplied URL** (webhooks, image proxies, link p
 
 ## File uploads
 
-Validate **type and size server-side** (never trust the client content-type or extension); store outside the web root / in object storage with least-privilege; prefer the **reserve-then-upload, rules-gated** model (→ `firestore`); scan where feasible; serve via signed URLs, not by echoing user paths.
+Validate **type and size server-side** (never trust the client content-type or extension); store outside the web root / in object storage with least-privilege; prefer the **reserve-then-upload, rules-gated** model (→ `image-handling`); scan where feasible; serve via signed URLs, not by echoing user paths.
 
 ## CSRF, webhooks & third-party APIs
 

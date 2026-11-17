@@ -9,6 +9,7 @@ Which layer drives each flow, and the calls behind it. The Identity Toolkit REST
 - [Account changes](#account-changes)
 - [The cookie](#the-cookie)
 - [Session records](#session-records)
+- [Troubleshooting](#troubleshooting)
 
 ## Sign-in and sessions
 
@@ -71,3 +72,10 @@ One document (or key) per session, written by the session route:
 - it expires with the session's absolute cap, by TTL.
 
 The read costs one lookup per request. A cache in front of it must be cleared by the delete, or a signed-out session keeps working until the cache expires.
+
+## Troubleshooting
+
+- **The server sees the user, the client shows them signed out** — the gate isn't passing the server's user to the session provider, or the cookie name the session service reads differs from the one the session route writes.
+- **A redirect loop on a signed-in page** — the cookie expired, its `Domain` doesn't cover the current host, or the cached current user wasn't expired after sign-in, so the gate still sees the old answer.
+- **A role or verification change doesn't show** — the claims ride on the cookie, so call the session refresh route, then `router.refresh()`; refreshing the client SDK's token alone changes nothing the server reads.
+- **Every server read fails on one machine only** — the API's origin doesn't resolve from inside the Next server (a container, a proxy), even though the browser reaches it.

@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Upload paths & bucket tiering
 
-- **Access level decides the bucket — never the feature.** Two buckets per project: a **public** bucket (world-readable via bucket IAM, client writes denied) and a **private** default bucket (client reads denied entirely). A bucket's readability under Uniform Bucket-Level Access is all-or-nothing — there are no per-object ACLs — so a new image type is placed by asking one question, "who may read this?", never "which feature is this for". Mixing gated and public objects in one bucket forces the wrong tier on one of them. IAM/UBLA mechanics and rules → `firestore`.
+- **Access level decides the bucket — never the feature.** Two buckets per project: a **public** bucket (world-readable via bucket IAM, client writes denied) and a **private** default bucket (client reads denied entirely). A bucket's readability under Uniform Bucket-Level Access is all-or-nothing — there are no per-object ACLs — so a new image type is placed by asking one question, "who may read this?", never "which feature is this for". Mixing gated and public objects in one bucket forces the wrong tier on one of them. IAM/UBLA mechanics and the deploy checks → [references/storage.md](references/storage.md).
 - **Small display images go through the server.** Compress client-side → API route or Server Action → Admin SDK writes to the public bucket at a **fixed per-slot path** (`{ownerId}/avatar`, `{ownerId}/resources/{resourceId}/cover`) so a replace overwrites in place. No storage credentials or write rules needed in the browser.
 - **Large originals go client-direct, against a reservation.** The server first **reserves** a DB record (`ownerId`, `status: "pending"`, the exact storage path) and returns the path; the client uploads with `uploadBytesResumable` (native pause/resume/cancel); Storage rules validate each write against the reserved record — owner matches, status is mid-upload, size and contentType within the caps. Streaming a 100 MB file through your API buys latency and memory pressure for nothing.
 - **Name objects by immutable id, not user filename.** The storage path uses the DB-generated record id; the original filename is stored on the record for download UX. User filenames collide, carry unsafe characters, and leak information.
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
 
 ## Boundaries
 
-- **Storage rules, bucket IAM/UBLA provisioning, Admin SDK init, reservation-gated client uploads, and the wider access boundary** → `firestore`. This skill owns the image pipeline that runs on top of those primitives.
+- **Bucket IAM/UBLA provisioning and reservation-gated client uploads** → [references/storage.md](references/storage.md). **The Admin SDK client and Firestore's access boundary** → `firestore`. This skill owns the image pipeline that runs on top of those primitives.
 - **CDN transform URLs and delivery-time derivatives** (responsive sizes, watermarks, format/quality auto) → `cloudinary`. This skill hands off at "a processed source image exists in Storage"; `cloudinary` owns how it's transformed and delivered.
 - **Route/service architecture the upload endpoints live in** (thin handlers, typed errors, response builders, cron auth) → `api-architecture`.
 - **Upload security beyond the caps** — content sniffing vs trusting `contentType`, rate limits, BOLA on file endpoints → `backend-security`; client-side upload risks → `frontend-security`.

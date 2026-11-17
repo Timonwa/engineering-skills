@@ -81,6 +81,7 @@ A public value that isn't a secret has no reason to be an env var, so `NEXT_PUBL
 ## Deployed tiers on Firebase App Hosting
 
 - **A base `apphosting.yaml` plus one overlay per tier** (`apphosting.<tier>.yaml`). The overlay sets `APP_ENV` and any grant only that tier has; the base declares the grants every tier shares, and each project's Secret Manager holds its own value.
+- **An API app takes no `availability:` blocks.** Its env guard parses at module load, which `next build` runs, so a variable limited to `RUNTIME` is missing during the build and the guard throws.
 - **Create the secret and grant the backend access before the next rollout.** A missing grant is the most common failed build, because the env guard throws during `next build`. The mechanics of `apphosting.yaml` and the secrets commands are the official `firebase-app-hosting-basics` skill's.
 - **Rotating a secret needs a new rollout**; a running backend keeps the value it started with.
 

@@ -106,7 +106,7 @@ Every run produces two things:
 
 ## Checklist
 
-Self-contained — the concrete criteria are inline below. Check every API route/Server Action, the permission registry, the role mappings, the object-level checks, the frontend gates, and the data rules. If `backend-security` (authorization), `firestore` (role model), or `api-architecture` (guards) are installed, they deepen each section and give the app's own patterns to match — but the audit runs without them. Only rules-file _internals_ hand off — to `firebase-security-rules-auditor`.
+Self-contained — the concrete criteria are inline below. Check every API route/Server Action, the permission registry, the role mappings, the object-level checks, the frontend gates, and the data rules. If `backend-security` (authorization), `access-control` (role model), or `api-architecture` (guards) are installed, they deepen each section and give the app's own patterns to match — but the audit runs without them. Only rules-file _internals_ hand off — to `firebase-security-rules-auditor`.
 
 The frame is **broken access control** (OWASP #1): **Broken Object-Level Authorization (BOLA)** (object-level — a forged id reaches another actor's resource), **Broken Function-Level Authorization (BFLA)** (function-level — an operation runs without the permission it requires), and **Broken Object-Property-Level Authorization (BOPLA)** (property-level — a request sets or reads fields the actor may not, e.g. mass assignment of `role`/`ownerId`/`status`). Every section below targets one or more of these.
 
