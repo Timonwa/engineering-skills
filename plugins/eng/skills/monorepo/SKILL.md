@@ -29,7 +29,7 @@ packages:
 
 ## pnpm
 
-- **`packageManager` names an exact version** (`"pnpm@11.x.y"`) in the root `package.json`; corepack refuses a range. `engines.node` states the minimum Node (`">=24"`), and `.nvmrc` holds the version CI and every machine run.
+- **`packageManager` names an exact version** (`"pnpm@11.x.y"`) in the root `package.json`, so every machine and CI run the same pnpm; `pnpm/action-setup` reads it in CI. Node 25 and later no longer ship corepack, so nothing depends on it. `engines.node` states the minimum Node (`">=24"`), and `.nvmrc` holds the version CI and every machine run.
 - **One version per third-party dependency, through the catalog.** Every app and package writes `"<dep>": "catalog:"`, and the version lives once in `pnpm-workspace.yaml`. The catalog records what was resolved when the dependency was added — nothing gets re-picked per package.
 - **An exception is recorded, never silent.** A place that can't use `catalog:` gets an exact version and a labelled syncpack `versionGroup` saying why, so `syncpack lint` (the `deps:check` script) passes and the reason sits beside the rule. The usual cases:
   - **A host that refuses `catalog:`** — some deploy adapters read a framework's exact version from each app's own `package.json`. Pin it there, and bump it in the same change as the catalog.
@@ -46,6 +46,7 @@ A worker in `functions/*` is bundled — esbuild into a `deploy/` folder with it
 ## Shared packages
 
 - **A package that uses a singleton declares it as a peer dependency** (`react`, `react-dom`, `next`, `firebase`, a form library), so every app supplies one copy. Two copies of React or Firebase break hooks and auth state in ways no type check catches.
+- **Dependencies point one way:** apps depend on packages, packages on lower packages, and nothing depends on an app or reaches into another package's files. `turbo boundaries` (experimental) checks undeclared imports and, with tags, the direction.
 - Whether a package ships source or builds to `dist/`, and the module settings each needs, are `code-structure`'s and `typescript`'s.
 
 ## turbo.json — the house shape
@@ -62,8 +63,9 @@ A worker in `functions/*` is bundled — esbuild into a `deploy/` folder with it
       "env": ["APP_ENV", "NEXT_PUBLIC_*"],
       "outputs": ["dist/**", "deploy/**", ".next/**", "!.next/cache/**", "storybook-static/**"]
     },
-    "lint": { "dependsOn": ["^build", "^lint"] },
-    "check-types": { "dependsOn": ["^build", "^check-types"] },
+    "transit": { "dependsOn": ["^transit"] },
+    "lint": { "dependsOn": ["^build", "transit"] },
+    "check-types": { "dependsOn": ["^build", "transit"] },
     "test": { "dependsOn": ["^build"], "outputs": ["coverage/**"] },
     "dev": { "cache": false, "persistent": true }
   }
@@ -73,6 +75,7 @@ A worker in `functions/*` is bundled — esbuild into a `deploy/` folder with it
 - **Every env var a build reads is listed in that task's `env`.** Strict mode withholds an unlisted variable from the task and leaves it out of the cache key, so a build bakes in `undefined`, or a changed secret restores a stale cached build. Turn on `turbo/no-undeclared-env-vars` in the shared ESLint config so a missing entry fails lint.
 - **`globalEnv` stays minimal** — a variable there re-hashes every task.
 - **Declare `outputs` on every task that should cache**, and exclude `.next/cache/**`.
+- **`transit` matches no script**: it ties `lint` and `check-types` to the packages they depend on, so a change in a source-only package expires their cache, without making them wait for each other the way `^lint` and `^check-types` would.
 
 ## Running things
 
@@ -83,7 +86,7 @@ A worker in `functions/*` is bundled — esbuild into a `deploy/` folder with it
 ## Do / Don't
 
 - **Do** pin every third-party version through the catalog; record every exception as a labelled syncpack group; allow builds one dependency at a time; declare every env var a task reads; run dev through pnpm; use `--affected` in CI with `TURBO_SCM_BASE`.
-- **Don't** write a version range in an app's `package.json` when the catalog has it; force a version inside someone else's dependency tree; give a `persistent` task dependents; put a variable in `globalEnv` that only one task reads.
+- **Don't** write a version range in an app's `package.json` when the catalog has it; force a version inside someone else's dependency tree; give a `persistent` task dependents; chain `lint` or `check-types` with `^`; let a package import an app; put a variable in `globalEnv` that only one task reads.
 
 ## Related skills
 
