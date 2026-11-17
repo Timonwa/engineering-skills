@@ -52,7 +52,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ eventId: s
 ## Responses and errors
 
 - **One envelope for every route** — `{ success: true, data, message?, metadata? }` or `{ success: false, error: { code, message, details? } }`, typed in the shared contracts — built only by `ok`, `created`, `noContent`, `paginated` and `errorResponse`. A hand-rolled body breaks every consumer's unwrap.
-- **Expected failures are typed errors** with a status and a stable `code` clients branch on: validation (400, with every failing field in `details`), bad request (400), unauthorised (401), forbidden (403), not found (404), conflict (409), precondition failed (412), too many requests (429, with `Retry-After`), service unavailable (503). `errorResponse` maps them; an unexpected error is a 500 whose message is hidden outside local.
+- **Expected failures are typed errors** with a status and a stable `code` clients branch on: validation (400, with every failing field in `details`), bad request (400), unauthorised (401), forbidden (403, or a plan's `FEATURE_NOT_IN_PLAN` and `PLAN_LIMIT_REACHED` — `plan-entitlements`), not found (404), conflict (409), precondition failed (412), too many requests (429, with `Retry-After`), service unavailable (503). `errorResponse` maps them; an unexpected error is a 500 whose message is hidden outside local.
 - **A missing composite index is a 503 with its own code**, not a 500 or an empty page, so it's obvious in logs and the index is added (`firestore`).
 - **A lock that's already held is a 409**, never a wait.
 - **Every response is `Cache-Control: no-store`** (OWASP), set once in the shared builders, so no browser or shared cache keeps a copy of someone's data. Consumers cache reads in their own server cache and expire them after a mutation (`nextjs`). A public read with nothing personal in it may opt into a shared-cache policy, deliberately and per route.
@@ -82,7 +82,7 @@ A request that can outlast the host's timeout — an export, a bulk import, a re
 ## Other callers
 
 - **Scheduled work** — one scheduler entry hits one dispatcher route that runs the due tasks: [references/cron.md](references/cron.md).
-- **Webhooks** — a provider's signed callbacks, recorded once and forgotten on failure so retries work: [references/webhooks.md](references/webhooks.md).
+- **Webhooks** — a provider's signed callbacks, recorded once and forgotten on failure so retries work: [references/webhooks.md](references/webhooks.md); sending them to customers → `webhook-delivery`.
 - **Queued jobs** — a task queue calling a worker route is gated like the scheduler, by the queue's OIDC token, and each job is idempotent on its own id ([references/cron.md](references/cron.md)).
 - **Health and docs routes** have no user and no permission, but a public one still takes a generous limit of its own, never the user tiers' quota. Health answers only that it's up, never which dependencies it has; a platform probe that must never be throttled reaches it by network or identity, not an open exemption. Docs are served only on the tiers meant to show them.
 - **The proxy runs before every route** — CORS allowlist, the CSRF origin check on mutations, the maintenance gate. It is never authorisation (`backend-security`, `maintenance-mode`).

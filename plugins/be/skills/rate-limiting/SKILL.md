@@ -83,6 +83,7 @@ Every provider the API calls — email, payments, media, search — has limits o
 
 - **Honour its 429 and `Retry-After`**, back off with jitter, and cap retries; a tight retry loop gets the whole account throttled or banned.
 - **Pace bulk work through a queue** at the provider's published rate, rather than sending in a loop from a request.
+- **Webhooks to customers' endpoints** are capped per endpoint (`webhook-delivery`).
 - **Budget what a caller can make the API send** — an invitation or a share by email spends the sender's budget, so one account can't spend the provider's whole allowance.
 
 ## Watching

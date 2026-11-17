@@ -1,6 +1,6 @@
 # Webhooks
 
-A webhook is a provider calling your API — a payment processor, an email service, a version-control host. It has no user, so the provider's signature is the only gate, and the provider retries until it gets a 2xx.
+A webhook is a provider calling your API — a payment processor, an email service, a version-control host. It has no user, so the provider's signature is the only gate, and the provider retries until it gets a 2xx. Sending webhooks to customers is `webhook-delivery`'s.
 
 ## The route
 
