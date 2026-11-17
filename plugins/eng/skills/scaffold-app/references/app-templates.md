@@ -50,7 +50,7 @@ Keep `dev`, `build` and `start` exactly as the starter wrote them (they encode i
 }
 ```
 
-The `x.y.z` versions are resolved from the registry at scaffold time. `storybook init` adds its own `storybook`/`build-storybook` scripts — if it ran, do not duplicate them. What pre-commit runs lives in `lint-staged.config.mjs` (see [Standalone extras](#standalone-extras-ci-hooks-and-commitlint)).
+The `x.y.z` versions are resolved from the registry at scaffold time. `create storybook` adds its own `storybook`/`build-storybook` scripts — if it ran, do not duplicate them. What pre-commit runs lives in `lint-staged.config.mjs` (see [Standalone extras](#standalone-extras-ci-hooks-and-commitlint)).
 
 ### `tsconfig.json` — add flags and the alias; keep everything the starter set
 
@@ -293,9 +293,9 @@ playwright-report/
 test-results/
 ```
 
-### Files `storybook init` owns
+### Files `create storybook` owns
 
-Reshape rather than rewrite: point `stories` at the colocated stories (`../src/ui/**/*.stories.@(ts|tsx)` and `../src/components/**/*.stories.@(ts|tsx)`), trim `addons` to `@storybook/addon-a11y` + `@storybook/addon-vitest` + `@storybook/addon-docs` (controls/actions/interactions are core — installing `addon-essentials`/`addon-actions` breaks on Storybook 10), import the app's CSS entry in `preview`, and add the tier `storySort`. Details → `storybook`.
+Reshape rather than rewrite: point `stories` at the colocated stories (`../src/**/[A-Z]*.stories.@(ts|tsx)`, which skips `_Template.stories.tsx`), trim `addons` to `@storybook/addon-a11y` + `@storybook/addon-vitest` + `@storybook/addon-docs` (controls/actions/interactions are core — installing `addon-essentials`/`addon-actions` breaks on Storybook 10), import the app's CSS entry in `preview`, and add the tier `storySort`. Details → `storybook`.
 
 ## The `lib/` kinds
 
@@ -887,14 +887,14 @@ export const Ghost: Story = { args: { variant: "ghost" } };
 export const Disabled: Story = { args: { disabled: true } };
 ```
 
-`storybook init` writes `.storybook/main.ts` itself — reshape it (see "Files `storybook init` owns" under [Editing the scaffolder's files](#editing-the-scaffolders-files)) rather than writing it from here.
+`create storybook` writes `.storybook/main.ts` itself — reshape it (see "Files `create storybook` owns" under [Editing the scaffolder's files](#editing-the-scaffolders-files)) rather than writing it from here.
 
 ## Demo files to delete
 
-| Starter           | Paths                                                                                                                                                                                                    |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `create-next-app` | `public/next.svg`, `public/vercel.svg`, `public/file.svg`, `public/globe.svg`, `public/window.svg`, `README.md`, the generated `AGENTS.md` + `CLAUDE.md`, `app/favicon.ico` when the project has its own |
-| `storybook init`  | its sample `src/stories/` folder (Button/Header/Page + their CSS and MDX) — the house colocates stories instead                                                                                          |
+| Starter            | Paths                                                                                                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create-next-app`  | `public/next.svg`, `public/vercel.svg`, `public/file.svg`, `public/globe.svg`, `public/window.svg`, `README.md`, the generated `AGENTS.md` + `CLAUDE.md`, `app/favicon.ico` when the project has its own |
+| `create storybook` | its sample `src/stories/` folder (Button/Header/Page + their CSS and MDX) — the house colocates stories instead                                                                                          |
 
 Confirm each path exists before listing it — the templates change between majors, and a DELETE line for a file that is gone is noise in the manifest.
 
