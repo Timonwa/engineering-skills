@@ -21,7 +21,7 @@ Four consequences worth stating, because they are where a monorepo actually diff
 - **Every kind exists in both places, and consumer count decides which — that one rule replaces every "does this folder still exist" question.** `packages/hooks` and an app's `lib/hooks/` are the same kind under the same grammar: **two or more consumers → the package; one → that app.** So `src/ui/`, `lib/hooks/`, `lib/utils/`, `lib/constants/` and the rest **do not disappear from a workspace app** — they keep exactly what only that app uses. A one-app-only date formatter belongs in `apps/site/src/lib/utils/`, and hoisting it to `packages/utils` to look tidy makes every other app rebuild for a change none of them care about. Moving one either way is a file move and an import swap, never a rewrite — so start local and promote when the second consumer appears.
 - **What the tree below shows is the thin end of that rule, not a ceiling.** Each app-local folder is drawn with the little that is genuinely app-scoped, because that is the case people get wrong: they scaffold every kind full of code the packages already own. Read a sparse folder as "this holds what is yours alone", never as "this may not grow". An app can legitimately carry a large `lib/utils/` and a full `src/ui/` — an app with its own backend inside a workspace often does.
 - **`apps/` is for deployables, and the list below is a menu.** `site` (the main website) is the default; the interview decides the rest — `dashboard` (the signed-in product), `admin` (the back office), `api`. `admin` earns its own app when ops needs a separate domain and auth surface; otherwise it stays an `/admin` area inside one app. **A route never repeats its app's name:** the admin app's users page is `/users`, the dashboard's settings page `/settings`; only `api` keeps its prefix (`/api/v1/...`). `storybook` **is deployable**: on a team with designers or reviewers who need to open a URL and click the real components, it gets a host and an auth gate like any other app. Solo, it stays a local `dev` surface.
-- **Every app and every package carries its own `README.md` and `AGENTS.md`.** No exceptions, including config-only packages. The root files cover the workspace; the local ones cover what only that folder knows, and the closest file wins.
+- **Every app and every package carries its own `README.md` and `AGENTS.md`.** No exceptions, including config-only packages. The root files cover the workspace; the local ones add what only that folder knows, never repeating the root.
 
 ## The workspace tree
 
@@ -445,7 +445,6 @@ Four consequences worth stating, because they are where a monorepo actually diff
 |___ .prettierignore                     # build output, deploy/, and the lockfile
 |___ .prettierrc.json                    # Prettier formats every file type; proseWrap preserve
 |___ AGENTS.md                           # workspace-wide conventions for agents
-|___ CLAUDE.md                           # one line: `@AGENTS.md`
 |___ commitlint.config.ts                # Conventional Commits via commit-msg; only if team-maintained
 |___ firebase.json                       # only when the backend is Firebase: which codebase
 |                                        # each functions/ folder is, the rules and index files
@@ -703,8 +702,8 @@ apps/<name>/
 |___ .env.example                        # every key this app reads, names only - no values, no comments
 |___ .gitignore                          # app-local only - .next, next-env.d.ts, .env
 |___ AGENTS.md                           # THIS app's facts: its routes, its env, its guards.
-|                                        # The workspace conventions are at the root, and the
-|                                        # closest file wins
+|                                        # Adds to the root file, which holds the workspace
+|                                        # conventions
 |___ apphosting.yaml                     # the base host config every tier inherits
 |___ apphosting.dev.yaml                 # the dev overlay - only what differs from the base
 |___ apphosting.prod.yaml                # the prod overlay; secret grants are per-tier, and

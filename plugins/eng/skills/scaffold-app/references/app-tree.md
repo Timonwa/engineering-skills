@@ -101,7 +101,6 @@ The tree is drawn for the default UI foundation, Tailwind only. Lines marked **(
 |___ .prettierignore                     # build output and the lockfile
 |___ .prettierrc.json                    # Prettier formats every file type; proseWrap preserve
 |___ AGENTS.md                           # conventions for agents
-|___ CLAUDE.md                           # one line: `@AGENTS.md`
 |___ commitlint.config.ts                # Conventional Commits via commit-msg; only if team-maintained
 |___ components.json                     # (Adire) the registry CLI's config, so an install writes here
 |___ CONTRIBUTING.md                     # only if the repo takes outside contributions

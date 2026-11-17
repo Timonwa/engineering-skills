@@ -92,7 +92,7 @@ Delete only the approved demo files ([Demo files to delete](references/app-templ
 
 ## Step 8 — Hand off
 
-- **`AGENTS.md`** and the `CLAUDE.md` import → `agents-md`, given the interview answers as project facts. It replaces any pair the scaffolder generated.
+- **`AGENTS.md`** and its wiring for each agent → `agents-md`, given the interview answers as project facts. It replaces any pair the scaffolder generated.
 - **Cache Components**, if the starter didn't turn it on → the official `next-cache-components-adoption` skill.
 - **The first feature** → `scaffold-feature`. **Committing** → `ship-changes`.
 

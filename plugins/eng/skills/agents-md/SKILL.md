@@ -61,11 +61,22 @@ Batch short questions for what the repo doesn't show and an agent would get wron
 1. **Fill the template's sections that apply**, and delete the rest.
 2. **Updating an existing file:** keep its project facts; cut lines that restate general standards or what the code shows; bring a drifted rule back to the house standard **unless the project records the difference as a deviation** — if it doesn't, ask which it is. Show a summary of what changed, with the line count before and after.
 3. **Keep the block `next dev` writes.** From Next.js 16.3, `next dev` adds a block between `<!-- BEGIN:nextjs-agent-rules -->` and `<!-- END:nextjs-agent-rules -->` to each app's `AGENTS.md`. Never edit or remove it; it comes back on the next run, so commit it.
-4. **Wire up Claude Code:** a root `CLAUDE.md` containing `@AGENTS.md`, so Claude Code reads the same file. An `AGENTS.md` on its own is read only when no `CLAUDE.md` exists.
+4. **Wire up the tools** — below.
+
+## Wiring up the tools
+
+Codex, Cursor, Copilot and most other agents read `AGENTS.md` as it is. The rest need one setting or one file:
+
+- **Claude Code (v2.1.277 and later) reads `AGENTS.md` itself** — the root one at launch and a folder's own when it opens a file there — **but only when there's no `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` in the working directory or above it.** Any of those switches it to `CLAUDE.md` files only, and every `AGENTS.md`, root and nested, goes unread.
+- **So add no `CLAUDE.md` by default.** Keep one only for sessions that can't read `AGENTS.md` directly (an older version, the built-in plugin disabled): it holds `@AGENTS.md`, and **every folder with an `AGENTS.md` then needs its own `CLAUDE.md` holding `@AGENTS.md`**, or the nested files never load. A symlinked `CLAUDE.md` works the same way.
+- **A personal `CLAUDE.local.md` counts too** and silently stops `AGENTS.md` loading for that person, unless their user settings set Claude Code's project instructions to `claude-md-and-agents-md`.
+- **Gemini CLI:** `"context": { "fileName": ["AGENTS.md", "GEMINI.md"] }` in `.gemini/settings.json`. **Aider:** `read: AGENTS.md` in `.aider.conf.yml`.
+
+Check the wiring from a nested folder: `/memory` in Claude Code lists the files it loaded.
 
 ## Per-app and per-package files
 
-A short `AGENTS.md` in each app and package — a heading and a handful of bullets — holds **the traps the code doesn't show** in that folder: a server-only barrel, a component that must come from a package, a config the bundler needs written a certain way. Each bullet links its guide. The closest file wins.
+A short `AGENTS.md` in each app and package — a heading and a handful of bullets — holds **the traps the code doesn't show** in that folder: a server-only barrel, a component that must come from a package, a config the bundler needs written a certain way. Each bullet links its guide. Agents read every file from the root down, the nearer one last, so a nested file adds to the root rather than replacing it: it never repeats a root rule, and a rule that departs from one says so — two rules that silently disagree leave the agent to pick one.
 
 ## Keeping it current
 

@@ -6,7 +6,7 @@ AGENTS.md TEMPLATE. Keep the root file under 200 lines. Include a section only w
 
 <One sentence: what the product is and who it's for.>
 
-Before touching a layer, read its guide in [`<guides folder>/`](<guides folder>/<index file>). Every app and package has its own `AGENTS.md`; the closest file wins. <Framework docs line, e.g. "Read the version-matched docs in `node_modules/next/dist/docs/` before assuming Next.js behaviour.">
+Before touching a layer, read its guide in [`<guides folder>/`](<guides folder>/<index file>). Every app and package has its own `AGENTS.md`, which adds to this one; where it departs from a rule here, it says so. <Framework docs line, e.g. "Read the version-matched docs in `node_modules/next/dist/docs/` before assuming Next.js behaviour.">
 
 ## Commands
 
