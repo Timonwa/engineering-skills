@@ -1,7 +1,7 @@
 ---
 name: auth
 description: >-
-  Authentication with Firebase Auth and Next.js — sign-in on the client, an httpOnly session cookie only the API mints, server-first password sign-in behind a lockout, auth email the API sends itself, password rules, session lifetimes and renewal, sign-out that ends the session on the server, operator sessions with a second factor, API keys, and where the check sits in a Next.js app. Use when building or reviewing sign-in, sessions, sign-out, auth email or a signed-in gate.
+  Authentication with Firebase Auth and Next.js — sign-in on the client, an httpOnly session cookie only the API mints, server-first password sign-in behind a lockout, account linking, auth email the API sends itself, password rules and breached-credential checks, optional customer MFA, session lifetimes and renewal, sign-out that ends the session on the server, operator sessions with a second factor, API keys, and where the check sits in a Next.js app. Use when building or reviewing sign-in, sessions, sign-out, auth email or a signed-in gate.
 ---
 
 # Auth
@@ -24,6 +24,11 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Every answer is generic.** A wrong password, an unknown address, a locked or a disabled account read the same, with the same status and timing; a reset request answers "if that address has an account, we've sent a link" either way. An identifier-first page that answers differently for known and unknown addresses is enumeration by design — a project that wants it records the trade-off and keeps the step behind the auth rate-limit tier.
 - **A `?redirect=` is followed only when it's a path on this site** (`safeRedirectPath` from `@timonwa/app-utilities`); anything else is an open redirect.
 
+## One account per person
+
+- **One account per email address**, whichever way someone signs in. Signing in with a provider for an address that already has an account fails with `auth/account-exists-with-different-credential`: answer by asking them to sign in the way they did before, then link the new provider to that account (`linkWithCredential`) — never create a second account.
+- **Pre-hijacking:** someone can register a password account with another person's address before they ever arrive. An unverified account never gains a linked provider. Firebase removes an unverified password when a trusted provider (Google for its own addresses) signs in to the same email; anything else needs the email verified before linking.
+
 The flow-by-flow table — which layer drives each, and the Identity Toolkit calls the Admin SDK lacks — is [references/flows.md](references/flows.md).
 
 ## Auth email
@@ -38,7 +43,7 @@ From NIST SP 800-63B and OWASP:
 
 - **At least 15 characters when the password is the only factor**, 8 when it's one of two; allow at least 64, every character including spaces and Unicode, and never truncate.
 - **No composition rules** (no "one uppercase, one symbol") and **no scheduled changes** — a change is forced only on evidence of compromise.
-- **Check each new password against a breached-password list** (Have I Been Pwned's range API sends only a hash prefix); refuse a match.
+- **Check each new password against a breached-password list** (Have I Been Pwned's range API sends only a hash prefix); refuse a match. **Check again at sign-in**: a password that has since appeared in a breach signs in, then must be changed before anything else, because reused breached passwords are what credential-stuffing tries.
 - **Changing the password or the email needs the current password** (or a fresh sign-in), and emails the owner — the old address, for an email change — with a way to report it.
 - Firebase's password policy enforces the length; the API enforces the rest, because it's the only path that sets a password.
 
@@ -52,9 +57,15 @@ From NIST SP 800-63B and OWASP:
 
 ## Ending sessions
 
+- **The sign-out response sends `Clear-Site-Data: "cache", "storage"`**, so the browser drops cached pages and stored data from the session; not `"cookies"`, which would also clear the device cookie.
 - **Signing out ends the session on the server**, not only in the browser: a cleared Firebase cookie stays valid until it expires. Give each session its own id — a claim on the custom token it's minted from — and a record in the store; verification checks the record, signing out deletes it, and the account's security page lists the sessions and ends any one of them. A project without session records revokes the account's refresh tokens on sign-out instead, which ends every device.
 - **"Sign out everywhere"** revokes the refresh tokens (`revokeRefreshTokens`) and deletes every session record; verification passes `checkRevoked: true`, so every cookie minted before is refused.
 - **Revoke every other session** when the password changes, the account is recovered, or a role is taken away, and **disable and revoke** when an account is suspended.
+
+## Customer second factors
+
+- **Offer every account an optional second factor** — TOTP, or a passkey where the provider supports it — with backup codes, the same rules as operators below. Accounts that move money (payouts, refunds) are prompted to turn it on.
+- **Turning it off needs the second factor or a fresh sign-in**, and emails the owner, like a password change.
 
 ## Operator sessions
 
@@ -75,7 +86,7 @@ The admin panel is a higher assurance level (NIST AAL2):
 
 For a public API, customers create keys for their own scripts and integrations; what a key may do is `access-control`'s.
 
-- **Generated by the API** — 32 random bytes, with a readable prefix naming the product and tier (`<product>_live_…`, `<product>_test_…`) so secret scanners and people can recognise one.
+- **Generated by the API** — 32 random bytes, with a readable prefix naming the product and tier (`<product>_live_…`, `<product>_test_…`) and a short checksum at the end, so secret scanners and people can recognise one and a scanner can tell a real key from a lookalike without calling the API. A public product registers the format with GitHub's secret-scanning partner programme, so a leaked key is reported to it.
 - **Shown once, stored as a hash** (SHA-256 is enough for a random key) with its prefix, last four characters, name, scopes, creator, created, last used and expiry — never the key itself.
 - **Sent as `Authorization: Bearer <key>`**, never in a URL, and accepted only on the routes that take keys; a key never mints a session.
 - **Revocable at once, and rotatable** — a new key works beside the old one until the old is revoked. Issuing and revoking are audited and emailed to the account's owners.
@@ -93,7 +104,7 @@ Next.js's own rule: the real check sits beside the data, because layouts don't r
 
 ## Do / Don't
 
-- **Do** sign in through the API for passwords; store API keys only as hashes; mint the cookie only in the API; answer every credential failure the same; send auth mail from the API; check new passwords against breaches; end sessions on the server; cap a session's total life; require a second factor for operators; gate each route group's layout behind `<Suspense>`; take identity from the token.
+- **Do** sign in through the API for passwords; keep one account per email and link providers to it; offer customers a second factor; store API keys only as hashes; mint the cookie only in the API; answer every credential failure the same; send auth mail from the API; check new passwords against breaches; end sessions on the server; cap a session's total life; require a second factor for operators; gate each route group's layout behind `<Suspense>`; take identity from the token.
 - **Don't** persist auth in the client SDK; trust an ID token older than five minutes for a new session; reveal whether an address has an account without recording the trade-off; impose composition rules or scheduled password changes; clear a cookie and call it signed out; let a refresh stretch a session past its cap; read the session in the root layout; keep the SDK signed in after the cookie is set.
 
 ## Related skills
