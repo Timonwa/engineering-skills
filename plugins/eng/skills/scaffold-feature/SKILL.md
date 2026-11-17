@@ -1,7 +1,7 @@
 ---
 name: scaffold-feature
 description: >-
-  Scaffolds one feature slice inside an existing app — schema, the server layer for the app's shape, page and components, skeletons, stories and tests — with paths and helpers read from AGENTS.md and the code. Plans the file list first, writes compile-ready stubs with TODOs, and never invents business logic. Use when asked to scaffold or spin up a feature, endpoint, page, CRUD slice, schema or hook.
+  Scaffolds one feature slice inside an existing app — schema, the store's paths, indexes and rules, the server layer for the app's shape, page and components with their error and not-found states, skeletons, stories and tests — with paths and helpers read from AGENTS.md and the code. Plans the file list first, writes compile-ready stubs with TODOs, and never invents business logic. Use when asked to scaffold or spin up a feature, endpoint, page, CRUD slice, schema or hook.
 argument-hint: "[feature-name] [scope hints]"
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash(ls:*), Bash(pnpm:*), Bash(npx:*)
 ---
@@ -41,17 +41,26 @@ The slice follows the app's shape:
 
 | Shape                       | The slice                                                                                |
 | --------------------------- | ---------------------------------------------------------------------------------------- |
-| An app with its own backend | schema → service → data → Server Action (or route) → page and components                 |
+| An app with its own backend | schema → store files → service → data → Server Action (or route) → page and components   |
 | A frontend over an API      | schema (or the contract's) → API read in `data/` and Server Action → page and components |
-| The API app                 | schema → service → data → route, with its docs entry                                     |
+| The API app                 | schema → store files → service → data → route, with its docs entry                       |
 
-A scope hint can cut it down. Present the plan: each file with a one-line purpose, the files modified (barrels, route and endpoint constants, the docs registry), and any package the feature needs. Wait for approval.
+A scope hint can cut it down. Present the plan: each file with a one-line purpose, the files modified (barrels, route and endpoint constants, the docs registry, the store's index and rules files, the navigation), and any package the feature needs. Wait for approval.
 
 ## Step 2 — Schema
 
 Per `schemas-and-contracts`: the full schema with its inferred type, a `.pick()` write schema, a partial-update schema built so omitted fields keep their values, and a list projection if the feature lists things. **Placement by consumer count** — the app's own `lib/schemas/` while one app uses it; the shared contracts package only once a second does.
 
-## Step 3 — The server layer
+## Step 3 — The store
+
+When the feature stores data (own backend, API app), its store files are part of the slice, never a follow-up:
+
+- **The path** — the collection name or path builder added to the shared constants (`COLLECTIONS` or the project's equivalent), never a literal in the data file.
+- **The indexes** — an entry in the committed index file for every query the data file runs that filters and orders, or filters on more than one field (`firestore`). A query without its index fails in production, not in the emulator.
+- **The rules** — the collection's entry in the security rules: deny-all when every read and write goes through the API, otherwise the ownership and membership checks the guard makes (`access-control`).
+- **A SQL store** gets a migration file instead, with its indexes in it.
+
+## Step 4 — The server layer
 
 Per `api-architecture` and `nextjs`, for the app's shape:
 
@@ -60,20 +69,25 @@ Per `api-architecture` and `nextjs`, for the app's shape:
 - **API read** (frontend over an API) — a `data/` read through the project's typed fetcher, cached per `nextjs`.
 - **Server Action** — validates with the schema and answers with an action result, never a thrown error; every mutation calls `updateTag` on what it changed and `refresh()` beside it. In an app with its own backend the action checks the caller itself; over a separate API, the API's guard is the real check (`access-control`).
 
-## Step 4 — Page and components
+## Step 5 — Page and components
 
 Per `code-structure`: the route constant first, then a thin `page.tsx` in the right group or area rendering a `…PageContent`, sections one per file in the feature's product-area folder, and client parts isolated in small `"use client"` leaves. Anything that waits on data gets a `<Component>Skeleton` and its own `<Suspense>`. Metadata matches the audience — public pages indexable, signed-in pages noindex (`seo`).
 
-## Step 5 — Stories and tests
+- **A detail route** calls `notFound()` when the resource doesn't exist or the caller can't see it, and its segment gets an `error.tsx` rendering the app's error view (`code-structure`).
+- **A page people reach from the menu** gets its navigation item; a public one, its sitemap entry (`seo`).
+- **A feature released gradually** sits behind a flag, checked on the server (`feature-flags`).
+
+## Step 6 — Stories and tests
 
 - **A new reusable component ships its story** in the same change (`storybook`).
 - **Tests per `testing`:** a spec beside each new service, data module, action, route and hook, covering the success path and each refusal as `// TODO:` cases; only the I/O boundaries are mocked.
 
-## Step 6 — Verify and hand off
+## Step 7 — Verify and hand off
 
 Run the project's type check and the test suites the slice reaches, and report the real output. Then list every file created or modified, and keep only the follow-ups that apply:
 
 - rate limits on sensitive operations, audit logging on privileged ones, and a permission registered for a gated route (`api-architecture`, `access-control`);
+- the rules and indexes deployed before the code that needs them;
 - the schema moved to the contracts package if a second consumer appears;
 - the page in the area whose layout carries the right gate;
 - every `// TODO:` left to implement.
@@ -86,4 +100,4 @@ In chat: the approved plan, the files created and modified, the type-check and t
 
 - **Features inside an existing app only.** A new project is shaped first by `scaffold-app`.
 - **Never implements business logic** — it scaffolds the shape and stops.
-- Owning skills: placement `code-structure` · API layer `api-architecture` · caching and actions `nextjs` · schemas `schemas-and-contracts` · names `naming` · components `reusables` · stories `storybook` · tests `testing` · permissions `access-control`. Framework or major-version moves → `migrate`.
+- Owning skills: placement `code-structure` · API layer `api-architecture` · caching and actions `nextjs` · schemas `schemas-and-contracts` · the store's files `firestore` · names `naming` · components `reusables` · stories `storybook` · tests `testing` · permissions `access-control`. Framework or major-version moves → `migrate`.
