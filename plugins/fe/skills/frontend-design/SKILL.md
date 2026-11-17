@@ -1,16 +1,12 @@
 ---
 name: frontend-design
 description: >-
-  The design-quality layer of a web UI — visual hierarchy, typography, color, spacing and rhythm, layout, depth, imagery, UI states, motion and distinctiveness. Use when building or improving components, pages, sections or layouts and wanting them polished and production-grade, or when making a UI less generic. Reads the project's palette, fonts and scales from AGENTS.md.
+  The craft of a web UI built from the project's design system — plan, critique and build from existing tokens; hierarchy; type measure, leading and scale; colour, contrast and dark surfaces; charts; spacing and layout; depth; imagery; every state with skeletons that mirror the layout; motion and reduced motion; the template defaults to choose deliberately; and checking in a browser. Use when building or improving a page, section or component, or making a UI look designed rather than assembled.
 ---
 
 # Frontend design
 
-Design quality is the judgment layer _on top of_ the technical skills: given tokens (`tailwind`), accessible primitives (`accessibility`, `reusables`), and semantic markup (`semantic-html`), this is how you make a UI look **intentional, hierarchical, and genuinely designed** — original work, not a template and not a copy of what everyone else ships.
-
-> **The bar: design like a designer.** Produce distinctive, original UI. Never settle for the default component-library look, and never clone the first common pattern you think of — see **Distinctiveness** below; it's the point of this skill, not a footnote.
-
-> **Project facts → `AGENTS.md`:** the brand palette, fonts, type/spacing scales, breakpoints, radius/shadow tokens, motion timings, and the site's aesthetic/voice. This skill is the _how-to-design-well_; those are the _materials_. Use the project's existing tokens and scales — never invent one-off values.
+The design system supplies the materials — tokens, components, the type and spacing scales (`design-system`, `tailwind`). This skill is the judgement that turns them into a UI that looks intentional: a clear hierarchy, a considered rhythm, every state designed, and one or two choices that make it unmistakably this product rather than a template.
 
 ## Project specifics first
 
@@ -19,87 +15,102 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Process
+## How to work
 
-- **Start with hierarchy, not decoration.** Decide what's primary/secondary/tertiary on the screen before choosing colors or borders.
-- **Design in grayscale first.** Removing color forces hierarchy to come from _size, weight, spacing, and contrast_ — add color last, as an accent, once the structure reads.
-- **Work in cycles, low- to high-fidelity.** Rough layout → spacing/hierarchy → color/polish → states. Don't perfect one corner before the whole reads.
-- **Lean on convention.** Use familiar patterns (where nav/search/actions live); spend your novelty budget on the one thing that should feel distinctive, not on reinventing controls.
+1. **Plan.** Read the brief and what the page must make someone do; decide what's primary, secondary and tertiary before choosing a colour or a border.
+2. **Choose from the system.** Every size, colour, radius, shadow and duration is an existing token; a value the system lacks is a question for `design-system` — a token if it will recur, or a commented one-off if it genuinely won't.
+3. **Build rough, then refine** — layout, then spacing and hierarchy, then colour and detail, then states. Judge it in greyscale first: if the structure doesn't read without colour, colour won't save it.
+4. **Critique against the brief and the system**: does the primary action win, does it look like the rest of the product, is anything there that carries no information?
+5. **Check it in a browser** when a tool is available — at a phone width and a wide one, in light and dark, with a long name and an empty list — rather than trusting the code.
 
-## Visual hierarchy — the master principle
+## Hierarchy
 
-- **Not everything can stand out.** If everything is bold/large/colored, nothing reads. Deliberately **de-emphasize** secondary content (labels, metadata, helper text) so the primary content dominates.
-- Establish hierarchy with **weight and color before size** — a heavier weight or a softer gray separates levels without ballooning font sizes.
-- **Secondary text = softer, not smaller-only.** Drop supporting text to a muted foreground token rather than shrinking it to unreadability.
-- **Labels are usually noise.** "Name: Jane" — often the value alone (or label-as-placeholder) is enough; combine label+value when scannability matters.
-- **De-emphasize by reducing contrast**, not by adding gray borders everywhere.
+- **Not everything can stand out.** Emphasise one thing per view and deliberately quieten the rest — labels, metadata, helper text.
+- **Weight and colour before size:** a heavier weight or the muted foreground separates levels without inflating the type.
+- **Quieten by lowering contrast**, never by shrinking text past readability or boxing it in borders — and never below 4.5:1 for muted, helper or placeholder text; only disabled controls are exempt.
+- **Convention for the furniture** — where navigation, search and actions sit; spend novelty on the one thing that should feel distinctive.
 
-## Typography
+## Type
 
-- **Use the project's type scale** — a fixed set of sizes; never eyeball a new one. Hierarchy comes from _steps on the scale_, not arbitrary px.
-- **Line length** ~45–75 characters for body copy (`max-w-prose`/a `ch`-based width). Long full-width paragraphs are a readability tell.
-- **Line height scales inversely with size**: tight for large headings, looser (~1.5–1.7) for body; and looser for longer line lengths.
-- **Weight for emphasis**, not italics/underline for UI. Avoid weights under 400 for small text; reserve 600–700 for headings/emphasis.
-- **Tighten headings** (slightly negative letter-spacing on large sizes); don't letter-space lowercase body. Don't center more than a couple of lines.
-- Align numbers in tables with tabular figures; don't mix too many families (a heading + a body family is plenty).
+- **The project's type scale only**; hierarchy comes from steps on it.
+- **Measure:** 45–75 characters for body copy, never past 80 (WCAG 1.4.8) — a `ch`-based max width, not the full container.
+- **Leading falls as size rises:** about 1.5 for body text (WCAG's figure for readable blocks), tighter for large headings; longer lines need more.
+- **Balance display headings** (`text-wrap: balance`) and only those; it's for a few lines, not paragraphs.
+- **Numbers that compare** — tables, prices, counters — use tabular figures (`tabular-nums`).
+- **Emphasis by weight**, not italics or underline in UI (a link in prose keeps its underline); avoid light weights at small sizes; one or two families at most; centre no more than a couple of lines.
 
-## Color
+## Colour
 
-- **Work in HSL/OKLCH** and use a **full shade ramp per hue** (not five hand-picked hex values) — you need many steps for text, surfaces, borders, and states. This is the `tailwind` token job; design _with_ those ramps.
-- **Grays should be tinted**, not pure neutral — a subtle hue toward the brand warms the whole UI.
-- **Never rely on hue alone** to convey meaning — pair with text/icon/weight (also `accessibility`). Ensure contrast meets AA (`accessibility` owns the ratios).
-- **Restraint**: one dominant brand color + neutrals + reserved semantic colors (success/warning/danger/info) _only_ for their meaning. More colors ≠ more design.
-- Prefer **semantic tokens** (`foreground`, `muted`, `border`, `accent`) over literal shades at the call site.
+- **Ramps, not picks:** each hue is a full ramp in the tokens (OKLCH keeps steps even), with greys tinted towards the brand; call sites use semantic tokens (`foreground`, `muted`, `border`, `accent`), never shades (`tailwind`).
+- **Restraint:** one dominant brand colour, the neutrals, and status colours used only for their meaning. Accent colours are never statuses (`design-system`).
+- **Contrast** at least 4.5:1 for body text and 3:1 for large text, for the boundaries of controls, for focus indicators and for meaningful graphics (WCAG 1.4.3, 1.4.11). Meaning never rests on hue alone (`accessibility`).
+- **Dark surfaces step lighter as they rise** — a card sits on a lighter surface than the page, a dialog lighter again — because shadows barely show on dark. Saturated accents are toned down for dark backgrounds.
 
-## Spacing, rhythm & layout
+## Charts
 
-- **Start with more whitespace than feels necessary, then remove.** Cramped UIs read cheap; generous spacing reads considered.
-- **Use the spacing scale** (consistent steps, typically multiples of a base) — no arbitrary margins. Consistent rhythm between sections and within components.
-- **Proximity groups.** Related elements sit close; unrelated ones get clear separation. Ambiguous equal spacing (is this label for the field above or below?) is a common bug — bind a label tighter to its field.
-- **Don't fill the width.** Cap content width for readability; center or offset within a wider canvas. Not every element should be full-bleed.
-- **Align to a grid**; align edges; avoid off-by-a-few-pixels drift. Establish columns and stick to them.
-- **Responsive by intent**, not just reflow — decide what each breakpoint should emphasize; every layout works from small to large.
+- **Categorical colours in one fixed order**, from the system, so a series keeps its colour across charts; a handful of categories at most, with the rest gathered into an "Other" bucket.
+- **Label directly** where possible and never rely on colour alone; gridlines and axes stay quiet, the data loud.
 
-## Depth & elevation
+## Spacing and layout
 
-- **Light comes from above:** shadows fall below, raised elements get a subtle top light / darker bottom edge. Keep it consistent.
-- Use a **shadow/elevation scale** (sm→lg) to signal layering (cards < popovers < modals); bigger, softer shadows = higher elevation. Don't scatter random shadows.
-- **Reduce borders.** Separate with spacing, a background shift, or a shadow before reaching for a 1px line — too many borders read busy. When you use borders, keep them low-contrast.
+- **Start with more space than feels necessary**, then remove; cramped reads cheap.
+- **The spacing scale only**, with a consistent rhythm between sections and within components.
+- **Proximity groups:** a label sits closer to its field than to the next one; equal gaps leave a reader guessing.
+- **Don't fill the width** — cap content for reading and let the canvas breathe. Align to a grid and keep edges true.
+- **Responsive by intent:** decide what each width emphasises, from the smallest up; truncated text in a flex row needs `min-w-0`.
 
-## Imagery & icons
+## Depth
 
-- Don't scale icons up as illustrations — use real illustrations/imagery at large sizes; keep icons at their intended size and optical weight.
-- **Text over images** needs a scrim/overlay or gradient for reliable contrast — never raw text on a photo.
-- Keep **consistent aspect ratios** and treatment (rounding, overlay) across a set. Constrain user-supplied images with `object-cover` + fixed ratio.
-- Use one icon set at a consistent stroke/weight (→ `svg-generation` for producing them).
+- **One elevation scale** — cards below popovers below dialogs — with light from above, and no scattered one-off shadows.
+- **Fewer borders:** separate with space or a background shift first; a decorative border, when used, is low-contrast — but the border that is the only edge of an input or control keeps 3:1 against its background (WCAG 1.4.11).
 
-## UI states & polish
+## Imagery and icons
 
-- **Design every state**, not just the happy path: default, hover, focus (visible — `accessibility`), active, disabled, loading (skeleton/spinner), **empty**, and **error**. Empty states are a design opportunity, not a blank div.
-- **Supercharge the defaults** — custom list markers, better link underlines (offset/thickness), accent-bordered callouts, considered form controls. Small upgrades over browser defaults signal craft.
-- **Reduce visual noise** — fewer dividers, fewer competing accents, fewer font sizes. Remove until it breaks, then add back one step.
-- Keep **radius, shadow, and spacing consistent** across components (from tokens) so the set feels like one system.
+- **One icon set** at one stroke weight, kept at its intended sizes; a large visual is an illustration, not a scaled-up icon.
+- **Text over a photo** sits on a scrim or gradient that guarantees contrast.
+- **One aspect ratio and treatment per set**; user images are cropped to it (`object-cover`).
+
+## States
+
+- **Design every state**, not the happy path: default, hover, visible focus, active, disabled, loading, empty, error, and partial — some of the page loaded and some failed, each part saying which.
+- **Skeletons mirror the real layout** — the same boxes in the same places — so nothing jumps when data arrives; every component that waits on data has its `<Component>Skeleton` (`design-system`).
+- **An empty state says what belongs here and the next step**, and a first-run empty state differs from "no results for this filter".
+- **Errors say what happened and what to do**, beside the thing that failed. The words are `copywriting`'s.
 
 ## Motion
 
-- **Subtle and purposeful** — motion should clarify (what changed, where it came from), never decorate for its own sake.
-- **Fast**: ~150–300ms with an ease curve; entrances/exits shorter, not springy-bouncy unless the brand calls for it.
-- Animate transform/opacity (cheap), not layout properties. Respect **`prefers-reduced-motion`** (→ `accessibility`).
+- **Motion explains** — what changed, where it came from — and never decorates; short (a couple of hundred milliseconds), eased, from the system's duration tokens.
+- **Animate `transform` and `opacity`**, never layout properties, and never `transition: all`.
+- **Respect `prefers-reduced-motion`:** non-essential motion is removed or reduced to a fade (`accessibility`).
 
-## Distinctiveness — design like a designer
+## Defaults to choose deliberately
 
-The whole point. The bar is **original, designed-from-intent work — not assembled from defaults, and not a copy of what everyone ships.** Approach each UI as a designer would: form a point of view, then make deliberate choices that express it.
+Each of these is fine when it carries information and a tell of a template when it's habit. Use one only on purpose:
 
-- **Never look like a stock component library.** Flat gray cards, a default system font, and one stock-blue button read as unfinished/templated. Off-the-shelf defaults (any component-library look) are a skeleton at most — restyle until the result is unmistakably _this_ product, not the library.
-- **Don't clone the common pattern** just because it's everywhere. Understand _why_ a pattern works, then ship a considered, distinctive version — not a copy of the first landing-page/dribbble result.
-- **Commit to a point of view** (calm / dense / editorial / playful / brutalist / …) and make _every_ choice serve it — type pairing, a signature accent, spacing generosity, motion, and one or two crafted signature details. Consistency of voice is what makes UI feel _authored_.
-- **Add the details a designer would** — considered empty states, a distinctive focus/hover treatment, intentional iconography weight and imagery. That last 10% of polish is what separates "designed" from "assembled".
+- an accent colour on one word of every headline;
+- tracked all-caps labels, and an eyebrow above every heading;
+- middle-dot detail strings ("12 photos · 3 days left");
+- "→" on links and buttons;
+- numbering on things that aren't a sequence;
+- a grid of identical cards with one radius and one shadow;
+- decorative gradients;
+- a fade-up on every section and a hover lift on every card;
+- the big-number hero.
+
+**Borders, numbers and labels earn their place by carrying information**; remove one and see if anything was lost.
+
+## Distinctiveness
+
+- **The base library is a starting point to restyle within**, not something to avoid — but a screen that still looks like the library's demo is unfinished.
+- **Commit to a point of view** — calm, dense, editorial, playful — and make every choice serve it: type pairing, how generous the space is, motion, one signature accent.
+- **Be bold in one place** per view, and quiet everywhere else.
+- **Understand why a common pattern works**, then make a considered version of it rather than a copy.
 
 ## Do / Don't
 
-- **Do** establish hierarchy first (in grayscale); use the project's scales/tokens; give generous whitespace; design all states + empty/error; keep motion subtle; add one distinctive detail.
-- **Don't** make everything bold; invent off-scale sizes/spacing/colors; rely on hue alone; box everything in borders; ship only the happy path; leave a UI at generic-default or looking like a stock component library; clone the first common pattern; hardcode values that belong in tokens (→ `tailwind`).
+- **Do** plan hierarchy before colour; build from tokens; check in greyscale and in a browser; keep body text to a readable measure; meet contrast for text, controls and focus; step dark surfaces lighter; design every state with skeletons that mirror the layout; keep motion short and reducible; be bold in one place.
+- **Don't** make everything stand out; invent an off-scale value; rely on hue alone; box everything in borders; ship only the happy path; use `transition: all`; reach for a template default out of habit; leave the base library's look untouched.
 
-> **Audit:** review this domain on demand with the manually-invoked `frontend-audit` command (see `audit-all` for the whole suite).
+## Related skills
 
-> **Boundaries:** component and file placement → `code-structure`; naming anything → `naming`.
+Tokens and theming `tailwind` · the system, tiers and skeletons `design-system` · building a reusable component `reusables` · markup `semantic-html` · contrast, focus and motion rules `accessibility` · the logo and icons `logos-and-icons` · checking in the running app `next-dev-loop` (official) · the audit `frontend-audit`.
