@@ -1,7 +1,7 @@
 ---
 name: audit-all
 description: >-
-  Manually invoked. Orchestrates the full house audit suite — detects what the repo has, runs every applicable domain audit (accessibility, seo, storybook, conventions, dependencies, environment, frontend, performance, api, rbac, firestore, redis, codebase, security), and aggregates them into one health report with an overall score and cross-cutting priorities. Each domain audit also writes its own report.
+  Manually invoked. Orchestrates the full house audit suite — detects what the repo has, runs every applicable domain audit (accessibility, seo, storybook, conventions, dependencies, environment, frontend, performance, api, access-control, firestore, redis, codebase, security), and aggregates them into one health report with an overall score and cross-cutting priorities. Each domain audit also writes its own report.
 argument-hint: "[phase]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 The **orchestrator** for the house audit family. It figures out what the repo actually contains, runs each **applicable** audit, and rolls everything up into a single consolidated report — so you get one health picture instead of fifteen. Each domain audit still writes its own `_reports/<name>.md`; this adds `_reports/audit-all.md` on top.
 
-> **The family** (each is its own manually-invoked command): `accessibility-audit`, `seo-audit`, `storybook-audit`, `conventions-audit`, `dependency-audit`, `env-audit`, `frontend-audit`, `performance-audit`, `api-audit`, `rbac-audit`, `firestore-audit`, `redis-audit`, `codebase-audit`, `security-audit`. Firestore/Storage **rule** internals → `firebase-security-rules-auditor`.
+> **The family** (each is its own manually-invoked command): `accessibility-audit`, `seo-audit`, `storybook-audit`, `conventions-audit`, `dependency-audit`, `env-audit`, `frontend-audit`, `performance-audit`, `api-audit`, `access-control-audit`, `firestore-audit`, `redis-audit`, `codebase-audit`, `security-audit`. Firestore/Storage **rule** internals → `firebase-security-rules-auditor`.
 
 ## Project specifics first
 
@@ -42,7 +42,7 @@ Detect from the repo, then run only what fits (skip the rest and say so in the r
 | `frontend-audit` · `performance-audit` · `accessibility-audit` | there's browser/UI code                                                                                                |
 | `seo-audit`                                                    | a public-facing app                                                                                                    |
 | `storybook-audit`                                              | Storybook is configured                                                                                                |
-| `api-audit` · `rbac-audit`                                     | there's an API / route-handler layer                                                                                   |
+| `api-audit` · `access-control-audit`                           | there's an API / route-handler layer                                                                                   |
 | `firestore-audit`                                              | Firestore is used — rules, indexes, or Admin-SDK queries                                                               |
 | `redis-audit`                                                  | Redis / Upstash is used                                                                                                |
 
@@ -51,7 +51,7 @@ Detect from the repo, then run only what fits (skip the rest and say so in the r
 1. **Resolve phase once** — a phase arg (`development` | `production`) if given; else default `production` (assume the app is live until told otherwise). Pass the same phase to every sub-audit so tiers line up.
 2. **Detect scope** — single app vs monorepo, which apps are public/internal, and which data/infra (Firestore, Redis, Storybook, API) are present, to pick the applicable audits above.
 3. **Run the applicable audits** — prefer running them **in parallel** (one subagent per audit), each following its own skill and writing its own `_reports/<name>.md`. Every audit is **report-only** — none modify code.
-4. **Aggregate** — collect each sub-report's score, finding counts, and top items; de-duplicate cross-cutting findings (a missing auth guard may surface in both `api-audit` and `rbac-audit` — report it once, note both).
+4. **Aggregate** — collect each sub-report's score, finding counts, and top items; de-duplicate cross-cutting findings (a missing auth guard may surface in both `api-audit` and `access-control-audit` — report it once, note both).
 5. **Write** `_reports/audit-all.md` (overwrite; carry forward the previous roll-up for trend). Never commit or push without explicit approval.
 
 ## Report format

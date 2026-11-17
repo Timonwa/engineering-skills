@@ -37,7 +37,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ eventId: s
 ```
 
 - **Rate limit first** — an attacker pays before any work is done. Tiers, keys and failure direction are `rate-limiting`'s.
-- **Authorise with a guard** — the guard is the only gate; nothing upstream checks again. Who the caller is → `auth`; what they may do → `rbac`. A guard that loads the resource checks existence before permission, so a caller without access gets 404, never a 403 that confirms the id exists.
+- **Authorise with a guard** — the guard is the only gate; nothing upstream checks again. Who the caller is → `auth`; what they may do → `access-control`. A guard that loads the resource checks existence before permission, so a caller without access gets 404, never a 403 that confirms the id exists.
 - **Validate body, query, params and form data** with the shared schemas through the project's `validate…` helpers; write schemas are `.pick()` allowlists (`schemas-and-contracts`). `ctx.params` is a Promise — await it, then validate it.
 - **Delegate in one service call.** No business logic, store access or branching in the route.
 - **Audit** every privileged mutation and every security-relevant action, at the platform, organisation or account scope it belongs to, fire-and-forget — see [references/audit-log.md](references/audit-log.md).
@@ -87,4 +87,4 @@ In the same change: the request and response schemas (`schemas-and-contracts`), 
 
 ## Related skills
 
-Rate limits `rate-limiting` · sessions `auth` · permissions `rbac` · schemas `schemas-and-contracts` · the store `firestore` · the API reference `openapi-registry` · route tests `testing` · server-side threats `backend-security` · where files live `code-structure`.
+Rate limits `rate-limiting` · sessions `auth` · permissions `access-control` · schemas `schemas-and-contracts` · the store `firestore` · the API reference `openapi-registry` · route tests `testing` · server-side threats `backend-security` · where files live `code-structure`.

@@ -94,23 +94,23 @@ Every skill here reads project-specific values — palette, fonts, collection na
 
 Each is manually invoked, report-only, and writes a scored report to `_reports/`. None of them modify code. `audit-all` detects which apply to the repo, runs those, and aggregates one summary.
 
-| Command                    | What it checks                                                                |
-| -------------------------- | ----------------------------------------------------------------------------- |
-| `/eng:audit-all`           | Detects what applies, runs each audit, aggregates one report                  |
-| `/eng:accessibility-audit` | WCAG 2.2 AA, keyboard, focus, contrast, ARIA                                  |
-| `/eng:api-audit`           | Thin handlers, validation at every boundary, pagination, rate-limit coverage  |
-| `/eng:codebase-audit`      | Repo-health triage — debt, dead code, strictness, coverage                    |
-| `/eng:conventions-audit`   | The repo against the `naming` and `code-structure` standards                  |
-| `/eng:dependency-audit`    | Version drift, unused deps, the catalog, lockfile, advisories                 |
-| `/eng:environment-audit`   | Zod-at-boot env, `.env.example` completeness, no secrets reaching the client  |
-| `/eng:firestore-audit`     | Firestore rules, indexes, query shape, and cost — a scored report             |
-| `/eng:frontend-audit`      | App Router structure, boundaries, caching, React idioms                       |
-| `/eng:performance-audit`   | Images, bundle weight, fonts, streaming, Core Web Vitals                      |
-| `/eng:rbac-audit`          | Unprotected routes and actions, object- and function-level authorization gaps |
-| `/eng:redis-audit`         | Key namespacing, TTL coverage, atomicity, per-request command cost            |
-| `/eng:security-audit`      | A red-team pass over whatever the app has — frontend, backend, or both        |
-| `/eng:seo-code-audit`      | Metadata, robots, sitemap, structured data, crawlability                      |
-| `/eng:storybook-audit`     | Story coverage against shared UI, and story quality                           |
+| Command                     | What it checks                                                                |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `/eng:audit-all`            | Detects what applies, runs each audit, aggregates one report                  |
+| `/eng:accessibility-audit`  | WCAG 2.2 AA, keyboard, focus, contrast, ARIA                                  |
+| `/eng:api-audit`            | Thin handlers, validation at every boundary, pagination, rate-limit coverage  |
+| `/eng:codebase-audit`       | Repo-health triage — debt, dead code, strictness, coverage                    |
+| `/eng:conventions-audit`    | The repo against the `naming` and `code-structure` standards                  |
+| `/eng:dependency-audit`     | Version drift, unused deps, the catalog, lockfile, advisories                 |
+| `/eng:environment-audit`    | Zod-at-boot env, `.env.example` completeness, no secrets reaching the client  |
+| `/eng:firestore-audit`      | Firestore rules, indexes, query shape, and cost — a scored report             |
+| `/eng:frontend-audit`       | App Router structure, boundaries, caching, React idioms                       |
+| `/eng:performance-audit`    | Images, bundle weight, fonts, streaming, Core Web Vitals                      |
+| `/eng:access-control-audit` | Unprotected routes and actions, object- and function-level authorization gaps |
+| `/eng:redis-audit`          | Key namespacing, TTL coverage, atomicity, per-request command cost            |
+| `/eng:security-audit`       | A red-team pass over whatever the app has — frontend, backend, or both        |
+| `/eng:seo-code-audit`       | Metadata, robots, sitemap, structured data, crawlability                      |
+| `/eng:storybook-audit`      | Story coverage against shared UI, and story quality                           |
 
 ## Vendor plugins
 

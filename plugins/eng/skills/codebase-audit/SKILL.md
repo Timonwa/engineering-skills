@@ -87,7 +87,7 @@ Write to `_reports/codebase-audit.md`:
 
 | Domain | Signal spotted | Run |
 | --- | --- | --- |
-| <e.g. authorization> | <e.g. route with no role guard> | `rbac-audit` |
+| <e.g. authorization> | <e.g. route with no role guard> | `access-control-audit` |
 
 ## Action items
 Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
@@ -120,7 +120,7 @@ This map keeps codebase-audit shallow: when the sweep surfaces a smell in a doma
 | Smell you spot                                                                                                                         | If installed, hand off to | Otherwise flag for manual review |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------- |
 | XSS sink, weak/missing Content Security Policy (CSP), secret in bundle, injection, Server-Side Request Forgery (SSRF), fail-open catch | `security-audit`          | Focused security review          |
-| Route/action with no role check, "logged-in ≠ authorized", IDOR, tenant leak                                                           | `rbac-audit`              | Focused authorization review     |
+| Route/action with no role check, "logged-in ≠ authorized", IDOR, tenant leak                                                           | `access-control-audit`    | Focused authorization review     |
 | Route handler missing Zod validation, rate limit, pagination, typed errors, response builder                                           | `api-audit`               | Focused API-layer review         |
 | Dependency version drift, unused/duplicate deps, stale lockfile, known vulnerability                                                   | `dependency-audit`        | Focused dependency review        |
 | Missing `.env.example`, unvalidated env at boot, `NEXT_PUBLIC_` misuse, committed env file                                             | `env-audit`               | Focused env/secrets review       |

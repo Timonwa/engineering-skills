@@ -58,7 +58,7 @@ Per `api-architecture` and `nextjs`, for the app's shape:
 - **Service and data** (own backend, API app) — one service file per resource holding the business logic, the only caller of its `data/` file; typed errors, no transport concerns.
 - **Route** (API app) — the house route order, a guard, a rate limit, a docs entry (`openapi-registry`) and a colocated `route.test.ts`, in the same change.
 - **API read** (frontend over an API) — a `data/` read through the project's typed fetcher, cached per `nextjs`.
-- **Server Action** — validates with the schema and answers with an action result, never a thrown error; every mutation calls `updateTag` on what it changed and `refresh()` beside it. In an app with its own backend the action checks the caller itself; over a separate API, the API's guard is the real check (`rbac`).
+- **Server Action** — validates with the schema and answers with an action result, never a thrown error; every mutation calls `updateTag` on what it changed and `refresh()` beside it. In an app with its own backend the action checks the caller itself; over a separate API, the API's guard is the real check (`access-control`).
 
 ## Step 4 — Page and components
 
@@ -73,7 +73,7 @@ Per `code-structure`: the route constant first, then a thin `page.tsx` in the ri
 
 Run the project's type check and the test suites the slice reaches, and report the real output. Then list every file created or modified, and keep only the follow-ups that apply:
 
-- rate limits on sensitive operations, audit logging on privileged ones, and a permission registered for a gated route (`api-architecture`, `rbac`);
+- rate limits on sensitive operations, audit logging on privileged ones, and a permission registered for a gated route (`api-architecture`, `access-control`);
 - the schema moved to the contracts package if a second consumer appears;
 - the page in the area whose layout carries the right gate;
 - every `// TODO:` left to implement.
@@ -86,4 +86,4 @@ In chat: the approved plan, the files created and modified, the type-check and t
 
 - **Features inside an existing app only.** A new project is shaped first by `scaffold-app`.
 - **Never implements business logic** — it scaffolds the shape and stops.
-- Owning skills: placement `code-structure` · API layer `api-architecture` · caching and actions `nextjs` · schemas `schemas-and-contracts` · names `naming` · components `reusables` · stories `storybook` · tests `testing` · permissions `rbac`. Framework or major-version moves → `migrate`.
+- Owning skills: placement `code-structure` · API layer `api-architecture` · caching and actions `nextjs` · schemas `schemas-and-contracts` · names `naming` · components `reusables` · stories `storybook` · tests `testing` · permissions `access-control`. Framework or major-version moves → `migrate`.

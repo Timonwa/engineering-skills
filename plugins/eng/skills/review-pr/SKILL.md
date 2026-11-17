@@ -47,7 +47,7 @@ Read every changed line, then look at it from each angle. On a diff over a few h
 4. **The intent** — does the change do what its issue or spec asked, all of it, and nothing it shouldn't?
 5. **The project's rules** — structure, naming, data and caching, API and auth, styling and the design system, as `AGENTS.md`, its guides and the house skills (`code-structure`, `naming`, `api-architecture`, `nextjs`, `design-system`) state them.
 6. **Reuse** — new helpers, hooks, schemas and constants checked against the project's packages (including the house packages it uses) and its own `lib/`. Name what it duplicates.
-7. **Security** — secrets reaching the client, input that skips validation, a missing guard or ownership check, unsafe HTML, an open redirect (`frontend-security`, `backend-security`, `rbac`).
+7. **Security** — secrets reaching the client, input that skips validation, a missing guard or ownership check, unsafe HTML, an open redirect (`frontend-security`, `backend-security`, `access-control`).
 8. **Tests** — new shared code, services, routes, actions and hooks have specs beside them, mocking only the I/O boundaries; nothing weakened or deleted to go green (`testing`).
 9. **Docs** — an `AGENTS.md`, README or guide the change now contradicts, or a new command, route, env value or convention not written down, with the line to update.
 10. **The PR itself** — the branch, small Conventional commits, the template filled in honestly, issues linked (`ship-changes`). A promotion PR (a tier branch into the next) is checked only for green checks, no stray commits and the merge method (`devops`), never re-reviewed line by line.

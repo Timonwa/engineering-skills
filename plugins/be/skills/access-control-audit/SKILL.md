@@ -1,7 +1,7 @@
 ---
-name: rbac-audit
+name: access-control-audit
 description: >-
-  Manually invoked. RBAC and authorization-coverage audit — unprotected API routes and Server Actions, function-level (BFLA) and object-level (BOLA) coverage, property-level and mass-assignment (BOPLA) exposure, the permission registry, the role-to-permission hierarchy, frontend gates that must back onto server checks, and data-layer rules coverage. Verifies each finding and writes a prioritized report.
+  Manually invoked. Access-control and authorization-coverage audit — unprotected API routes and Server Actions, function-level (BFLA) and object-level (BOLA) coverage, property-level and mass-assignment (BOPLA) exposure, the permission registry, the role-to-permission hierarchy, frontend gates that must back onto server checks, and data-layer rules coverage. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -9,9 +9,9 @@ disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
-# RBAC audit
+# Access control audit
 
-A **manually-invoked, red-team RBAC audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/rbac-audit.md`.
+A **manually-invoked, red-team access-control audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/access-control-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`backend-security`**, **`firestore`**, and **`api-architecture`** (rule internals → **`firebase-security-rules-auditor`**) ARE present, also apply their house-specific rules as an enhancement.
 
@@ -34,10 +34,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ### Method
 
 1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
-2. **Load the previous report** — if `_reports/rbac-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
+2. **Load the previous report** — if `_reports/access-control-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
-5. **Write the report** to `_reports/rbac-audit.md` (overwrite) and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
+5. **Write the report** to `_reports/access-control-audit.md` (overwrite) and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
 
 ### Severity
 
@@ -50,10 +50,10 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/rbac-audit.md`:
+Write to `_reports/access-control-audit.md`:
 
 ```
-# RBAC audit — <app/scope>
+# Access control audit — <app/scope>
 
 **Date:** <YYYY-MM-DD> · **Phase:** <phase> · **Mode:** Report-only · **Branch:** `<branch>` · **Scope:** <what was audited> · **Overall:** <X>/10
 
@@ -99,7 +99,7 @@ Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; 
 
 Every run produces two things:
 
-- **Full report** → `_reports/rbac-audit.md`, in the format above, overwriting the prior run.
+- **Full report** → `_reports/access-control-audit.md`, in the format above, overwriting the prior run.
 - **Chat summary** → a short recap posted in chat: the overall `<X>/10` (with Δ vs last run), a severity count (Critical / High / Medium / Low, i.e. C / H / M / L), the top findings worst-first (id · severity · one-line · `file:line`), and the report path. Note any "needs confirmation" items.
 
 **Report-only** — this audit recommends fixes in the report; it never modifies code.

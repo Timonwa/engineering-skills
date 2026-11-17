@@ -74,7 +74,7 @@ The same four kinds whatever the repo's shape. A single app keeps them in `lib/`
 - **Wire contract → schema; UI-only state → type.** Anything parsed at a boundary is a schema; `types/` holds only what no schema or const produces (upload progress, a menu's open state).
 - **An enum is an `as const` array**, and both the enum schema and the UI read that one array (`EVENT_STATUSES` → `z.enum(EVENT_STATUSES)` and `type EventStatus`).
 - **Data paths** — collection names and path builders — are constants in the contracts, because the API writes them and the workers trigger on them, so both must read one copy.
-- **Permissions are client-safe on purpose.** `can()` is pure, with no I/O, so the same predicate gates a button in the UI and the guard in the API; how roles and verbs are designed is `rbac`'s.
+- **Permissions are client-safe on purpose.** `can()` is pure, with no I/O, so the same predicate gates a button in the UI and the guard in the API; how roles and verbs are designed is `access-control`'s.
 - **An app-local form schema stays in the app's `lib/schemas/`**, built from contract pieces (`OrganiserSchema.shape.name`, the safe URL schema). It moves into the contracts only when a second workspace needs it. Never re-declare a contracts schema inside an app.
 
 ## A contracts package
@@ -94,6 +94,6 @@ The same four kinds whatever the repo's shape. A single app keeps them in `lib/`
 
 - Validating a schema inside a route, and the route order → `api-architecture`.
 - Server Actions answering with an action result → `nextjs`.
-- Roles, verbs and `can()` → `rbac`.
+- Roles, verbs and `can()` → `access-control`.
 - Types, `satisfies` and tsconfig → `typescript`; names of schemas and types → `naming`.
 - Where `lib/` kinds and packages go → `code-structure`.
