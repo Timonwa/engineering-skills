@@ -1,14 +1,12 @@
 ---
 name: cloudinary
 description: >-
-  Delivering images from Cloudinary and wiring the account and SDK into a project — the delivery URL grammar and transform insertion, responsive width ladders and srcset, blur placeholders, the cloud-name vs API-key vs API-secret boundary, signed and unsigned uploads, account hardening, and the credit cost model. Use on Cloudinary, res.cloudinary.com, transform URL, srcset, upload preset, signed URL, f_auto/q_auto, image CDN.
+  The house rules for Cloudinary on top of the official Cloudinary skills — when a project uses it, storing the public id and building URLs at read time, `f_auto/q_auto` as their own final components, versioned named transformations, a width ladder through one helper, credentials as constants with the secret server-only, signed uploads behind auth, destroy with invalidation, private assets, account hardening and strict transformations, and the credit meters. Use when delivering or uploading images through Cloudinary.
 ---
 
 # Cloudinary
 
-Cloudinary derives every variant (size, format, quality, effects) **at delivery time from one uploaded asset** — you build URLs, not files. Two shapes exist and a project may have either: **delivery-only** (no upload pipeline; the app just builds transform URLs from existing assets — no SDK, no secrets) and **full pipeline** (server-side SDK for uploads and account provisioning). The one secret is the API secret, and it never leaves the server.
-
-> **Project facts → `AGENTS.md`:** the cloud name per environment, folder scheme, named-transformation names, env var names, and which shape the project uses. This skill is the portable standard.
+Cloudinary derives every size, format and quality of an image from one stored asset at delivery time, so a project builds URLs rather than files. It's the house choice for content sites — a blog, a portfolio — and for delivering derivatives an upload pipeline has already produced; it isn't a default part of every app. The official skills teach the SDKs and the transformation language; this skill holds only the rules a project adds on top.
 
 ## Project specifics first
 
@@ -17,171 +15,66 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## The delivery URL grammar
+## Two shapes
 
-- **Every delivery URL follows one shape:** `https://res.cloudinary.com/<cloud_name>/<resource_type>/<delivery_type>/<transformations>/<version>/<public_id>.<ext>` — e.g. `.../myclould/image/upload/w_800,c_limit,q_auto,f_auto/v1712345678/blog/hero.jpg`. Transforms are edited into the URL between `/upload/` and the version/public_id; the asset is never re-uploaded to get a variant.
-- **A transform component is comma-separated `key_value` params; chained components are `/`-separated and apply sequentially.** `w_800,c_limit,q_auto` is one component; `c_fill,w_300/e_grayscale` is a two-step chain. Never put the same param twice in one component (two `w_`s is invalid) — add a step to the chain instead.
-- **The version segment is `v` + digits** (`v1712345678`) — it's a cache-busting asset version, not a transform. When parsing a URL, `v\d+` right after `/upload/` means "no transforms yet".
-- **Always end the chain with `q_auto,f_auto`.** `f_auto` negotiates the best format per browser (AVIF/WebP with the original as fallback); `q_auto` picks a perceptually tuned quality. These two alone are most of Cloudinary's delivery value — an image URL without them is a defect.
-- **Crop modes are a deliberate choice, not interchangeable:** `c_limit` = shrink only if larger, never upscale, keep aspect (the default for content images); `c_fit` = fit inside the box, may upscale; `c_fill` = exact `w×h`, crops overflow — pair with `g_auto` (or `g_auto:faces` for people) so the crop centers on the subject; `c_scale` = exact dimensions, distorts. Fixed-shape UI slots (cards, avatars) get `c_fill,g_auto`; everything else gets `c_limit`.
-- **Name Cloudinary folders with hyphens, never underscores** (`blog-covers`, not `blog_covers`) — transform params look like `xx_value`, so an underscore folder as the first path segment is indistinguishable from a transform chain when parsing URLs.
+- **Delivery only** — the assets already exist in Cloudinary (uploaded through its Media Library, or by a pipeline elsewhere); the app only builds URLs. No SDK, no secret.
+- **A pipeline** — the server uploads, names and deletes assets with the Node SDK. Where originals live in storage, Cloudinary gets a copy only as large as the biggest derivative needs (`image-handling`).
 
-## Building transform URLs (delivery-only)
+## Assets and URLs
 
-- **The helper is pure string manipulation in client-safe code** — no SDK import, no credentials. It needs only the URL (or the cloud name from a `NEXT_PUBLIC_*`/`PUBLIC_*` env var when building from bare public_ids).
-- **Insert transforms into the `/upload/` segment; pass non-Cloudinary URLs through untouched** so the helper is safe to call on any `src`.
-- **Detect what follows `/upload/` before inserting:** a `v\d+` segment or a plain path → prepend the transform as the first component; an existing transform chain → append yours as a **new `/`-separated step**, never comma-merged into the same component where duplicate params collide.
-- **Blur placeholder = tiny + blurred + cheap:** `w_40,e_blur:1000,q_auto:low,f_auto` (blur strength ranges 1–2000). Serve it as a `background-image` behind the real `<img>` and fade the full image in on `load` — with a `prefers-reduced-motion` opt-out that shows it immediately.
+- **Store the public id and its version, never a URL.** The URL is built when the record is read, so a cloud-name change or a new transformation needs no migration. The version (`v<digits>`, from the upload response) changes on every overwrite and busts the CDN's copy.
+- **The public id is deterministic** — a path per kind plus your own record id (`blog-covers/post-42`) — so a re-upload overwrites rather than piling up copies. Accounts use dynamic folders: the path lives in the public id, `asset_folder` only places it in the console, and the old `folder` parameter isn't used. No segment may look like a version (`v` followed by digits) or a transformation.
+- **One helper builds every URL** from the cloud name, the public id, the version and a transformation, on the server, where the per-tier cloud name is read; the page receives the finished URL (`env`). A version is in [references/url-helper.md](references/url-helper.md).
+- **`f_auto` and `q_auto` end every delivery URL, each as its own component** — `c_limit,w_800/f_auto/q_auto`, never merged into the resize step (Cloudinary's own guidance). An image without them is a defect, unless it needs a fixed format or quality.
+- **Crops are chosen, not defaulted:** `c_limit` for content images, so nothing is upscaled; `c_fill,g_auto` for fixed-shape slots (cards, avatars), so the crop follows the subject. The rest of the language is `cloudinary-transformations`'s.
+- **Responsive images use a width ladder** — `[480, 768, 1024, 1280, 1600]` to start, topped at about twice the largest rendered width — with a real `sizes`. In Next.js, the components that show Cloudinary images pass `next/image` a `loader` that only adds the width to the URL the server built — per image, never `images.loaderFile`, which would rewrite every image on the site — and `images.deviceSizes` is set to the ladder, so the widths stay bounded. `<CldImage>` is an option, not the default.
 
-## Responsive delivery
+## Named transformations
 
-- **Default width ladder: `[480, 768, 1024, 1280, 1600]`** — a starting point, not a law. Trim it to your layout: the top rung should be about the largest rendered CSS width × 2 (for 2× DPR screens); rungs beyond that are pure bandwidth waste.
-- **Build `srcset` from the ladder with `w` descriptors and always pair it with a real `sizes` attribute** — without `sizes` the browser assumes `100vw` and over-downloads. The `<img>`/`srcset`/`sizes` markup rules live in `semantic-html`.
-- **Don't stack `dpr_auto` onto a `w`-descriptor `srcset`.** The browser already factors DPR into which `srcset` candidate it picks; `dpr_auto` on top double-counts it, and it only activates under Client Hints (an opt-in `Accept-CH` header, Chromium-only) so it silently does nothing elsewhere. Use `dpr_auto` only for a single fixed-width image on a site that has Client Hints configured.
-- **In Next.js, don't hand-roll `srcset`** — give `next/image` a custom Cloudinary `loader` that returns `w_${width},c_limit,q_auto,f_auto` URLs and let it manage the ladder (→ `nextjs`). Hand-rolled `srcset` is for frameworks without an image component (Astro remote images, plain HTML).
+- **A recipe used in many places is a named transformation** (`t_card_v1`), created by an idempotent script, never by hand in the console.
+- **Version them; never edit one in production.** The CDN keeps renders made with the old definition, so a change ships as `t_card_v2` and the old name goes once nothing uses it.
+- **`f_auto` follows the name** — `t_card_v1/f_auto/q_auto`. Inside a named transformation it's ignored, because the CDN can't see it there.
 
-## Credentials & env wiring
+## Credentials
 
-- **Three values, three sensitivity levels:** the **cloud name** is public — it appears in every delivery URL, so expose it as `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` (or the framework's public-env equivalent). The **API key** is a non-secret identifier (useless without the secret) but has no business in a client bundle either — keep it server-side. The **API secret** is full account control: server env + secret manager only, never `NEXT_PUBLIC_`/`VITE_`-prefixed, never committed (→ `frontend-security`, `devops`).
-- **Validate all three with Zod at boot** so a misconfigured deploy fails at startup, not at the first upload:
+- **The cloud name and the API key are public facts**, committed as per-tier constants (`env`): the cloud name is in every URL, and the key can't sign anything alone. **The API secret** is the account — server-only, from the secret manager, never in a public variable or a bundle.
+- **Pick the cloud name before any URL ships**; renaming it breaks every cached URL.
+- **Keys are key-and-secret pairs with roles.** Give each use its own pair with the narrowest role; to rotate, generate a new pair, deploy it, then deactivate the old one.
+- **A product environment per tier** where the plan allows, otherwise an account per tier; a single shared one is a recorded choice.
 
-```ts
-// config/env.ts — server app
-const EnvSchema = z.object({
-  // …
-  CLOUDINARY_CLOUD_NAME: z.string().min(1),
-  CLOUDINARY_API_KEY: z.string().min(1),
-  CLOUDINARY_API_SECRET: z.string().min(1),
-});
-```
+## Uploads and deletes
 
-- **Pick the cloud name before any URL ships.** It is baked into every public delivery URL, so renaming later breaks every cached image. Rename the autogenerated one (`dzciq2xje`-style) to a clean brand-aligned name on day one.
-- **Per-environment isolation costs money or accounts:** the free plan allows one product environment per account, so dev/staging/prod isolation means separate free accounts (`<brand>-dev`, `<brand>-staging`, `<brand>`) or a paid multi-environment plan. A single shared account is acceptable early — keep the per-env names reserved and record the choice in `AGENTS.md`.
-- **Rotation gotcha:** regenerating the API secret regenerates the API key with it. Update both everywhere, redeploy, and only then revoke the old key in the dashboard.
+- **The server uploads** through one configured SDK instance; services import it and never call `config()` themselves.
+- **A browser that uploads directly uses a signed upload.** The signature route sits behind the session guard and a rate limit, and signs only the parameters the server chose — public id, `asset_folder`, timestamp, and the allowed formats and size (or a signed preset holding them), so it can't take an SVG or a type `image-handling` forbids — never whatever the request sends. The server verifies the upload response's signature before it records the public id and version the browser reports. An unsigned preset lets anyone with the cloud name fill the account; use one only for genuinely anonymous input, locked to a folder and limited by an incoming transformation.
+- **Deletes purge the CDN too:** `uploader.destroy(publicId, { resource_type, invalidate: true })`. Without `invalidate`, the image keeps being served until its cache expires.
 
-## The server SDK (full pipeline)
+## Private assets
 
-- **One boot module configures the SDK once; every service imports the configured instance** and never calls `cloudinary.config()` itself:
+- **Default `upload` delivery is public**, and anyone who sees one URL can request any transformation of the asset.
+- **Gated assets use the `authenticated` type with signed URLs**, which protects the original and every derivative; `private` protects only the original. A signed URL can be shared, so it's minted only after the access check and never stored. On its own it doesn't expire: only token-based access, on plans that include it, limits it in time. Without that, gated content lives in the private storage bucket behind short signed links instead (`image-handling`).
+- **Private assets also send `X-Robots-Tag: noindex`**, set with the upload's `headers` option.
 
-```ts
-// lib/cloudinary.ts — server-only; the single configured instance
-import { v2 as cloudinary } from "cloudinary";
-import { env } from "@/config/env";
+## Hardening the account
 
-cloudinary.config({
-  cloud_name: env.CLOUDINARY_CLOUD_NAME,
-  api_key: env.CLOUDINARY_API_KEY,
-  api_secret: env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+On day one, on the console's Security page:
 
-export { cloudinary };
-```
+- **Decide strict transformations.** Without it, anyone can mint unlimited new transformation URLs from a public id, and each one is billed. Turn it on for a busy or high-value account, which means every URL is signed, named or allowlisted by referrer — and every chained form actually requested (`t_card_v1/f_auto/q_auto`, each width in the ladder) is marked allowed for strict or generated eagerly, or every image breaks; leaving it off for a small site with a few fixed shapes is a recorded choice, watched on the transformations meter.
+- **Keep `Fetched URL` restricted** unless the site fetches remote images, and then list the allowed fetch domains; an open fetch makes the account a proxy anyone can bill.
+- **Leave PDF and ZIP delivery off** unless the site serves them, set Cloudinary staff access to controlled visibility (temporary access an admin grants), and limit Admin API access to the server's IP addresses where it has fixed ones.
 
-- **Uploads go through the server by default** — `cloudinary.uploader.upload(file, { folder, public_id, overwrite: true })` with a **deterministic `public_id`** (derived from your own record id) so re-uploads overwrite instead of accumulating duplicates. The client sends the file to your API; your API talks to Cloudinary.
-- **If the client must upload directly, use signed uploads, not unsigned presets.** The server generates a per-request signature (`cloudinary.utils.api_sign_request(params, apiSecret)`) and the client POSTs to `https://api.cloudinary.com/v1_1/<cloud_name>/image/upload` with it — the server still controls folder and public_id. An **unsigned upload preset** lets anyone holding your public cloud name + preset name fill your account; only accept one for genuinely anonymous input, locked to a folder with an incoming size/format-limiting transformation, and treat it as a standing liability.
-- **Version named transformations, never edit them in place.** Reusable transform recipes become named transformations (`t_<name>` in URLs), provisioned by an idempotent script via `cloudinary.api.create_transformation(name, transformationString)` — suffix the name `_v1` and ship a `_v2` for changes, because the CDN keeps derivatives cached against the old definition and in-place edits leave stale renders live. During pre-launch tuning, delete + recreate (`api.delete_transformation` then create) to force cache invalidation.
+## Cost
 
-## Access control & signed delivery
+Credits are one pool shared by transformations, storage and bandwidth ([current plans](https://cloudinary.com/pricing)):
 
-- **Default `upload` delivery is public and enumerable** — anyone with the URL (or a guessed public_id) gets the asset and any transform of it. Fine for blog covers; wrong for paid or private content.
-- **When assets shouldn't be publicly reachable, deliver as `type: "authenticated"` with `sign_url: true`** — the SDK inserts an `s--<signature>--` component into the URL, and unsigned requests 401. `type: "private"` protects only the original (derived transforms stay public) — prefer `authenticated` when in doubt. Time-boxed access adds an `auth_token` with a `duration`.
+- **A transformation is billed once per new derived asset**, then every request for it is bandwidth. Each rung of a width ladder is its own derivative, and `f_auto` can produce one per format, so a launch or a bulk upload spikes the meter and steady state is storage and bandwidth.
+- **An upload counts as a transformation**, and an unbounded set of transformation URLs is the billing attack strict transformations closes.
+- **Storage only grows** until you delete, so keep the stored copy no bigger than the largest derivative.
 
-```ts
-const url = cloudinary.url(publicId, {
-  type: "authenticated",
-  sign_url: true,
-  transformation: [{ width: 1024, crop: "limit" }, { quality: "auto", fetch_format: "auto" }],
-});
-```
+## Do / Don't
 
-- **Harden the account settings on day one** (Settings → Security): restrict the **`Fetched URL`** delivery type — otherwise your account is an open remote-image proxy anyone can bill against once the cloud name leaks (it's in every URL); leave **PDF and ZIP delivery** disabled; leave Cloudinary support access off outside an active support ticket.
-- **Decide the strict-transformations posture explicitly.** Anyone who can see a public_id can mint unlimited _new_ transform URLs, and each unique one is a billed transformation — that's the transform-bombing cost attack. **Strict transformations** closes it by rejecting on-the-fly transforms unless signed, eager, or from a named/allowlisted source — turn it on for high-value assets or a high-profile cloud, and note that it forces every delivery URL through signing or pre-declared transforms. For a small site whose URLs use a handful of fixed transform shapes, leaving it off and watching the transformation meter is a defensible trade — but make it a decision, not a default you never saw.
+- **Do** store the public id and version; build URLs in one helper; end with `/f_auto/q_auto`; version named transformations; keep the secret server-only; sign only server-chosen parameters behind auth; destroy with `invalidate: true`; use `authenticated` for gated assets; decide strict transformations on day one.
+- **Don't** store a delivery URL; merge `f_auto` or `q_auto` into another component; put `f_auto` inside a named transformation; edit a named transformation in production; expose the secret; sign whatever a request sends; rely on an unsigned preset; leave `Fetched URL` open.
 
-## The cost model
+## Related skills
 
-- **Credits are one shared pool across three meters** — on the free plan, 25 credits per rolling 30-day window, where 1 credit = 1,000 transformations = 1 GB storage = 1 GB bandwidth, in any combination ([pricing](https://cloudinary.com/pricing) — verify current numbers before capacity planning).
-- **The meters age differently:** storage is cumulative (never shrinks unless you delete), bandwidth is monthly and traffic-shaped, and **transformations are one-time per unique URL** — the first request renders and bills; every later request is a CDN cache hit (bandwidth only).
-- **`f_auto` multiplies the transformation count** — each derived URL renders once per negotiated format (typically 2–3 variants: AVIF/WebP + fallback), so budget roughly `unique transform URLs × formats`, not `× 1`.
-- **Transformations spike, then evaporate.** The month you first render a batch of assets pays the whole transformation cost; steady state is storage + bandwidth. So watch the transformations meter around launches and bulk uploads — and remember every rung of a `srcset` ladder is its own unique URL. This spike profile is also why unrestricted on-the-fly transforms are the billing attack surface (see strict transformations above).
-- **Keep the stored source small when Cloudinary is derivative-only.** If originals live elsewhere (e.g. a private storage bucket → `image-handling`), push Cloudinary a downsized copy only as large as the biggest derivative needs — storing 20 MB originals to serve 300 px thumbnails burns the storage meter for nothing.
-
-## Example
-
-The delivery-only helper — client-safe, no SDK, safe to call on any `src`:
-
-```ts
-// lib/cloudinary.ts — delivery-only URL helpers (no secrets, no SDK)
-const CLOUDINARY_HOST = "res.cloudinary.com";
-
-export function isCloudinaryUrl(url: string): boolean {
-  return url.includes(CLOUDINARY_HOST);
-}
-
-// Transform components are comma-separated `key_value` params. Requires
-// hyphenated folder names — an underscore folder would false-positive here.
-function isTransformChain(segment: string): boolean {
-  return segment.split(",").every(part => /^[a-z]+_[^/]+$/.test(part));
-}
-
-function withTransform(url: string, transform: string): string {
-  const marker = "/upload/";
-  const idx = url.indexOf(marker);
-  if (idx === -1) return url; // not an upload-delivery URL — leave it alone
-
-  const head = url.slice(0, idx + marker.length);
-  const tail = url.slice(idx + marker.length);
-  const first = tail.split("/")[0];
-
-  // `v<digits>` is a version segment, not a transform — insert before it.
-  if (/^v\d+$/.test(first)) return `${head}${transform}/${tail}`;
-
-  // Existing chain: append ours as a NEW `/` step — comma-merging into one
-  // component collides on duplicate params (two `w_`s is invalid).
-  if (isTransformChain(first)) {
-    return `${head}${first}/${transform}/${tail.slice(first.length + 1)}`;
-  }
-
-  return `${head}${transform}/${tail}`;
-}
-
-export function cloudinaryResized(url: string, width: number): string {
-  if (!isCloudinaryUrl(url)) return url;
-  return withTransform(url, `w_${width},c_limit,q_auto,f_auto`);
-}
-
-export function cloudinaryBlurUrl(url: string): string {
-  if (!isCloudinaryUrl(url)) return url;
-  return withTransform(url, "w_40,e_blur:1000,q_auto:low,f_auto");
-}
-
-// Starting-point ladder — trim the top rung to ~2× your largest rendered CSS width.
-export const DEFAULT_RESPONSIVE_WIDTHS = [480, 768, 1024, 1280, 1600];
-
-export function cloudinarySrcset(url: string, widths: number[] = DEFAULT_RESPONSIVE_WIDTHS): string {
-  if (!isCloudinaryUrl(url)) return "";
-  return widths.map(w => `${cloudinaryResized(url, w)} ${w}w`).join(", ");
-}
-```
-
-Consumed in markup (any framework — `sizes` must describe the real layout):
-
-```html
-<img
-  src={cloudinaryResized(coverUrl, 1024)}
-  srcset={cloudinarySrcset(coverUrl)}
-  sizes="(max-width: 768px) 100vw, 768px"
-  width="1200" height="800"
-  alt="…"
-  loading="lazy" decoding="async"
-/>
-```
-
-## Boundaries
-
-- **The upload pipeline that feeds Cloudinary** — client-side compression caps, EXIF stripping, storage bucket tiering, orphan reaping → `image-handling`. This skill starts where an asset already has a Cloudinary public_id.
-- **Firebase Storage and signed storage URLs** → `image-handling`; **Secret Manager and App Hosting env wiring** → `env`; general secret/env strategy and CI secret scanning → `devops`.
-- **The official Cloudinary skills own the SDK surface.** This skill is the portable house standard — the URL grammar, credential boundary, account hardening, and the cost model. For SDK-specific work go to the vendored skills: **`cloudinary-next`** (`next-cloudinary` — `CldImage`, `CldOgImage`, `CldUploadWidget`, server actions), **`cloudinary-react`** (`@cloudinary/url-gen` + `@cloudinary/react` in Vite/CRA apps), **`cloudinary-transformations`** (turning a described effect into a transformation string, AI transformations, named transformations, debugging a URL that will not render), and **`cloudinary-docs`** (looking a detail up in the current docs). Where they and this skill overlap on URL grammar, they are the deeper reference and this one is the rule about what the project may do.
-- **`next/image`, custom loaders, and Next caching of image routes** → `nextjs`; the `<img>`/`srcset`/`sizes`/`<picture>` markup itself → `semantic-html`.
-- **No secrets in the client bundle** (the API secret rule is an instance of it) → `frontend-security`; server-side upload endpoint safety (auth, size limits, rate limits) → `backend-security`.
-- **Alt text and non-decorative image semantics** → `accessibility`; image weight/LCP review → `performance-audit`; image sitemaps and structured data → `seo`.
+Transformations, crops and effects `cloudinary-transformations` (official) · `next-cloudinary` components `cloudinary-next` (official) · the upload pipeline and storage `image-handling` · constants and secrets `env` · `next/image` loaders `nextjs` · `img`, `srcset` and `sizes` markup `semantic-html` · upload routes `api-architecture` · signature-route limits `rate-limiting` · server threats `backend-security` · alt text `accessibility`.
