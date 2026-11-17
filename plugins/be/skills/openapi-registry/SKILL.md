@@ -1,14 +1,14 @@
 ---
 name: openapi-registry
 description: >-
-  Generates and maintains an OpenAPI/Swagger API reference from a route registry rather than hand-writing per endpoint — the registry pattern (a registry.ts of route registrations plus an openapi.ts spec config), registering method, auth, status, params and response schemas from the handler's real behavior, operation summaries and descriptions, file-upload schemas, and the group-by-group drift audit. Use on "OpenAPI", "Swagger", "API docs", "API reference", "update the registry".
+  The OpenAPI document generated from a route registry in a Next.js API — one registration per route from the Zod schemas the handler validates, per-group modules composed by one file, a closed tag list, success status by meaning, standard errors derived from the entry, a paginated flag, uploads as binary strings, `.meta()` for names and examples, stable operation ids, a coverage test both ways, local-only routes kept out, and a spec lint and breaking-change check in CI. Use when adding a route, changing a schema, or serving the API reference.
 ---
 
-# API docs (OpenAPI registry)
+# OpenAPI registry
 
-The API reference is generated from a registry module, never hand-written per endpoint. The registry entry ships in the same change as the route, and every entry mirrors what the handler _actually_ does — the handler is the source of truth, the registry its faithful projection.
+The API's OpenAPI document is generated from a registry, never written by hand. Each route registers once, in the same change as the route, using the exact Zod schemas its handler validates — so the document can't describe a body the API doesn't accept. The handler is the source of truth; the registry is its projection, and a test proves the two match.
 
-This skill governs the registry → OpenAPI spec layer, not any particular viewer — the resulting spec renders identically in Swagger UI, Scalar, Postman, ReDoc, or Stoplight; swapping the display tool never changes how a route is registered.
+The document is the contract; how it's displayed (Scalar, Swagger UI, Redoc) is a viewer choice that changes nothing here. How the prose in it reads is the writing plugin's `api-reference`.
 
 ## Project specifics first
 
@@ -17,75 +17,64 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## The registry pattern
+## The shape
 
-- **Two modules own the spec** — a registrations module (`registry.ts` — every route's `registerRoute()` entry; the file you edit) and a spec-config module (`openapi.ts` — info, servers, tags). These names are the pattern, not a mandate: find the project's equivalents via its `AGENTS.md` or the docs-serving route.
-- **Schemas come from the code, not the docs** — register the exact Zod schema the handler validates with, imported from the shared schemas package. Inline `z.object({ id: z.string() })` is acceptable only for trivial path params with no named schema.
-- **One tag entry per group, one sentence each** — say who uses the group and what it covers. Never list endpoints in a tag description; the list goes stale.
-- **Client-side flows get tag prose, not fake routes** — a flow with no backend endpoint (OAuth sign-in, magic link) is documented in its tag description, naming the endpoints the client calls after the client-side part completes.
+- **A shared setup module** creates the registry and holds what every entry reuses: the security schemes (bearer token, session cookie, API key), the error envelope and pagination metadata as named components, and one `registerRoute()` helper that turns a short definition into a full operation.
+- **One module per group** of routes (public, auth, account, each product area, admin, system), each calling `registerRoute()` for the routes it covers. One file imports them all, so it's the only place that knows the full set.
+- **A spec config module** builds the document: OpenAPI 3.1 (its schemas are JSON Schema 2020-12, which is what Zod emits), the info block with the auth, rate-limit and envelope notes, the servers, and the tag list. It's built once per process and cached.
+- **The library:** `@asteasolutions/zod-to-openapi` (its `OpenApiGeneratorV31`), which reads Zod 4's `.meta()`; `extendZodWithOpenApi` is needed only for parameter-level descriptions and for an extended schema shown as a reference to its parent. Zod's own `z.toJSONSchema()` covers a single schema — for a webhook payload or a tool definition — without a registry.
+
+The helper and the coverage test are in [references/registry.md](references/registry.md).
 
 ## Registering a route
 
-- **Read the handler first, then register what it does** — all exported methods (one file can export both `POST` and `DELETE` — register each), the schemas used for body/query/params, whether any auth/permission helper is called, and the response shape and success status.
-- **Auth flag mirrors the handler** — any auth/permission helper call means the entry is marked authenticated (even when unverified users are allowed); no auth call means the flag is omitted. Never guess from the URL.
-- **Success status by semantics** — POST that creates a resource → `201`; POST that performs an action → `200`; DELETE returning a body → `200`, returning none → `204`.
-- **Every parameter is registered, never described in prose** — path params, query string, and JSON body each go in their dedicated field with a schema; file uploads use the body field plus a `multipart/form-data` content type.
-- **Always provide a response schema when the endpoint returns data** — it types the success envelope's `data`; omitting it publishes `unknown`. Omit it only for `204` no-body responses.
-- **Standard errors are derived, not restated** — a well-built registry auto-adds the standard set from the entry itself (400 with any input schema, 401/403 with auth, 404 with path params, plus rate-limit and server errors). Register only endpoint-specific errors in the dedicated `additionalErrors` field — never as prose in the description.
-- **File uploads need one shared binary field** — `z.instanceof(File)` can't be introspected by the Zod-to-OpenAPI generator (e.g. `@asteasolutions/zod-to-openapi`, or the project's equivalent), so define a single binary-string field constant at the top of the registry and extend each upload schema with it; never define it twice.
+- **Read the handler, then register what it does** — every exported method (one file can export `GET` and `DELETE`, and each registers), the schemas it validates params, query and body with, whether a guard runs, and what it returns.
+- **The schemas are the handler's own**, imported from the shared contracts, never redeclared. A trivial path param with no named schema may be inline.
+- **Auth mirrors the guard.** A route whose handler calls any session, permission or key guard is registered with `auth`, so the operation lists its security schemes; one with no guard has none. Never guess from the path.
+- **Success status by meaning:** a `POST` that creates → `201`; a `POST` that acts (a state transition, a send) → `200`; an async start → `202`; a `DELETE` with no body → `204`.
+- **Every input in its field** — `params`, `query`, `body` — never described in prose. A body is marked `required`, since OpenAPI defaults it to optional. Uploads take a `multipart/form-data` body; the generator has no `z.file()` support, so the file field is documented with an explicit `.openapi({ type: "string", format: "binary" })` while the handler validates the real file.
+- **A response schema whenever data comes back**, typing the envelope's `data`; without it the document says nothing about the shape. A list sets `paginated`, so the envelope carries the pagination metadata.
+- **Standard errors are derived, never restated.** The helper adds 400 when there's any input, 401 and 403 with auth, 404 with path params, 429 with `Retry-After` and the `RateLimit` fields, and 500. Only errors particular to this route go in `additionalErrors`, keyed by status (a 409 conflict, a 403 `PLAN_LIMIT_REACHED` — `plan-entitlements`); the 503 of maintenance mode and the 404 of a switched-off flag are derived too.
+- **A stable `operationId`** for each operation, unique across the document — client generators name methods after it, so renaming one is a breaking change. Derive it from the method and path, or set it, but never let it change by accident.
+- **A retiring version's operations are `deprecated: true`**, alongside the `Deprecation` and `Sunset` headers the routes send (`api-architecture`).
 
-## Descriptions
+## Tags
 
-Every endpoint gets both a `summary` and a `description` — short, direct, one or two sentences, written for the developer consuming the API.
+- **The tag list is closed**: declared once, in order, in the spec config, and a route's `tag` is typed as one of them. A typo fails the type check instead of inventing a group.
+- **One sentence per tag** — who uses the group and what it covers. Never a list of its endpoints, which goes stale.
+- **A flow with no route of its own** (a provider sign-in, an emailed link the client completes) is described in its tag's sentence, naming the routes the client calls afterwards — never registered as a route that doesn't exist.
 
-- **Include** — what it returns or does, action verb first ("Returns …", "Creates …", "Sends …"); non-obvious edge cases (conflicts, terminal state transitions); caller-relevant behavior not obvious from the params.
-- **Exclude** — anything the entry already encodes ("rate-limited", "no auth required", "partial update"); error conditions (→ `additionalErrors`); parameter descriptions (→ the param schemas); internal permission strings; backend implementation details (which database, counters, transactions); schema names and cross-references; frontend cache instructions; "stub — pending" notes beyond a temporary flag.
+## Words in the entry
 
-> ❌ "Cursor-paginated public items list used by the discover-page rails. Server-enforced filters — `discoverable` AND `status live`. See `PublicItemsQuerySchema`. Rate-limited."
->
-> ✓ "Cursor-paginated list of live, publicly discoverable items."
+- **`summary` is required**: a short, verb-first line ("Create an event", "List the caller's albums").
+- **`description` is optional**, for what a caller can't see from the entry — a terminal state, a side effect, an ordering. Never what the entry already says (auth, rate limits, parameters, errors), internal permission strings, the database or a schema's name.
+- **Names and examples on the schema**, with `.meta({ id, description, examples: [...] })` — the `id` makes it a named component, reused by `$ref`, and the examples show in every viewer. A request is described by what callers send (defaults optional, strings before coercion); a response by what they get back.
 
-## Example
+## Keeping it true
 
-A full entry that obeys every rule above (neutral vocabulary — swap in the project's real schemas):
+- **A coverage test, both ways.** It walks the route files, reads the methods each exports — `export function GET`, `export const GET` and `export { handler as GET }` alike — and fails when one isn't in the document — and when the document lists a path nothing serves. A new route without its entry fails CI.
+- **Local-only routes stay out** — developer tools, seeding, test hooks. The coverage test skips them by an explicit list of prefixes, so leaving one out is a decision, not a miss.
+- **A script writes the document to a file**, for CI to lint and diff — built once from the branch and once from the base branch.
+- **The document is linted in CI** (Spectral or Redocly with the OpenAPI ruleset), so a broken `$ref`, a duplicate `operationId` or a missing response fails before merge.
+- **Breaking changes are caught, not discovered.** A CI step diffs the document against the base branch (`oasdiff breaking --fail-on ERR` — without the flag it never fails); a removed field, a new required input or a narrowed type fails unless it lands in a new version (`api-architecture`).
+- **Served only where it's meant to be seen** — the document and the reference page answer 404 on a tier that doesn't publish them, and each takes a public rate limit.
+- **Outgoing webhooks are documented too**, in the document's `webhooks` section (`registerWebhook`), from the same payload schemas the sender signs.
 
-```ts
-import { CreateItemSchema, ItemSchema } from "@acme/schemas";
+## Common mistakes
 
-registerRoute({
-  method: "post",
-  path: "/v1/projects/{projectId}/items",
-  tags: ["Items"],
-  summary: "Create an item",
-  description: "Creates an item in the given project.",
-  auth: true, // handler calls getUserFromRequest
-  successStatus: 201, // POST that creates a resource
-  pathParams: z.object({ projectId: z.string() }), // trivial — no named schema exists
-  requestBody: CreateItemSchema, // the same schema the handler validates with
-  responseSchema: ItemSchema,
-  additionalErrors: { 402: "Item quota exceeded for the project's plan." }, // endpoint-specific only
-});
-```
+1. A file exports two methods and only one is registered.
+2. A `POST` action registered as `201`, or a create as `200`.
+3. The handler parses query, body or a path param the entry doesn't list.
+4. No response schema on a route that returns data.
+5. The entry uses a different schema from the one the handler validates with.
+6. `auth` missing on a guarded route, or set on a public one.
+7. Errors or parameters written as description prose.
+8. An `operationId` changed by a rename.
 
-## Common mistakes — check these when touching the registry
+## Auditing for drift
 
-1. A route file exports multiple methods on one path but only one is registered.
-2. A POST action registered as `201` instead of `200` (or vice versa).
-3. The handler parses query params / a request body / `[param]` path segments, but the matching registry field is missing.
-4. Missing response schema — the endpoint returns data but the spec types it `unknown`.
-5. The registry uses a different schema than the handler validates with.
-6. The auth flag missing on a protected route, or present on a public one.
-7. Error conditions or parameter details written as description prose instead of registered fields.
-8. Internal permission strings or implementation details leaking into descriptions.
-9. Descriptions referencing stale or not-yet-shipped behavior.
+One tag at a time, reading the tag list fresh from the spec config: read the route files, read their entries, list every mismatch against the mistakes above, fix them, and run the API's type check before the next tag. Work from public routes to admin and system ones.
 
-## Auditing the registry for drift
+## Related skills
 
-- **One tag group at a time**, reading the tag list fresh from the spec config each run — never from a cached list.
-- **Process groups in consumer order** — public unauthenticated routes, then authenticated user flows, then elevated-role routes (whatever the project calls them — manager, moderator, owner), then admin routes, then infrastructure (webhooks, cron, dev). Within a tier, order by resource domain.
-- **Per group** — read the actual route files, read the matching registry entries, report every discrepancy (using the mistakes list above), wait for approval, fix, run the project's type check (the API package's, in a monorepo), then move to the next group.
-
-## Boundaries
-
-- Designing the routes themselves — handlers, validation, auth guards, response envelopes → `api-architecture`. This skill documents what those handlers already do; it never changes a handler's behavior to make the spec tidier.
-- The prose inside the spec — how a summary, a parameter description, an error table or an auth section should read for the developer consuming the API — is a technical-writing job. This skill owns the registry entry's shape and its fidelity to the handler, not the sentences.
+Routes, guards and the envelope `api-architecture` · the schemas `schemas-and-contracts` · the rate-limit headers `rate-limiting` · sending webhooks `webhook-delivery` · the coverage test `testing` · the reference's prose the writing plugin's `api-reference` · the audit `api-audit`.
