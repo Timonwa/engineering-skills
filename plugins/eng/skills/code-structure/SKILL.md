@@ -33,17 +33,19 @@ All source sits under `src/`, with the path alias `@/*` → `./src/*`.
 
 | Folder            | Holds                                                                                                             |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `src/app/`        | routes only: `page.tsx`, `layout.tsx`, `error.tsx`, `not-found.tsx`, `loading.tsx` and route handlers             |
-| `src/proxy.ts`    | the request proxy, beside `src/app/`                                                                              |
+| `src/app/`        | the files Next.js reads by name and nothing else — no components, data or helpers                                 |
+| `src/proxy.ts`    | the request proxy, beside `src/app/`; `src/instrumentation.ts` beside it for startup and error reporting          |
 | `src/components/` | the app's pages and features, organised by product area                                                           |
 | `src/ui/`         | the app's own shared UI, in the tiers `design-system` defines — only what no package already provides             |
 | `src/lib/`        | everything that isn't a component, kind-first (below)                                                             |
 | `src/styles/`     | one entry plus one file per layer, never a single growing stylesheet; the layers and their order are `tailwind`'s |
 | `src/testing/`    | fixtures, fakes and render helpers shared by the app's tests; how to write them is `testing`                      |
+| `public/`         | at the app's root: files served as they are from the site root                                                    |
 
 ### `components/`
 
 - **It's organised by product area** — the part of the product a page belongs to, the way you'd name it when saying what you're working on: `auth/`, `marketing/`, `billing/`, `events/`. A route group that is one area (marketing, auth, legal) is one folder; a group that holds many areas, such as a dashboard or a whole admin app, gives each feature its own folder rather than nesting them under the group's name. Inside an area, one folder per page, named and nested the way its URL is, so `billing/plans/` holds the sections of `/billing/plans`.
+- **Imports point one way** — `app/` → `components/` → `ui/` → `lib/`; nothing imports from `app/`, and client code never from the server boundary. A lint rule (`import/no-restricted-paths` zones, or `eslint-plugin-boundaries`) enforces it, so a wrong import fails lint rather than review.
 - **Framework boundaries group by kind**, not by the route that hosts them: `components/errors/` holds the error, not-found and unauthorised views; `components/guards/` holds client-side gates.
 - **`components/_shared/`** holds cross-feature widgets, grouped by concern (`otp/`, `layout/`). Each group has a barrel with one explicit export per file and is imported as `@/components/_shared/<group>`. A **server-coupled component** (its import chain reaches server code) stays out of its group barrel and is imported by path, so a client import of the barrel can never drag server code into the bundle. There is no root `_shared/index.ts`.
 - **`components/<area>/_shared/`** holds what one area's pages share.
@@ -145,34 +147,19 @@ Skip this section for a single app.
 
 ## Next.js placement
 
-- `error.tsx`, `not-found.tsx` and `loading.tsx` sit beside their segment; private folders (`_components/`) hold route-local pieces that must not become routes.
+Every file Next.js reads by name — route files, metadata files, the ones beside `app/` — and the house content of each, with the entry examples, is in [references/next-files.md](references/next-files.md).
+
+- **`app/` holds no private folders.** Next allows `_components/` there, but the house puts route-local pieces in `components/` under the page's folder, so `app/` reads as the URL map and nothing more.
+- **Special files sit beside their segment** — `loading`, `error`, `not-found`, `template` — except `global-error`, which sits only in `app/` and renders its own `<html>` and `<body>`.
+- **A modal or drawer with its own URL** is a search param when it only needs to survive a reload, and a parallel slot plus an intercepting route when it's also a page of its own; every slot has a `default.tsx`.
 - **A route group that needs a URL prefix keeps a real segment inside it.** `(auth)/auth/`: the parentheses buy the shared layout, the inner folder buys the `/auth` prefix. A group that only groups (`(marketing)`, `(legal)`) has no inner segment, because its pages sit at the root of the URL.
 - **A route never repeats its app's name.** One app holding every area divides them by URL: main pages at the root, `/dashboard/...` and `/admin/...` for the other areas. Where each area is its own app, the app already is the area, so its pages sit at the root — the admin app's users page is `/users`, not `/admin/users`. Only an API keeps its prefix (`/api/v1/...`).
-
-## Entry files
-
-```tsx
-// app/(marketing)/about/page.tsx — a page must default-export
-import { AboutPageContent } from "@/components/marketing/about";
-
-export default function AboutPage() {
-  return <AboutPageContent />;
-}
-```
-
-```tsx
-// app/(marketing)/layout.tsx — a layout is a thin entry too
-import { NAV_ITEMS } from "@/lib/constants";
-import { MarketingLayout } from "@/ui/layouts";
-
-export default function MarketingRouteLayout({ children }: { children: React.ReactNode }) {
-  return <MarketingLayout nav={NAV_ITEMS}>{children}</MarketingLayout>;
-}
-```
 
 ## Checklist before finishing
 
 - [ ] Each `page.tsx` is ~3 lines (import + render) and each `layout.tsx` renders a shell; neither holds more than a guard.
+- [ ] `app/` holds only files Next.js reads by name; every parallel slot has a `default.tsx`.
+- [ ] Imports point one way, enforced by a lint rule.
 - [ ] Every visual section is its own file with a named export, composed by `index.tsx`.
 - [ ] `components/` is organised by product area, pages nested as their URLs are, and holds only `.tsx` (plus colocated stories, tests and an approved stub).
 - [ ] `lib/` is kind-first and flat inside each kind, files named `<domain>.<kind>.ts`, every kind barrel one explicit export per file.
