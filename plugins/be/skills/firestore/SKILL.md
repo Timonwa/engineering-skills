@@ -33,7 +33,8 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Cursor pagination, never offset** — the cursor is a document id, the query asks for `limit + 1` to know whether there's more, and `documentId()` breaks ties. Offset reads and bills every skipped document. The shared helper is in [references/patterns.md](references/patterns.md).
 - **Counts use `count().get()`**, billed per thousand index entries, never a fetch of every document.
 - **`orderBy` drops documents that lack the field**, silently — a field a list sorts on is written on every document, with a default.
-- **`in` and `getAll` are chunked** to Firestore's limits, and the chunks run in parallel.
+- **`in` and `getAll` are chunked** at 30 values, and the chunks run in parallel.
+- **A small read takes only its fields** — `.select()` on the Admin SDK — when a document is large and the read needs a few fields; it bills the same reads, but sends fewer bytes.
 
 ## Writing
 
@@ -41,7 +42,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Counters use `FieldValue.increment()`**, never a read and a write. **Uniqueness** uses `create()`, which fails if the document exists, or a transaction.
 - **Timestamps:** `FieldValue.serverTimestamp()` on writes; `Timestamp.now()` inside a transaction, where a value must be known before commit. `createdAt` and owner fields never change after create.
 - **Batches** group related writes, split at Firestore's 500-operation limit.
-- **Denormalise what lists read** — a count, a name, a cover — onto the parent document, updated in the same transaction or batch as the change, so a list is one query, not one per row. A delete reverses a counter only if that document was counted.
+- **Denormalise what lists read** — a count, a name, a cover — onto the parent document, updated in the same transaction or batch as the change, so a list is one query, not one per row. A delete reverses a counter only if that document was counted, and a scheduled recount repairs any counter that drifts, logging each correction.
 - **Writes take a validated, allowlisted body** — the schema is the gate (`schemas-and-contracts`).
 
 ## Lifecycle
