@@ -1,6 +1,6 @@
 ---
 name: naming
-description: Use whenever naming or renaming anything — code (functions, hooks, components, variables, booleans, types, Zod schemas, constants, files), test files and fixtures, CSS classes, design tokens and assets (icons/illustrations/logos). Enforces descriptive, verb-first, ownership-revealing names with the house casing, the `<domain>.<kind>.ts` file suffixes, and structured patterns. Apply when writing new code, creating assets/tokens, reviewing names, or refactoring.
+description: Use whenever naming or renaming anything — code (functions, hooks, components, variables, booleans, types, Zod schemas, constants, files), test files and fixtures, API paths, JSON and stored fields, enum values, collections, error codes, analytics events, CSS classes, design tokens and assets. Enforces descriptive, verb-first, ownership-revealing names with the house casing, the `<domain>.<kind>.ts` file suffixes, and structured patterns. Apply when writing new code, creating assets/tokens, reviewing names, or refactoring.
 ---
 
 # Naming
@@ -98,6 +98,20 @@ Builders and fakes follow the function rules: `buildUser`, `createFirestoreFake`
 - **Cache tags** — from one central `CACHE_TAGS` const, `entity:id` grammar (`user:123`).
 - **Redis keys** — from the key-builder catalogue; the grammar is `redis`'s.
 - **Branches** — `type/short-kebab-description` (`feat/`, `fix/`, `docs/`); the rest of the git flow is `ship-changes`'.
+
+## Data, the wire and errors
+
+- **API paths** — plural, `kebab-case` resource nouns (`/api/v1/events/{eventId}/ticket-types`); a verb appears only as a state-transition sub-route (`/publish`). Route structure is `api-architecture`'s.
+- **JSON and stored fields** — `camelCase`, the same name in the store, on the wire and in the type, so no layer translates between them.
+- **Field grammar:**
+  - a timestamp ends in `At` (`createdAt`, `publishedAt`); a calendar date with no time ends in `Date` (`startDate`);
+  - a number with a unit names it (`durationSeconds`, `sizeBytes`, `amountMinor` beside `currency`);
+  - an id ends in `Id` (`ownerId`), a count in `Count` (`attendeeCount`), and a list is plural (`tags`, `memberIds`);
+  - a boolean follows the boolean rules (`isPublished`).
+- **Stored enum values** — lowercase `snake_case` strings (`pending_payment`), never display text and never renamed once stored: the label the UI shows lives in a separate map.
+- **Collections and tables** — plural nouns (`events`, `teamMembers`), from one constants file; a document id is never a display value.
+- **Errors** — a class is `<Situation>Error` (`NotFoundError`, `RecentSignInRequiredError`); the `code` clients branch on is `UPPER_SNAKE_CASE` (`RATE_LIMITED`) and, like an enum value, never changes once shipped.
+- **Analytics events** — `object_action` in `snake_case`, past tense, from one catalogue constant (`event_published`, `ticket_purchased`); their properties are `snake_case` too, matching what analytics tools expect. One name per action across every app, or the funnels split.
 
 ## CSS classes
 
