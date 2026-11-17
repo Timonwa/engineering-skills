@@ -1,14 +1,12 @@
 ---
 name: semantic-html
 description: >-
-  Semantic HTML and JSX markup — element choice, document structure, headings, lists and description lists, tables, forms, dialogs and disclosure, media, and where markup meets JSX and Tailwind. Use when writing or reviewing any markup, building a component, page, form, table or list, or fixing div soup. Triggers on "semantic HTML", "right element", "heading structure", "table markup", "form markup".
+  Semantic HTML and JSX markup — the element that describes the content, landmarks and one outline of headings, lists and description lists, tables, links versus buttons, form markup (labels, fieldsets, input types, autocomplete, button types), dialogs and disclosure, media markup, the document head, and markup under Tailwind and React. Use when writing or reviewing any markup, building a component, page, form, table or list, or fixing div soup.
 ---
 
-# HTML — semantic markup
+# Semantic HTML
 
-Write semantic HTML: pick the element that describes the content, not `<div>`/`<span>`. Semantic markup is the foundation accessibility and SEO build on.
-
-> **Pairs with the `accessibility` skill.** This skill owns the _markup_ (right element, structure, headings, `<dl>`, forms, media). `accessibility` owns the rest — WCAG, ARIA behavior, contrast, focus, keyboard, live regions, and verification. Start here; go there for a11y depth.
+Pick the element that says what the content **is**, then style it. Semantic markup is what assistive technology, search engines, browser features (reader mode, autofill, translation) and the next developer all read; `<div>` and `<span>` are style hooks with no meaning, used only when nothing better fits. This skill owns element choice and structure; how things look, take focus and announce is `accessibility`'s.
 
 ## Project specifics first
 
@@ -17,109 +15,101 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Choosing the right element — decide while writing
+## The right element — decided while writing
 
-Before reaching for `<div>`/`<span>`, ask **"what is this content?"** and pick the element that describes it. `<div>`/`<span>` are last resorts — style hooks with no meaning. If content has structure or meaning, a better element almost always exists. Decide **while writing** the markup, not after review.
+| The content is…                                              | Use                                               | Not                          |
+| ------------------------------------------------------------ | ------------------------------------------------- | ---------------------------- |
+| A label paired with a value (a stat, a spec, metadata)       | `<dl>` with `<dt>` and `<dd>`                     | nested `<span>`s or `<div>`s |
+| A list of similar items                                      | `<ul>` or `<ol>` with `<li>`                      | a stack of `<div>`s          |
+| A themed group of content with a heading                     | `<section>` with its heading                      | a bare `<div>`               |
+| Something that stands on its own (a card, a post, a comment) | `<article>`                                       | `<div>`                      |
+| The page's main content                                      | `<main>`, once per page                           | `<div>`                      |
+| A block of navigation links                                  | `<nav>`                                           | a `<div>` of links           |
+| A search form                                                | `<search>` around the form                        | `<div role="search">`        |
+| The intro or end matter of a page or section                 | `<header>`, `<footer>`                            | `<div>`                      |
+| Content beside the main flow (a sidebar, a callout)          | `<aside>`                                         | `<div>`                      |
+| Emphasis, importance, a highlight                            | `<em>`, `<strong>`, `<mark>`                      | a `<span>` with CSS          |
+| Something that does an action                                | `<button>`                                        | a `<div>` with `onClick`     |
+| Something that goes to a URL                                 | `<a href>`                                        | a `<button>` that navigates  |
+| A quotation, a figure with its caption                       | `<blockquote>`/`<q>`, `<figure>` + `<figcaption>` | `<div>`                      |
+| A date or time                                               | `<time dateTime="…">`                             | `<span>`                     |
+| Contact details for a page or article                        | `<address>`                                       | `<div>`                      |
+| Code, a key to press, an abbreviation                        | `<code>`, `<kbd>`, `<abbr title>`                 | `<span>`                     |
+| Rows and columns of data                                     | `<table>`                                         | a grid of `<div>`s           |
+| Content that opens and closes                                | `<details>` + `<summary>`                         | a `<div>` toggled by a click |
+| A modal or non-modal dialog                                  | `<dialog>`                                        | a hand-built overlay `<div>` |
+| The result of a calculation                                  | `<output>`                                        | `<span>`                     |
 
-| The content is…                                                       | Use                                                | Not                           |
-| --------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------- |
-| A label paired with a value (stat, metric, spec, key→value, glossary) | `<dl>` + `<dt>` (label) + `<dd>` (value)           | nested `<span>`/`<div>`       |
-| A list of similar items                                               | `<ul>`/`<ol>` + `<li>`                             | a stack of `<div>`s           |
-| A titled, thematic group of content                                   | `<section>` with a heading (`<h2>`–`<h6>`)         | a bare `<div>`                |
-| Self-contained, standalone content                                    | `<article>`                                        | `<div>`                       |
-| The page's primary content                                            | `<main>` (one per page)                            | `<div>`                       |
-| Site/section navigation                                               | `<nav>`                                            | a `<div>` of links            |
-| Intro / masthead of a page or section                                 | `<header>`                                         | `<div>`                       |
-| End matter (author, links, copyright)                                 | `<footer>`                                         | `<div>`                       |
-| Tangential / complementary content (sidebar, callout)                 | `<aside>`                                          | `<div>`                       |
-| Text needing emphasis / importance                                    | `<em>` / `<strong>`                                | `<span>` + CSS                |
-| A clickable action                                                    | `<button>`                                         | `<div>`/`<span>` + onClick    |
-| A link to a URL                                                       | `<a href>`                                         | `<div>` + onClick             |
-| A quotation                                                           | `<blockquote>` / `<q>`                             | `<div>`                       |
-| A figure + caption                                                    | `<figure>` + `<figcaption>`                        | `<div>`                       |
-| A date or time                                                        | `<time dateTime="…">`                              | `<span>`                      |
-| Tabular data (rows × columns)                                         | `<table>` + `<caption>` + `<thead>` + `<th scope>` | a grid of `<div>`s            |
-| Collapsible/disclosure content                                        | `<details>` + `<summary>`                          | `<div>` + onClick toggle      |
-| A modal or popup dialog                                               | `<dialog>` (+ `showModal()`)                       | a hand-rolled `<div>` overlay |
+- **A `<span>` never contains a `<span>`.** HTML allows it, but it's always a sign the content has structure the markup isn't saying: make the pieces siblings, or use the element the content is.
+- **A link or a button, by what happens.** Going somewhere — a new URL, another page, a section of this one, a filter "pill" that changes the URL — is a link. Changing something here — submitting, opening, toggling, deleting — is a button. A pill row that navigates is a `<nav>` of links with the current one marked (`accessibility`), never toggle buttons or tabs. The exceptions keep their own patterns even when their state is in the URL: tabs that switch panels on the same page are a tab list, and a control that opens a dialog or drawer is a button (`react` keeps their state in the URL).
+- **Layout never justifies a `<div>`.** A `<ul>`, `<dl>`, `<section>` or `<nav>` can be the flex or grid container itself.
 
-### Label → value pairs are a description list
+## Structure
 
-Any "label + value" grouping — stats, counters, metadata, specs — is a **`<dl>`**, not nested spans/divs:
+- **Landmarks:** one `<main>`, `<header>` and `<footer>` for the page's banner and footer, `<nav>` for each navigation block — each labelled (`aria-label`) when there's more than one — and `<aside>` for complementary content. Everything visible sits inside a landmark.
+- **One outline of headings.** One `<h1>` per page, naming it; then `<h2>` for its sections and `<h3>` for parts of those, never skipping a level. Size comes from CSS, never from picking a heading level. The HTML "outline algorithm" was never implemented, so nesting a `<section>` doesn't change a heading's level.
+- **A `<section>` has a heading**, and is named by it (`aria-labelledby`); a group with no heading is a `<div>`. A heading that would repeat what's visible is kept, visually hidden, rather than dropped.
 
-```jsx
-<dl>
-  {stats.map((s) => (
-    <div key={s.label}>   {/* a single wrapper div per pair is allowed in <dl> */}
-      <dt>{s.label}</dt>  {/* term / label */}
-      <dd>{s.value}</dd>  {/* value / description */}
-    </div>
-  ))}
-</dl>
-```
+## Lists and description lists
 
-- `<dt>` comes **before** `<dd>` in the DOM. To show the value visually on top, reorder with CSS (`flex-col-reverse`), never by swapping DOM order.
-- A group is a `<dt>`/`<dd>` pair directly under `<dl>`, or wrapped in **one** `<div>` — no deeper nesting.
-- Extra detail about the value (a hint, unit) goes **inside** the `<dd>`, never as a third sibling.
+- **A label and its value are a `<dl>`.** `<dt>` comes before its `<dd>` in the DOM; to show the value on top, reorder with CSS (`flex-col-reverse`), never the DOM — safe here because nothing in a `<dl>` takes focus, so the reading order and the visual order can't mislead. A pair sits directly in `<dl>` or inside one `<div>` — nothing deeper — and a hint or unit goes inside the `<dd>`.
 
-### Tabular data is a `<table>`
+  ```tsx
+  <dl>
+    {stats.map((stat) => (
+      <div key={stat.label}>
+        <dt>{stat.label}</dt>
+        <dd>{stat.value}</dd>
+      </div>
+    ))}
+  </dl>
+  ```
 
-Dashboards are the most-div-souped surface. Rows-by-columns data — anything a user would sort, scan across, or compare — is a `<table>`: `<caption>` names it, `<thead>` holds the header row, every header cell is `<th scope="col">` (or `scope="row"` for row headers). A CSS-grid of `<div>`s loses header association for screen readers and can't be recovered with ARIA patchwork. Use grid/flex `<div>`s only for card layouts, where each item is a self-contained `<article>`, not a row.
+- **A list styled without bullets stays a list.** Tailwind's reset removes list markers, and Safari then stops announcing some lists; a `<ul>` or `<ol>` that must be read as a list takes `role="list"`.
 
-### Dialogs and disclosure are native elements
+## Tables
 
-- **`<dialog>`** with `showModal()` gives you focus trapping, `Escape`, `::backdrop`, and top-layer stacking for free — prefer it to hand-rolled overlays (behavior depth → `accessibility`, component design → `reusables`).
-- **`<details>`/`<summary>`** is the native accordion/disclosure — keyboard and screen-reader support included; reach for a custom component only when you need animation or exclusive-open groups it can't express.
-
-### Every content group needs a heading
-
-Each region (`<section>`/`<article>`) starts with a heading (`<h2>`–`<h6>`) so the page has a real outline. Keep levels **sequential** (`<h1>` page title → `<h2>` sections → `<h3>` sub-parts); never skip a level for visual size — size with CSS. One `<h1>` per page.
-
-```jsx
-<section aria-labelledby="counts-h">
-  <h2 id="counts-h">Counts</h2>
-  <dl>…</dl>
-</section>
-```
-
-- A `<section>` needs an accessible name: a heading via `aria-labelledby`, or `aria-label` when there's no visible heading. An unlabeled `<section>` is just a `<div>`.
-
-### Anti-patterns to avoid
-
-- **`<span>` inside `<span>`**, or stacks of `<div>`, for content that has structure — use `<dl>`, a list, or headings.
-- **`<div>` where a list / `<dl>` / heading fits** — "div soup" is meaningless to assistive tech and search engines.
-- **`<section>` with no heading or accessible name** — use `<div>` if it's purely layout.
-- **Skipped heading levels** — keep them sequential; use CSS for size.
-- **Clickable `<div>`/`<span>`** — use `<button>` (action) or `<a href>` (navigation).
-
-### In React / JSX
-
-Components are functions that emit HTML — the same rules apply to their output. A "card" or "list" component renders `<article>`/`<section>`/`<dl>`/`<ul>` as appropriate, not a default `<div>`. **Prefer native elements over ARIA `role=`; reach for ARIA only when no native element fits** (see `accessibility`).
+Rows of data someone would scan across, compare or sort are a `<table>`: a `<caption>` names it, `<thead>` holds the header row, each header cell is `<th scope="col">` (or `scope="row"` for a row's header), and the body is `<tbody>`. A CSS grid of `<div>`s loses the link between cell and header, and no ARIA brings it back. Cards in a grid are `<article>`s in a `<ul>`, not rows. A sortable column's header holds a `<button>`, and the header carries `aria-sort`.
 
 ## Forms
 
-- `<form>` with proper `action`/`method`; associate every input with a label (`<label htmlFor>` or a wrapping `<label>`); use the right input `type` (`email`/`tel`/`number`/…); group related controls with `<fieldset>` + `<legend>`; add validation attributes (`required`, `pattern`, `min`, `max`). Error/label a11y depth → `accessibility`.
+- **Every control has a `<label>`**, tied by `htmlFor` and `id` or by wrapping it. A placeholder is a hint, never the label.
+- **Related controls are a `<fieldset>` with a `<legend>`** — a radio group, a set of checkboxes, a row of toggle buttons that pick one option, an address block.
+- **The right input `type`** (`email`, `tel`, `url`, `number`, `date`, `search`) and `inputmode` for the keyboard, so phones show the right one; a number that isn't a quantity — a card number, an account number, an OTP — is `type="text"` with `inputmode="numeric"`, and a phone number is `type="tel"`.
+- **`autocomplete` on every field about the person** (`name`, `email`, `tel`, `street-address`, `postal-code`, `new-password`, `current-password`), from the HTML standard's list — autofill works, and WCAG 1.3.5 requires it for fields about the person — plus `one-time-code` on a code field, which isn't required but lets the phone fill it.
+- **Constraint attributes stay** (`required`, `minLength`, `min`, `max`, `pattern`) even when the app validates with its own messages: they describe the field. The form takes `noValidate` so the browser's bubbles don't compete with the app's (`schemas-and-contracts`).
+- **Every `<button>` states its `type`.** A button inside a form submits by default, so anything that isn't the submit is `type="button"`.
+- **A form that changes data is a `<form>`** with an action — a Server Action in Next.js (`nextjs`) — so Enter submits it and it works before scripts load.
+
+How labels are read, and how errors are shown and announced, is `accessibility`'s.
+
+## Dialogs and disclosure
+
+- **A dialog is `<dialog>`**, opened with `showModal()` for a modal (the browser handles the top layer, `::backdrop`, Escape and inertness) or `show()` for a non-modal one. A lighter popup with no backdrop — a menu, a tooltip-like panel — uses the `popover` attribute.
+- **Content that opens and closes is `<details>` and `<summary>`**; `name` on several `<details>` makes an exclusive accordion. A custom component only when the design needs what they can't do.
+- Focus behaviour, return focus and live announcements are `accessibility`'s; a reusable dialog's API is `reusables`'.
 
 ## Media
 
-- **Images:** always `alt` — descriptive for informative, `alt=""` for decorative; `srcset`/`sizes` for responsive; `width`/`height` to prevent layout shift; `loading="lazy"` below the fold — but **never lazy-load the LCP (hero) image**: it loads eagerly with `fetchpriority="high"` (in Next, `next/image` with `priority` → `nextjs`).
-- **`autocomplete`** on inputs collecting user data (`name`, `email`, `postal-code`, …) — browsers autofill correctly and WCAG 1.3.5 requires it on common fields.
-- **Video/audio:** captions + transcripts; multiple source formats; `poster` for video; avoid autoplay with sound.
+- **Every `<img>` has `alt`**; what it says is `accessibility`'s. It also has `width` and `height` (or an aspect ratio in CSS) so the page doesn't shift as it loads, and `srcset` with `sizes` for responsive sources; `<picture>` only to switch formats or crops.
+- **Images below the fold load lazily (`loading="lazy"`); the largest image in view never does** — it loads eagerly with `fetchpriority="high"`. In Next.js that's `next/image` with `loading="eager"` or `fetchPriority="high"` (`priority` is deprecated from Next 16) — `nextjs`.
+- **An `<iframe>` has a `title`** naming what it holds (a map, a video), and a table too wide for the screen sits in a scroll container that's labelled and reachable by keyboard (`tabindex="0"`, `role="region"`, `aria-label`).
+- **Video and audio** have `controls`, a `poster` for video, and a `<track kind="captions">`; nothing autoplays with sound.
 
-## Document meta
+## The document
 
-`<!DOCTYPE html>`, `<html lang>`, a viewport meta tag, and appropriate SEO meta tags.
+`<!doctype html>`; `<html lang>` with the page's language; `<meta charset="utf-8">`; a viewport meta of `width=device-width, initial-scale=1` that never limits zoom; a unique `<title>`. In Next.js the framework writes most of these from the root layout and the Metadata API (`nextjs`, `seo`).
 
-## Styling (Tailwind)
+## In React and Tailwind
 
-Utility classes are **presentational only** — they never change what an element _means_. Keep markup semantic and add classes to it; don't reach for a `<div>` because it's convenient to style.
+- **A component's output follows the same rules.** A card renders an `<article>`, a list a `<ul>`, a stat block a `<dl>` — never a default `<div>`. A fragment, not a wrapper `<div>`, when a component returns siblings. JSX writes `htmlFor` and `className`, and a component that wraps a native element passes its attributes through (`reusables`).
+- **Utility classes never change meaning.** Style the semantic element directly (`<section className>`); don't wrap it in styled `<div>`s. `sr-only` keeps text for assistive technology while hiding it visually (`tailwind`).
 
-- Style the semantic element directly (`<section className>`, `<dl className>`, `<button className>`) instead of wrapping it in styled `<div>`s.
-- Layout (flex/grid) never justifies div soup — a `<section>`, `<ul>`, `<dl>`, or `<nav>` can be the flex/grid container itself.
-- Use `sr-only` for visually-hidden but accessible text (e.g. a `<section>`'s accessible-name heading that would otherwise be visually redundant).
-- (Tokens, dark mode, the `ui:` prefix → `tailwind`.)
+## Do / Don't
 
-## ARIA — prefer native
+- **Do** ask what the content is before typing a tag; use landmarks and one heading outline; put label–value pairs in a `<dl>` and data in a `<table>`; label every control; group related controls in a `<fieldset>`; give every button a `type`; use `<dialog>` and `<details>`; size every image.
+- **Don't** nest a `<span>` in a `<span>`; make a `<div>` clickable; navigate with a button or act with a link; skip a heading level for size; leave a `<section>` without a heading; lay out data in a grid of `<div>`s; use a placeholder as a label; lazy-load the main image.
 
-Prefer native HTML over ARIA; reach for ARIA only when no native element fits, and make it match the element's real behavior. The markup basics live here (`alt`, `<label htmlFor>`, `aria-label` for icon-only controls). **Everything deeper — roles, states, landmarks, live regions, contrast, focus, keyboard — is the `accessibility` skill.**
+## Related skills
 
-> **Audit:** review this domain on demand with the manually-invoked `accessibility-audit` command (see `audit-all` for the whole suite).
+Focus, keyboard, contrast, ARIA states and announcements `accessibility` · a reusable component's API and focus handling `reusables` · Tailwind and `sr-only` `tailwind` · images, forms and metadata in Next.js `nextjs` · titles and structured data `seo` · form schemas `schemas-and-contracts` · the review `accessibility-audit`.
