@@ -67,7 +67,7 @@ Per `api-architecture` and `nextjs`, for the app's shape:
 - **Service and data** (own backend, API app) — one service file per resource holding the business logic, the only caller of its `data/` file; typed errors, no transport concerns.
 - **Route** (API app) — the house route order, a guard, a rate limit, a docs entry (`openapi-registry`) and a colocated `route.test.ts`, in the same change.
 - **API read** (frontend over an API) — a `data/` read through the project's typed fetcher, cached per `nextjs`.
-- **Server Action** — validates with the schema and answers with an action result, never a thrown error; every mutation calls `updateTag` on what it changed and `refresh()` beside it. In an app with its own backend the action checks the caller itself; over a separate API, the API's guard is the real check (`access-control`).
+- **Server Action** — validates with the schema and answers with an action result, never a thrown error; every mutation calls `updateTag` on what it changed, which re-renders the route and clears the client cache (`nextjs`). In an app with its own backend the action checks the caller itself; over a separate API, the API's guard is the real check (`access-control`).
 
 ## Step 5 — Page and components
 
