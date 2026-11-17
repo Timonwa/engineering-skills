@@ -31,11 +31,11 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Every source is untrusted** — search params, route params, `location`, `document.referrer`, `postMessage` data, API responses, and pasted or dropped HTML (`getData("text/html")`).
 - **Server rendering doesn't sanitise.** Data a Server Component puts into a hand-built HTML string is as dangerous as any other; render through JSX, and sanitise any HTML string wherever it renders.
 - **DOM clobbering:** sanitised HTML can still carry `id` and `name` values that shadow globals — keep DOMPurify's `SANITIZE_DOM` on, add `SANITIZE_NAMED_PROPS`, and never look up user HTML by name.
-- **JSON-LD** goes through `seo`'s component, which escapes `<` so a value can't close the script tag.
+- **JSON-LD** goes through `seo-aeo-geo`'s component, which escapes `<` so a value can't close the script tag.
 
 ## Security headers
 
-**Each app sends the same baseline on every response, from its own `next.config` `headers()`, matched on `/:path*`.** The block is written out in each app and changed in all of them in the same change, so no app drifts; an app adds only what's its own (`X-Robots-Tag`, `seo`).
+**Each app sends the same baseline on every response, from its own `next.config` `headers()`, matched on `/:path*`.** The block is written out in each app and changed in all of them in the same change, so no app drifts; an app adds only what's its own (`X-Robots-Tag`, `seo-aeo-geo`).
 
 | Header                         | Value                                                                      | Why                                                                                   |
 | ------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
@@ -105,4 +105,4 @@ The headers block, both CSP setups and the sanitiser are in [references/frontend
 
 ## Related skills
 
-Server-side threats, CSRF and Server Actions `backend-security` · the session cookie `auth` · public values and tiers `env` · the safe URL schema `schemas-and-contracts` · consent before scripts `cookie-consent` · proxy and rendering `nextjs` · indexing headers `seo` · uploads `image-handling` · dependency gates `devops` · a full review `security-audit`.
+Server-side threats, CSRF and Server Actions `backend-security` · the session cookie `auth` · public values and tiers `env` · the safe URL schema `schemas-and-contracts` · consent before scripts `cookie-consent` · proxy and rendering `nextjs` · indexing headers `seo-aeo-geo` · uploads `image-handling` · dependency gates `devops` · a full review `security-audit`.

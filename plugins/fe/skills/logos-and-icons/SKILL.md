@@ -86,17 +86,17 @@ Every raster icon is **opaque**: the brand icon sits on a square plate of a bran
 
 The modern set is a handful of files, every raster rendered **from the SVG**:
 
-| File                             | Size       | For                                                                                                              |
-| -------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `logo.svg`, `logo-dark.svg`      | vector     | the primary logo, per background                                                                                 |
-| `icon.svg`                       | vector     | the brand icon — the source of every raster, and the browser tab's favicon                                       |
-| `favicon.ico`                    | 16, 32, 48 | browsers and Google Search, which reads only raster favicons (ICO, PNG…)                                         |
-| `icon.png`                       | 96 or 192  | a linked raster above 48px, which Google prefers — a multiple of 48                                              |
-| `icon-512.png`                   | 512        | avatars, social profiles, the Organization `logo` in structured data (112px or more; a raster is safest — `seo`) |
-| `apple-icon.png`                 | 180        | iOS home-screen bookmarks                                                                                        |
-| PNG copies of each mark          | as used    | email, which drops SVG — Gmail strips it and Outlook never rendered it (`transactional-email`)                   |
-| `icon-192.png`, maskable 192/512 | 192, 512   | **only** a web app with a manifest, or one that installs                                                         |
-| `icon-mono.svg`                  | vector     | **only** Android themed icons, embroidery, single-colour print                                                   |
+| File                             | Size       | For                                                                                                                      |
+| -------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `logo.svg`, `logo-dark.svg`      | vector     | the primary logo, per background                                                                                         |
+| `icon.svg`                       | vector     | the brand icon — the source of every raster, and the browser tab's favicon                                               |
+| `favicon.ico`                    | 16, 32, 48 | browsers and Google Search, which reads only raster favicons (ICO, PNG…)                                                 |
+| `icon.png`                       | 96 or 192  | a linked raster above 48px, which Google prefers — a multiple of 48                                                      |
+| `icon-512.png`                   | 512        | avatars, social profiles, the Organization `logo` in structured data (112px or more; a raster is safest — `seo-aeo-geo`) |
+| `apple-icon.png`                 | 180        | iOS home-screen bookmarks                                                                                                |
+| PNG copies of each mark          | as used    | email, which drops SVG — Gmail strips it and Outlook never rendered it (`transactional-email`)                           |
+| `icon-192.png`, maskable 192/512 | 192, 512   | **only** a web app with a manifest, or one that installs                                                                 |
+| `icon-mono.svg`                  | vector     | **only** Android themed icons, embroidery, single-colour print                                                           |
 
 `sharp` renders each raster from the SVG onto its plate, and a few lines pack PNGs into `favicon.ico` ([references/rendering.md](references/rendering.md)). In a Next.js app, `icon` and `apple-icon` files in `app/` become the `<link>` tags by name; `favicon.ico` goes in `public/`, declared through `metadata.icons` with `sizes: "32x32"` — the file convention marks it `sizes="any"`, which lets Chrome pick it over the theme-aware SVG (`code-structure`'s `references/next-files.md`); everything a manifest or a URL references goes in `public/`.
 
@@ -129,4 +129,4 @@ The modern set is a handful of files, every raster rendered **from the SVG**:
 
 ## Related skills
 
-Clear space, colour tokens and visual identity `design-system` · the Organization logo in structured data `seo` · metadata file names `code-structure` · email images `transactional-email` · contrast and names `accessibility` · file and asset names `naming` · other hand-drawn SVGs and diagrams `tw:images-and-diagrams`.
+Clear space, colour tokens and visual identity `design-system` · the Organization logo in structured data `seo-aeo-geo` · metadata file names `code-structure` · email images `transactional-email` · contrast and names `accessibility` · file and asset names `naming` · other hand-drawn SVGs and diagrams `tw:images-and-diagrams`.

@@ -55,16 +55,16 @@ All source sits under `src/`, with the path alias `@/*` → `./src/*`.
 
 **Strictly kind-first, and flat inside each kind.** Every top-level folder is a _kind_ — exactly one folder per kind, never a domain or feature folder at the `lib/` root, never a mini `hooks/` or `types/` rebuilt inside a feature, no loose files at the root. **The domain is a filename prefix, not a subfolder**: `constants/auth.constant.ts`, not `constants/auth/index.ts`.
 
-| Kind         | Grammar                | Holds                                                                            |
-| ------------ | ---------------------- | -------------------------------------------------------------------------------- |
-| `config/`    | bare names             | one-per-app settings: `env`, `routes`, `endpoints`, `site`                       |
-| `constants/` | `<domain>.constant.ts` | frozen domain values; the const and its inferred type together                   |
-| `data/`      | `<domain>.data.ts`     | static content records — pricing tiers, FAQs, team                               |
-| `hooks/`     | `use-<subject>.ts`     | one hook per file, named for what it gives you                                   |
-| `schemas/`   | `<domain>.schema.ts`   | Zod schemas with their inferred types, in the same file                          |
-| `seo/`       | bare names             | the app's metadata factory and structured-data builders; what goes in is `seo`'s |
-| `types/`     | `<domain>.type.ts`     | shapes with no const or schema behind them                                       |
-| `utils/`     | `<domain>.utils.ts`    | pure helpers; a single-function file may keep a bare name (`cn.ts`)              |
+| Kind         | Grammar                | Holds                                                                                    |
+| ------------ | ---------------------- | ---------------------------------------------------------------------------------------- |
+| `config/`    | bare names             | one-per-app settings: `env`, `routes`, `endpoints`, `site`                               |
+| `constants/` | `<domain>.constant.ts` | frozen domain values; the const and its inferred type together                           |
+| `data/`      | `<domain>.data.ts`     | static content records — pricing tiers, FAQs, team                                       |
+| `hooks/`     | `use-<subject>.ts`     | one hook per file, named for what it gives you                                           |
+| `schemas/`   | `<domain>.schema.ts`   | Zod schemas with their inferred types, in the same file                                  |
+| `seo/`       | bare names             | the app's metadata factory and structured-data builders; what goes in is `seo-aeo-geo`'s |
+| `types/`     | `<domain>.type.ts`     | shapes with no const or schema behind them                                               |
+| `utils/`     | `<domain>.utils.ts`    | pure helpers; a single-function file may keep a bare name (`cn.ts`)                      |
 
 - **`schemas/`, `constants/` and `types/` each own their inferred type.** `types/` holds only what neither a schema nor a const produces; re-declaring one there is how the kinds drift. How schemas are written is `schemas-and-contracts`'.
 - **Every kind has a barrel with one explicit export line per file** (`@/lib/<kind>`), never `export *` from a directory — a wildcard hides what joined it.

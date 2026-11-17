@@ -4,11 +4,11 @@ Behind the "Programmatic SEO" section of `SKILL.md`. Generating many templated p
 
 ## The modern guardrail (read first)
 
-Google's 2024 policies are the line pSEO must not cross:
+Google's spam policies are the line pSEO must not cross:
 
 - **Scaled content abuse** — mass-producing pages (templated, AI-generated, or scraped) primarily to manipulate rankings, with little added value. Covers auto-translated and lightly-varied pages.
 - **Site reputation abuse** ("parasite SEO") — third-party pages published on a strong domain to exploit its ranking.
-- **Helpful Content system** — sitewide signal; a mass of unhelpful pages can drag down the whole site.
+- **Helpfulness, judged by the core ranking systems** — the separate helpful content system was folded into them in 2024; a mass of unhelpful pages can still drag down the whole site.
 
 If a batch of pages wouldn't satisfy a real user on its own, it's a liability, not an asset.
 
@@ -75,7 +75,7 @@ Playbooks can layer (e.g. Curation + Locations — "Best coworking spaces in San
 ## QA
 
 - **Pre-launch**: unique title/description per page, correct heading structure, schema where relevant, page speed, crawlable, no conflicting `noindex`.
-- **Post-launch**: indexation rate, rankings, traffic, engagement, conversion; watch for thin-content/Helpful-Content warnings, ranking drops, manual actions, crawl errors.
+- **Post-launch**: indexation rate, rankings, traffic, engagement, conversion; watch for thin-content signals, ranking drops, manual actions, crawl errors.
 
 ## Common mistakes
 

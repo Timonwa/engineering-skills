@@ -260,7 +260,7 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 ```
 
-The layout never reads the session; a route group's layout gates behind `<Suspense>` (`auth`). Richer metadata (templates, OG, canonicals) → `lib/seo/` and `seo`, when that extra was selected.
+The layout never reads the session; a route group's layout gates behind `<Suspense>` (`auth`). Richer metadata (templates, OG, canonicals) → `lib/seo/` and `seo-aeo-geo`, when that extra was selected.
 
 ### `src/app/page.tsx` — make it a thin entry
 

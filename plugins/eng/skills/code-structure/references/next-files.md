@@ -26,7 +26,7 @@ The files Next.js reads by name, where each sits, and what the house puts in it.
 
 ## Metadata files
 
-`opengraph-image`, `twitter-image`, `icon`, `apple-icon`, `favicon.ico`, `sitemap`, `robots` and `manifest` are also read by name, from `app/` or a segment. A generated one (`.tsx`, `.ts`) builds its content from `lib/`; what goes in it is `seo`'s and `logos-and-icons`'.
+`opengraph-image`, `twitter-image`, `icon`, `apple-icon`, `favicon.ico`, `sitemap`, `robots` and `manifest` are also read by name, from `app/` or a segment. A generated one (`.tsx`, `.ts`) builds its content from `lib/`; what goes in it is `seo-aeo-geo`'s and `logos-and-icons`'.
 
 ## Beside app/
 

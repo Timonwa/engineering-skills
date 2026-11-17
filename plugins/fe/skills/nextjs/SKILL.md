@@ -73,7 +73,7 @@ The house model is **Cache Components** (`cacheComponents: true`): a page is a s
 
 ## Metadata
 
-- **`metadata`** for static values, **`generateMetadata`** when they depend on data, sharing the page's read through `cache()`. What goes in them is `seo`'s; the metadata files (`opengraph-image`, `sitemap`, `robots`) are `code-structure`'s.
+- **`metadata`** for static values, **`generateMetadata`** when they depend on data, sharing the page's read through `cache()`. What goes in them is `seo-aeo-geo`'s; the metadata files (`opengraph-image`, `sitemap`, `robots`) are `code-structure`'s.
 - **`ImageResponse`** renders a flexbox subset of CSS (no grid) and only the fonts passed to it, fetched explicitly; keep its output deterministic so it caches.
 
 ## Errors and after the response
@@ -113,4 +113,4 @@ The house model is **Cache Components** (`cacheComponents: true`): a page is a s
 
 ## Related skills
 
-Files and folders `code-structure` · React `react` · sessions and the current user `auth` · the API the app reads `api-architecture` · schemas and action results `schemas-and-contracts` · env `env` · headers and CSP `frontend-security` · metadata and OG images `seo` · images `image-handling` · flags `feature-flags` · the audits `frontend-audit`, `performance-audit` · adopting Cache Components `next-cache-components-adoption`, tuning it `next-cache-components-optimizer`, partial prefetching `next-partial-prefetching-adoption`, checking a change in the running app `next-dev-loop` (all official).
+Files and folders `code-structure` · React `react` · sessions and the current user `auth` · the API the app reads `api-architecture` · schemas and action results `schemas-and-contracts` · env `env` · headers and CSP `frontend-security` · metadata and OG images `seo-aeo-geo` · images `image-handling` · flags `feature-flags` · the audits `frontend-audit`, `performance-audit` · adopting Cache Components `next-cache-components-adoption`, tuning it `next-cache-components-optimizer`, partial prefetching `next-partial-prefetching-adoption`, checking a change in the running app `next-dev-loop` (all official).

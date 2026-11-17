@@ -13,40 +13,37 @@ Behind the "Structured data" section of `SKILL.md`. Rendered via the `<JsonLd>` 
 
 ## What actually earns rich results today
 
-- **Live for most sites**: `Product` (offers/price), `Breadcrumb`, `Article`/`NewsArticle`, `Recipe`, `Review`/`AggregateRating` (genuine UGC only), `Event`, `VideoObject`, `Organization` (knowledge panel signals), `LocalBusiness`.
-- **No longer rich results for most sites** (use only for entity understanding, don't promise SERP features): **`FAQPage`** (restricted to authoritative gov/health since Aug 2023) and **`HowTo`** (deprecated 2023).
+- **Still shown**, where eligible: `Product`, `BreadcrumbList`, `Article`, `Event`, `VideoObject`, `Organization` (logo and knowledge panel), `LocalBusiness`, `ProfilePage`, `DiscussionForumPosting`, `SoftwareApplication`, and review snippets (genuine reviews only). Google's search gallery is the current list; check it before promising a feature.
+- **Gone from Google Search**: **`FAQPage`** rich results (no longer shown from May 2026, documentation removed), **`HowTo`** (removed 2023) and the **sitelinks search box** (`WebSite` `SearchAction`, removed November 2024). The markup is harmless but earns nothing there.
 - **Never self-author `aggregateRating`/`review`** on your own Product/Organization/LocalBusiness — self-serving reviews violate Google's guidelines. Only mark up genuine, user-generated ratings.
 
 ## Required vs recommended (durable types)
 
-- **Organization** — req `name`, `url`; rec `logo`, `sameAs`, `contactPoint`.
-- **WebSite** — `url`, `name`; optional `SearchAction` (sitelinks search box).
-- **Article / BlogPosting** — req `headline`, `image`, `datePublished`, `author`; rec `dateModified`, `publisher`, `description`, `mainEntityOfPage`.
-- **Product** — req `name`, `image`, `offers` (`price` + `priceCurrency` + `availability`); rec `sku`, `brand`, and only-if-genuine `aggregateRating`/`review`.
-- **SoftwareApplication** — for SaaS/app pages; req `name`, `offers`; rec `applicationCategory` (e.g. `BusinessApplication`), `operatingSystem` (e.g. `Web`), and only-if-genuine `aggregateRating`.
-- **BreadcrumbList** — req `itemListElement` (`position`, `name`, `item`).
+- **Organization** — no required properties; rec `name`, `url`, `logo` (at least 112×112px in a format Google Images supports — a raster is safest — crawlable and legible on white, `logos-and-icons`), `sameAs`, `contactPoint`.
+- **WebSite** — `url`, `name` (the site name Google shows); no `SearchAction`.
+- **Article / BlogPosting** — no required properties; rec `headline`, `image`, `datePublished`, `author`, `dateModified`, `publisher`, `description`, `mainEntityOfPage`.
+- **Product** — req `name`, `image`, `offers` (`price` + `priceCurrency`); rec `availability`, `sku`, `brand`, and only-if-genuine `aggregateRating`/`review`. A merchant listing needs a price above zero.
+- **SoftwareApplication** — for SaaS/app pages; req `name`, `offers.price`, and one of `aggregateRating` or `review` — genuine only, so a page without real ratings is never eligible for the rich result; rec `applicationCategory` (e.g. `BusinessApplication`), `operatingSystem` (e.g. `Web`).
+- **BreadcrumbList** — req `itemListElement` (`position`, `name`, `item`). The rich result shows on desktop only.
 - **LocalBusiness** — req `name`, `address`; rec `geo`, `openingHoursSpecification`, `telephone`, `priceRange`.
-- **Event** — req `name`, `startDate`, `location`; rec `endDate`, `eventAttendanceMode`, `eventStatus`, `offers`, `performer`, `organizer`.
+- **Event** — req `name`, `startDate`, `location`; rec `endDate`, `eventStatus`, `offers` (with `url` to the ticket page), `performer`, `organizer`, `image`. Eligible only for an event at a physical location, bookable by the general public (not members- or invitation-only), one event per page; the online-event properties were removed in 2025.
 
 ## Examples
 
 Organization + WebSite as a connected graph (sitewide, in the root layout):
 
 ```ts
-const ORG_ID = `${siteConfig.url}/#org`;
+const ORG_ID = `${SITE.url}/#org`;
 
 export function organizationSchema() {
   return { "@context": "https://schema.org", "@type": "Organization", "@id": ORG_ID,
-    name: siteConfig.name, url: siteConfig.url, logo: `${siteConfig.url}/logo.svg`,
-    sameAs: siteConfig.socials,
+    name: SITE.name, url: SITE.url, logo: `${SITE.url}/icon-512.png`, // a raster on its plate, ≥112px
+    sameAs: SITE.socials,
     contactPoint: { "@type": "ContactPoint", email: "hello@acme.com", contactType: "customer support" } };
 }
 export function websiteSchema() {
-  return { "@context": "https://schema.org", "@type": "WebSite", "@id": `${siteConfig.url}/#website`,
-    url: siteConfig.url, name: siteConfig.name, publisher: { "@id": ORG_ID },
-    potentialAction: { "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${siteConfig.url}/search?q={q}` },
-      "query-input": "required name=q" } };
+  return { "@context": "https://schema.org", "@type": "WebSite", "@id": `${SITE.url}/#website`,
+    url: SITE.url, name: SITE.name, publisher: { "@id": ORG_ID } };
 }
 ```
 
@@ -56,11 +53,11 @@ Article:
 export function articleSchema(post: Post) {
   return { "@context": "https://schema.org", "@type": "BlogPosting",
     headline: post.title, description: post.excerpt,
-    image: new URL(post.cover, siteConfig.url).toString(),
+    image: new URL(post.cover, SITE.url).toString(),
     datePublished: post.publishedAt, dateModified: post.updatedAt ?? post.publishedAt,
-    author: { "@type": "Person", name: post.author, url: `${siteConfig.url}/about` },
-    publisher: { "@id": `${siteConfig.url}/#org` },
-    mainEntityOfPage: new URL(post.path, siteConfig.url).toString() };
+    author: { "@type": "Person", name: post.author, url: `${SITE.url}/about` },
+    publisher: { "@id": `${SITE.url}/#org` },
+    mainEntityOfPage: new URL(post.path, SITE.url).toString() };
 }
 ```
 
@@ -68,11 +65,11 @@ Product (offer, no self-serving rating):
 
 ```ts
 export function productSchema(p: Product) {
-  const url = new URL(`/shop/${p.slug}`, siteConfig.url).toString();
+  const url = new URL(`/shop/${p.slug}`, SITE.url).toString();
   return { "@context": "https://schema.org", "@type": "Product",
     name: p.name, description: p.summary,
-    image: p.images.map((s) => new URL(s, siteConfig.url).toString()),
-    brand: { "@type": "Brand", name: siteConfig.name }, url,
+    image: p.images.map((s) => new URL(s, SITE.url).toString()),
+    brand: { "@type": "Brand", name: SITE.name }, url,
     offers: { "@type": "Offer", price: p.price, priceCurrency: "USD",
       availability: "https://schema.org/InStock", url } };
 }
@@ -83,12 +80,13 @@ SoftwareApplication (SaaS/app pages — the product page of a web app):
 ```ts
 export function softwareApplicationSchema() {
   return { "@context": "https://schema.org", "@type": "SoftwareApplication",
-    name: siteConfig.name, applicationCategory: "BusinessApplication", operatingSystem: "Web",
-    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } };  // no self-authored aggregateRating
+    name: SITE.name, applicationCategory: "BusinessApplication", operatingSystem: "Web",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } };
+  // eligible for the rich result only with a genuine aggregateRating or review — never self-authored
 }
 ```
 
-FAQPage — structurally valid, but **no rich result for most sites** (keep only if you want the entity understanding):
+FAQPage — structurally valid, but **no rich result in Google Search** any more; keep it only if another consumer uses it:
 
 ```ts
 export function faqSchema(items: { q: string; a: string }[]) {

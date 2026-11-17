@@ -98,7 +98,7 @@ How labels are read, and how errors are shown and announced, is `accessibility`'
 
 ## The document
 
-`<!doctype html>`; `<html lang>` with the page's language; `<meta charset="utf-8">`; a viewport meta of `width=device-width, initial-scale=1` that never limits zoom; a unique `<title>`. In Next.js the framework writes most of these from the root layout and the Metadata API (`nextjs`, `seo`).
+`<!doctype html>`; `<html lang>` with the page's language; `<meta charset="utf-8">`; a viewport meta of `width=device-width, initial-scale=1` that never limits zoom; a unique `<title>`. In Next.js the framework writes most of these from the root layout and the Metadata API (`nextjs`, `seo-aeo-geo`).
 
 ## In React and Tailwind
 
@@ -112,4 +112,4 @@ How labels are read, and how errors are shown and announced, is `accessibility`'
 
 ## Related skills
 
-Focus, keyboard, contrast, ARIA states and announcements `accessibility` · a reusable component's API and focus handling `reusables` · Tailwind and `sr-only` `tailwind` · images, forms and metadata in Next.js `nextjs` · titles and structured data `seo` · form schemas `schemas-and-contracts` · the review `accessibility-audit`.
+Focus, keyboard, contrast, ARIA states and announcements `accessibility` · a reusable component's API and focus handling `reusables` · Tailwind and `sr-only` `tailwind` · images, forms and metadata in Next.js `nextjs` · titles and structured data `seo-aeo-geo` · form schemas `schemas-and-contracts` · the review `accessibility-audit`.

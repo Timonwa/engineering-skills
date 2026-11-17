@@ -44,7 +44,7 @@ Ask with `AskUserQuestion` in batches of at most four, the house default first i
 2. **Shared cache and rate limiting** — Redis (`redis`, `rate-limiting`).
 3. **Runtime toggles** — feature flags (`feature-flags`) · a maintenance kill switch (`maintenance-mode`) · cookie consent (`cookie-consent`).
 4. **Error tracking** — none · Sentry · another the owner names: its SDK started in `instrumentation.ts` (`register()`), server errors reported from `onRequestError`, and the client's own init.
-5. **Extras** — MDX content · transactional email (`transactional-email`) · field encryption (`field-encryption`) · SEO beyond the defaults (`seo`).
+5. **Extras** — MDX content · transactional email (`transactional-email`) · field encryption (`field-encryption`) · SEO beyond the defaults (`seo-aeo-geo`).
 
 **Batch 5 — product features** (only for an app with its own backend; a frontend over someone else's API leaves these to that backend)
 

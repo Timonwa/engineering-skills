@@ -50,7 +50,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Understandable
 
 - **The page's language is set (3.1.1)** on `<html lang>`, and passages in another language carry their own `lang` (3.1.2). Brand names and codes that mustn't be machine-translated take `translate="no"`.
-- **Every page has a title that says what it is (2.4.2)**, unique per page (`seo`).
+- **Every page has a title that says what it is (2.4.2)**, unique per page (`seo-aeo-geo`).
 - **Labels and instructions (3.3.2)** are visible and stay visible — a placeholder is a hint, never the label; required fields say so in text.
 - **Errors (3.3.1, 3.3.3)** are named in text, say how to fix them, sit beside their field (`aria-describedby`, `aria-invalid`), and are **seen**: a summary near the submit button, or the page scrolls to and focuses the first invalid field.
 - **Legal, financial and data-changing submissions (3.3.4)** can be reviewed, corrected or undone; leaving a form with unsaved changes asks first.
@@ -85,4 +85,4 @@ Browser snippets for checking a rendered page — unlabelled inputs, small targe
 
 ## Related skills
 
-Element choice, headings, labels and landmarks `semantic-html` · colour tokens and contrast pairs `design-system`, `tailwind` · component behaviour and focus management `reusables` · keyboard and axe stories `storybook` · route announcements and titles `nextjs`, `seo` · sign-in `auth` · end-to-end checks `testing` · the review `accessibility-audit`.
+Element choice, headings, labels and landmarks `semantic-html` · colour tokens and contrast pairs `design-system`, `tailwind` · component behaviour and focus management `reusables` · keyboard and axe stories `storybook` · route announcements and titles `nextjs`, `seo-aeo-geo` · sign-in `auth` · end-to-end checks `testing` · the review `accessibility-audit`.

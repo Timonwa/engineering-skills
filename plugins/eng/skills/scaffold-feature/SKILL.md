@@ -71,10 +71,10 @@ Per `api-architecture` and `nextjs`, for the app's shape:
 
 ## Step 5 — Page and components
 
-Per `code-structure`: the route constant first, then a thin `page.tsx` in the right group or area rendering a `…PageContent`, sections one per file in the feature's product-area folder, and client parts isolated in small `"use client"` leaves. Anything that waits on data gets a `<Component>Skeleton` and its own `<Suspense>`. Metadata matches the audience — public pages indexable, signed-in pages noindex (`seo`).
+Per `code-structure`: the route constant first, then a thin `page.tsx` in the right group or area rendering a `…PageContent`, sections one per file in the feature's product-area folder, and client parts isolated in small `"use client"` leaves. Anything that waits on data gets a `<Component>Skeleton` and its own `<Suspense>`. Metadata matches the audience — public pages indexable, signed-in pages noindex (`seo-aeo-geo`).
 
 - **A detail route** calls `notFound()` when the resource doesn't exist or the caller can't see it, and its segment gets an `error.tsx` rendering the app's error view (`code-structure`).
-- **A page people reach from the menu** gets its navigation item; a public one, its sitemap entry (`seo`).
+- **A page people reach from the menu** gets its navigation item; a public one, its sitemap entry (`seo-aeo-geo`).
 - **A feature released gradually** sits behind a flag, checked on the server (`feature-flags`).
 
 ## Step 6 — Stories and tests

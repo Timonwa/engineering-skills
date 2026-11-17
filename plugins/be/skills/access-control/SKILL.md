@@ -91,7 +91,7 @@ A link or code grants access to whoever holds it. Following the W3C's capability
 - **One resource, read only:** the link resolves to an actor with one read verb on one resource; a `GET` never triggers an action.
 - **Expiring and revocable:** each link has an expiry or a single use, the owner can revoke it and issue another, and an expired, revoked or wrong link answers 404 — the same as a resource that doesn't exist.
 - **A passcode is a weaker secret:** stored encrypted or hashed, compared in constant time, its attempts rate-limited per resource and caller with a lockout (`rate-limiting`); a correct code sets a short-lived cookie for that resource only, so the code isn't sent again.
-- **Nothing leaks it:** the page sends `Referrer-Policy: no-referrer`, loads no third-party scripts, and is `noindex`; the link's path is disallowed in `robots.txt` (`seo`).
+- **Nothing leaks it:** the page sends `Referrer-Policy: no-referrer`, loads no third-party scripts, and is `noindex` (a meta tag and `X-Robots-Tag`) — never disallowed in `robots.txt`, which would stop crawlers reading the `noindex` (`seo-aeo-geo`).
 - **Access bought or earned is a relationship**, not a link: "ticket holders may see this album" is checked against the purchase, like a membership.
 
 ## Where plans and flags sit

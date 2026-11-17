@@ -77,4 +77,4 @@ A worked example — caps, the browser and server checks, a fixed-slot replace, 
 
 ## Related skills
 
-The Admin client and the store `firestore` · upload routes and the 202 `api-architecture` · per-account upload limits `rate-limiting` · server threats and file access (BOLA) `backend-security` · delivery transforms `cloudinary` · `next/image` and refresh after a mutation `nextjs` · generated images (`ImageResponse`) `seo` · alt text `accessibility` · slot and asset names `naming`.
+The Admin client and the store `firestore` · upload routes and the 202 `api-architecture` · per-account upload limits `rate-limiting` · server threats and file access (BOLA) `backend-security` · delivery transforms `cloudinary` · `next/image` and refresh after a mutation `nextjs` · generated images (`ImageResponse`) `seo-aeo-geo` · alt text `accessibility` · slot and asset names `naming`.

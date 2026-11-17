@@ -110,4 +110,4 @@ Even a one-language product writes copy that won't break when another arrives: s
 
 ## Related skills
 
-Emails `emails` · visual identity `design-system` · logos `logos-and-icons` · accessible names and errors in markup `accessibility`, `semantic-html` · form errors in code `schemas-and-contracts` · page titles and metadata `seo` · shared components take their copy through props `reusables`.
+Emails `emails` · visual identity `design-system` · logos `logos-and-icons` · accessible names and errors in markup `accessibility`, `semantic-html` · form errors in code `schemas-and-contracts` · page titles and metadata `seo-aeo-geo` · shared components take their copy through props `reusables`.
