@@ -62,10 +62,18 @@ Walks **text nodes**, not "elements without children" — skipping parents with 
 () => {
  const chan = (v) => {
   v /= 255;
-  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
  };
  const lum = ([r, g, b]) => 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
- const parse = (s) => (s.match(/[\d.]+/g) || []).map(Number); // [r,g,b] or [r,g,b,a]
+ // Computed oklch(), oklab() and color-mix() don't serialise as rgb(); a 1×1 canvas converts any of them to sRGB.
+ const ctx = Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true });
+ const parse = (s) => {
+  ctx.clearRect(0, 0, 1, 1);
+  ctx.fillStyle = s;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+  return [r, g, b, a / 255];
+ };
  const ratio = (fg, bg) => {
   const [hi, lo] = [lum(fg), lum(bg)].sort((a, b) => b - a);
   return (hi + 0.05) / (lo + 0.05);
@@ -145,7 +153,7 @@ Walks **text nodes**, not "elements without children" — skipping parents with 
    const t = document.getElementById(decodeURIComponent(href.slice(1)));
    return !!t && !!(t.matches("main, [role=main]") || t.querySelector("main, [role=main]") || t.closest("main, [role=main]"));
   }),
- zoomBlocked: /user-scalable\s*=\s*(no|0)|maximum-scale\s*=\s*1\b/.test(
+ zoomBlocked: /user-scalable\s*=\s*(no|0)|maximum-scale\s*=\s*(0?\.\d+|1(\.\d+)?)\b/.test(
   document.querySelector("meta[name=viewport]")?.content || "",
  ), // true = a WCAG failure (blocks pinch-zoom)
 })

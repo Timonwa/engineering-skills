@@ -1,16 +1,12 @@
 ---
 name: accessibility
 description: >-
-  Audits and fixes web accessibility against WCAG 2.2 AA — screen readers, keyboard navigation, focus management, ARIA, color contrast, tap targets. Use when shipping or reviewing UI that must be usable by everyone, or on "a11y", "accessibility audit", "WCAG", "screen reader", "keyboard accessible", "contrast check", "focus trap", "aria-label", "tab order", "axe", "Lighthouse accessibility", or a vague "make this accessible".
+  Building UI that meets WCAG 2.2 AA beyond the markup — text alternatives, contrast checked on the tokens in both themes, reflow and zoom, keyboard and focus (order, visibility, dialogs, skip link, not obscured), target size, pointer and motion, labels, errors people see, accessible sign-in, ARIA states and live regions, and the gates that verify it: lint, Storybook axe at error, keyboard stories and screen-reader passes. Use when building or reviewing any interactive UI, a form, a dialog or a colour token.
 ---
 
-# Accessibility (a11y)
+# Accessibility
 
-You are an expert in web accessibility and inclusive design. The goal is UI that everyone can use — people using screen readers, keyboards only, magnification, voice control, or with low-vision / motor / cognitive needs — and to **verify** it, not just assert it.
-
-Target **WCAG 2.2 level AA** by default. Organize thinking around **POUR**: Perceivable, Operable, Understandable, Robust.
-
-> **Pairs with the `semantic-html` skill.** `semantic-html` covers _semantic markup_ (right element, landmarks, headings, `<dl>`, `<fieldset>`/`<legend>`, button-vs-link). This skill assumes that foundation and adds the rest: **contrast, focus, keyboard, ARIA behavior, live regions**, and **how to verify** with tooling + manual testing. Always start from native semantic HTML; reach for ARIA only when no native element fits — an ARIA role you add commits you to its full keyboard contract.
+UI everyone can use — with a screen reader, a keyboard alone, magnification, voice control, or low-vision, motor or cognitive needs — and **verified**, not asserted. The target is **WCAG 2.2 level AA**. It starts from the right element (`semantic-html`); this skill adds what markup alone can't promise: how things look, move, take focus and announce.
 
 ## Project specifics first
 
@@ -19,106 +15,74 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Two modes
+## Native first, ARIA last
 
-1. **Build mode** — writing or reviewing UI. Apply the Checklist as you write. Prefer native elements. Never ship a control that only works with a mouse.
-2. **Audit mode** — "is this accessible?" Run the layered Audit workflow, report findings by WCAG criterion + severity, then fix. Even for a vague request, start with the audit.
+- **Use the element that already behaves** — a `<button>`, a link, a `<dialog>`, `<details>` (`semantic-html`). ARIA changes only what assistive technology is told, never behaviour: a `role` you add commits you to that role's whole keyboard contract.
+- **For a composite widget no element covers** — tabs, a combobox, a menu, a tree, a listbox — follow the WAI-ARIA Authoring Practices pattern for it exactly (keys, roles, states), or use a library that does. Bad ARIA is worse than none.
 
-## Audit workflow — layered, cheapest signal first
+## Perceivable
 
-Automated tools catch only ~30–40% of issues. Do all three layers; never stop at a Lighthouse score.
+- **Text alternatives (1.1.1).** An informative image's `alt` says what it conveys, not what it is; a decorative one is `alt=""`; an icon-only control gets its name from `aria-label` or visually hidden text; a chart or diagram gets its data in text nearby.
+- **Contrast (1.4.3, 1.4.11):** text at least **4.5:1**, large text (24px, or 18.66px bold) **3:1**, and UI parts that convey state — borders of inputs, focus rings, icons that carry meaning — **3:1**. Checked by a script over the **colour tokens, in light and dark mode**, so a palette change fails before it ships (`design-system`, `tailwind`); a measured pair, never an eyeballed one.
+- **Never colour alone (1.4.1)** — an error, a status, a selected item also carries text, an icon or a pattern.
+- **Reflow and zoom (1.4.4, 1.4.10, 1.4.12):** at 200% zoom and at a 320px-wide viewport nothing is clipped or overlapped and nothing needs horizontal scrolling, except data tables and maps; text survives larger letter, word and line spacing. The viewport meta never blocks zoom (`maximum-scale`, `user-scalable=no`).
+- **Content on hover or focus (1.4.13)** — a tooltip or popover can be dismissed with Escape, stays while the pointer moves onto it, and doesn't vanish on its own.
+- **Media:** captions on recorded and live video (1.2.2, 1.2.4), audio description of what's only shown (1.2.5), a transcript for audio, nothing playing sound on its own.
+- **Orientation (1.3.4):** never lock a page to portrait or landscape. **No images of text (1.4.5)** where real text would do.
+- **Links and headings say where they go and what follows (2.4.4, 2.4.6)** — no bare "Read more"; a link in prose is told apart without colour (underlined), and the same function keeps the same name everywhere (3.2.4).
 
-### Layer 1 — Static (fast, CI-enforceable)
+## Operable
 
-For JSX/React/Vue/Svelte, lint catches a large static subset with zero runtime:
+- **Everything works from the keyboard (2.1.1), and nothing traps it (2.1.2).** Enter and Space on buttons, Escape to dismiss, arrow keys inside composites (one tab stop per widget, a roving `tabindex`). `tabindex="0"` joins the natural order, `-1` takes focus only from code, a positive value never.
+- **Focus is always visible (2.4.7)** — a `:focus-visible` ring with 3:1 contrast against what's behind it, in both themes; removing the outline only with a replacement — Tailwind's `outline-hidden`, never `outline-none`, so forced-colours mode still draws one.
+- **Focus order follows the reading order (2.4.3)**, so the DOM order is the visual order; CSS `order` and absolute positioning never reorder meaning.
+- **Focus isn't hidden (2.4.11)** under a sticky header or footer: `scroll-padding` on the scrolling container matches their height.
+- **Dialogs and drawers:** focus moves in when they open, stays inside while modal (the page behind is `inert`), Escape closes, and focus returns to the control that opened them. Native `<dialog>` with `showModal()` does most of this; the Popover API is always non-modal, so it suits menus and tooltips, never a modal drawer. Every dialog is named by its heading (`aria-labelledby`).
+- **After an in-app navigation**, focus and the announcement land on the new page's heading or main region, so a screen-reader user knows the page changed (Next.js's route announcer reads the page title; it doesn't move focus, so the project decides where focus goes and keeps it consistent).
+- **A skip link (2.4.1)** is the first focusable element on pages with repeated navigation, visible when focused, leading to `<main>`.
+- **In-page navigation** marks the current section with `aria-current="location"`; site navigation marks the current page with `aria-current="page"`.
+- **Targets are at least 24×24 CSS px (2.5.8)**, or spaced so a 24px circle around each touches no other; aim for 44×44 on touch.
+- **Pointer:** anything done with a drag has a single-pointer alternative (2.5.7); a path or multi-finger gesture has a simple one (2.5.1); actions fire on release, not press (2.5.2).
+- **A control's visible label is in its accessible name (2.5.3)**, so voice users can say what they see.
+- **Single-key shortcuts (2.1.4)** can be turned off or remapped, or only work when their component has focus.
+- **Motion and time:** nothing flashes more than three times a second (2.3.1); anything that moves, scrolls or updates on its own for over five seconds can be paused (2.2.2); animation respects `prefers-reduced-motion`; a time limit — a session about to end — warns and lets the person extend it (2.2.1).
 
-- **`eslint-plugin-jsx-a11y`** (React) — add to the ESLint config and run `eslint .`. Catches missing `alt`, unlabeled controls, invalid/`aria-*`, redundant roles, `onClick` without a keyboard handler, positive `tabindex`, etc. Wire it into CI so regressions can't merge. Make this the baseline gate on every project.
-- **Continuous dev feedback** — wire `@axe-core/react` (logs violations to the console during development) or, in a Storybook project, the a11y addon (→ `storybook-setup`) so issues surface as you build, not at audit time.
+## Understandable
 
-### Layer 2 — Runtime (the DOM the user actually gets)
+- **The page's language is set (3.1.1)** on `<html lang>`, and passages in another language carry their own `lang` (3.1.2). Brand names and codes that mustn't be machine-translated take `translate="no"`.
+- **Every page has a title that says what it is (2.4.2)**, unique per page (`seo`).
+- **Labels and instructions (3.3.2)** are visible and stay visible — a placeholder is a hint, never the label; required fields say so in text.
+- **Errors (3.3.1, 3.3.3)** are named in text, say how to fix them, sit beside their field (`aria-describedby`, `aria-invalid`), and are **seen**: a summary near the submit button, or the page scrolls to and focuses the first invalid field.
+- **Legal, financial and data-changing submissions (3.3.4)** can be reviewed, corrected or undone; leaving a form with unsaved changes asks first.
+- **No surprises (3.2.1, 3.2.2):** focusing or changing a field never submits, navigates or opens something on its own.
+- **Consistent navigation and help (3.2.3, 3.2.6)** — the same place on every page.
+- **Don't ask twice (3.3.7)** — information already given in the flow is filled in or selectable.
+- **Accessible sign-in (3.3.8):** no puzzle, transcription or memory test to get in; paste and password managers work, and passkeys or an emailed link are offered (`auth`).
 
-Static analysis can't see contrast, computed focus order, or ARIA state — audit the _rendered_ page.
+## Robust
 
-**Preferred — `chrome-devtools-mcp`** (if its MCP tools are available):
+- **Every control exposes its name, role and state (4.1.2)** — native elements do; a custom one sets them: `aria-expanded` and `aria-controls` on a disclosure, `aria-pressed` on a toggle, `aria-selected` in tabs and listboxes, `aria-checked` on a custom checkbox.
+- **Status messages are announced without moving focus (4.1.3)** — a live region (`role="status"`, or `role="alert"` for errors) that exists **before** its content changes, or the change isn't read. A computed result goes in `<output>`.
+- **Loading:** a skeleton is `aria-hidden`, the region it fills carries `aria-busy` while it loads, and the result — loaded, or failed — is announced through the status region.
+- **Decorative or duplicated content** is hidden from assistive technology with `aria-hidden="true"`, never on anything focusable.
 
-- **Lighthouse** — run an accessibility audit in `navigation` mode; save JSON to a temp dir. Don't read the whole report; filter to failures:
-  ```bash
-  node -e "const r=require('./report.json');Object.values(r.audits).filter(a=>a.score!==null&&a.score<1).forEach(a=>console.log(JSON.stringify({id:a.id,title:a.title,items:a.details?.items?.map(i=>i.node?.selector||i.node?.snippet)})))"
-  ```
-- **Native browser issues** — `list_console_messages` with `types:["issue"]`, `includePreservedMessages:true`. Surfaces missing labels, invalid ARIA, and **low-contrast** issues Chrome flags automatically.
-- **Accessibility tree** — `take_snapshot` returns what assistive tech "sees" (roles, names, heading levels): the source of truth for semantics. Compare against `take_screenshot` to catch DOM-vs-visual reading-order mismatches (CSS float / absolute / `order`).
-- **Keyboard** — `press_key` "Tab" / "Shift+Tab", then `take_snapshot` to find the focused node. Verify order is logical, focus is always visible, and focus **traps inside** an open modal/drawer until it closes.
-- **Custom checks** — `evaluate_script` with the snippets in `references/audit-snippets.md` (orphaned inputs, tap-target size, contrast, page-level checks).
-- Tip: fetch web.dev guidance as clean markdown by appending `.md.txt` to the URL (e.g. `https://web.dev/articles/accessible-tap-targets.md.txt`).
+## Verifying it
 
-**Fallback — no `chrome-devtools-mcp`:**
+Automated checks find only part of the problems; every layer runs.
 
-- **axe-core + Playwright**: `@axe-core/playwright` → `new AxeBuilder({ page }).analyze()` per key route; assert zero violations in a test.
-- **Lighthouse CLI**: `npx lighthouse <url> --only-categories=accessibility --output=json`.
-- **DevTools**: Accessibility pane (a11y tree) + the contrast checker in the color picker. The `references/audit-snippets.md` snippets also paste straight into the console.
+- **Lint:** `eslint-plugin-jsx-a11y` catches missing names, invalid ARIA and click handlers on non-interactive elements as code is written. `eslint-config-next` turns on only a handful of its rules, as warnings, so the shared config adds `jsx-a11y`'s recommended set at error.
+- **Components:** each story runs axe through Storybook's a11y addon with `parameters.a11y.test: "error"`, so a violation fails the test run, and interactive components carry a keyboard `play` story — Tab to it, operate it, check focus (`storybook`). Together with lint, that's the component gate.
+- **Pages:** where the project runs end-to-end tests, each key route also runs `@axe-core/playwright` and asserts no violations. `@axe-core/react` doesn't support React 18 or later; don't add it.
+- **By hand, before a UI ships:** the flow with the keyboard alone; with a screen reader — VoiceOver with Safari, NVDA with Firefox or Chrome, and TalkBack on Android, where most of an African audience is; at 200% zoom and 320px wide; with reduced motion and forced colours on.
+- **Contrast** runs as a script over the tokens in CI, in both themes.
 
-### Layer 3 — Manual (what tools can't judge)
-
-- **Keyboard-only**: put the mouse away. Tab through every interactive element; operate all of it with Enter / Space / arrows / Esc. No traps; focus visible at every step; focus returns sensibly after a dialog closes.
-- **Screen reader**: VoiceOver (macOS ⌘F5), NVDA (Windows), or Orca (Linux). Confirm name / role / state are announced, and dynamic changes (results loading, errors, toasts) are read via live regions.
-- **Zoom 200%** and **400% reflow**: nothing clipped, no horizontal scroll, nothing lost.
-- **User preferences**: honor `prefers-reduced-motion`, `prefers-color-scheme`, `prefers-contrast`; also test with `forced-colors` / Windows High Contrast (emulate in DevTools rendering settings) and `prefers-reduced-transparency`.
-
-## Checklist — WCAG 2.2 AA by POUR
-
-### Perceivable
-
-- **Contrast**: body text ≥ **4.5:1**; large text (≥24px, or ≥18.66px bold) ≥ **3:1**; UI components & meaningful graphics ≥ **3:1**. Never convey info by **color alone** — pair with text/icon/pattern.
-- **Text alternatives**: informative images get descriptive `alt`; decorative images `alt=""`; **icon-only controls** get an accessible name (`aria-label`); complex visuals get a longer description.
-- **Media**: captions for video, transcripts for audio, no autoplay with sound.
-- **Adaptable**: DOM order matches visual/reading order; meaning never depends on layout.
-
-### Operable
-
-- **Keyboard**: every action works with the keyboard alone; no traps; support Enter/Space (buttons), Esc (dismiss), arrows (menus/tabs/listboxes/composite widgets).
-- **Focus**: a **visible focus indicator** on every interactive element (never `outline:none` without a `:focus-visible` replacement); logical tab order; manage focus on route/modal change (move into the dialog, restore to the trigger on close); `tabindex="0"` for natural order, `-1` for programmatic, **never positive**.
-- **Target size** (2.5.8, new in 2.2): interactive targets ≥ **24×24 CSS px** (aim 44×44 on touch) with adequate spacing.
-- **Focus not obscured** (2.4.11, new in 2.2): sticky headers/footers must not fully hide the focused element — give focusable content `scroll-margin` (or the container `scroll-padding`) at least the height of the sticky bar.
-- **Dragging movements** (2.5.7, new in 2.2): any drag interaction (reorder, slider, kanban) needs a single-pointer alternative — buttons, a menu, or direct input.
-- **Motion/timing**: nothing flashes >3×/sec; auto-updating content is pausable; respect `prefers-reduced-motion`.
-- **Skip link**: a "skip to main content" link for keyboard users on content-heavy pages.
-- **Native overlays**: `<dialog>` (`showModal()`) and the Popover API give focus management, Esc, and inertness for free — prefer them over hand-rolled focus traps.
-
-### Understandable
-
-- **Labels**: every input has a programmatic label (`<label htmlFor>` or a wrapping `<label>`); a placeholder is a _hint_, not a label; group related controls with `<fieldset>`+`<legend>`.
-- **Errors**: identify in text (not color alone), tie to the field (`aria-describedby`), and say how to fix; use appropriate `inputmode`/`type`.
-- **Predictable**: consistent nav; no surprise context change on focus or input; set `<html lang>`.
-- **Consistent help** (3.2.6, new in 2.2): help mechanisms (contact link, chat widget, FAQ) appear in the same relative place on every page.
-- **Redundant entry** (3.3.7, new in 2.2): don't ask for the same information twice in a flow — autofill or prefill it (e.g. "same as shipping address").
-- **Accessible authentication** (3.3.8, new in 2.2): no cognitive-function test to log in (memorizing, transcribing, puzzles); allow paste and password managers.
-
-### Robust
-
-- **Valid, semantic markup**; correct **name / role / value** for every control (native gives this free; custom widgets must supply all three).
-- **ARIA, correctly & sparingly**: `aria-expanded`/`aria-controls` for disclosures, `aria-current="page"` for nav, `aria-hidden="true"` for decorative, `aria-pressed`/`aria-selected` for toggles/tabs. Bad ARIA is worse than none.
-- **Live regions**: announce async changes — `aria-live="polite"` (status), `role="alert"` / `aria-live="assertive"` (errors), `<output>` for computed results.
-
-## Reporting findings
-
-For each issue: **location** (file:line or selector) · **what** (the barrier) · **WCAG criterion** (e.g. 1.4.3 Contrast (Minimum)) · **who it affects** · **fix** · **severity** — _critical_ (blocks a task for a group) / _serious_ / _moderate_ / _minor_. Fix critical + serious before shipping.
-
-## Common fixes (quick reference)
-
-- Icon-only button announces nothing → add `aria-label` (+ `title` for a sighted hover tooltip).
-- Grouped radio-like/toggle buttons with no group name → wrap in `<fieldset>`+`<legend>`.
-- `<div onClick>` / `<span onClick>` → `<button>` (action) or `<a href>` (navigation).
-- Low contrast → shift the token/shade until it measures ≥ 4.5:1 (verify, don't eyeball).
-- Custom dropdown/modal → move focus in on open, trap it, Esc closes, restore focus to the trigger on close; wire `aria-expanded`/`aria-controls`.
-- Async result not announced → render it into an `aria-live` region or `<output>`.
-- Missing/removed focus ring → restore a visible `:focus-visible` style.
-- Tiny tap target → pad to ≥ 24×24 (44×44 on touch).
+Browser snippets for checking a rendered page — unlabelled inputs, small targets, contrast, focus order — are in [references/audit-snippets.md](references/audit-snippets.md). A full review against WCAG is `accessibility-audit`.
 
 ## Do / Don't
 
-- **Do** prefer native HTML; test with the keyboard and a screen reader; enforce a static gate in CI; fix the root cause, not the symptom; report against WCAG criteria.
-- **Don't** add ARIA just to silence a warning without understanding it; trust an automated score as proof of compliance; use `role`/`tabindex` to make a `<div>` behave like a `<button>` when `<button>` exists; remove focus outlines without a replacement.
+- **Do** start from the native element; follow the APG pattern for composites; check contrast on the tokens in both themes; keep focus visible, ordered and unobscured; move focus into dialogs and back; give every target 24px; make errors seen; announce status changes from a region that already exists; test with a keyboard and a screen reader, Android included.
+- **Don't** add a `role` without its keyboard behaviour; remove a focus ring without a replacement; use a positive `tabindex`; convey meaning by colour alone; block zoom; let a placeholder be the label; put `aria-hidden` on something focusable; trust an automated score as proof.
 
-See `references/audit-snippets.md` for runnable browser snippets (orphaned inputs, tap-target size, contrast, global page checks).
+## Related skills
 
-> **Audit:** review this domain on demand with the manually-invoked `accessibility-audit` command (see `audit-all` for the whole suite).
+Element choice, headings, labels and landmarks `semantic-html` · colour tokens and contrast pairs `design-system`, `tailwind` · component behaviour and focus management `reusables` · keyboard and axe stories `storybook` · route announcements and titles `nextjs`, `seo` · sign-in `auth` · end-to-end checks `testing` · the review `accessibility-audit`.
