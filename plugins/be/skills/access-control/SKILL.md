@@ -1,7 +1,7 @@
 ---
 name: access-control
 description: >-
-  Access control for a Next.js API on Firebase — roles, relationships and attributes (RBAC, ReBAC, ABAC) behind permission verbs and one pure can(); guards as the only gate, 404 before 403; tenant scoping; escalation limits; stale claims; API-key scopes; share links and passcodes; where plan and flag checks sit; UI gates that only hide; and tests. Use when adding a permission, role, guarded route, API key, share link, or a control only some people see.
+  Access control for a Next.js API on Firebase — roles, relationships and attributes (RBAC, ReBAC, ABAC) behind permission verbs and one pure can(); guards as the only gate, 404 before 403; tenant scoping; invitations; escalation limits; two-person approval and access reviews; stale claims; API-key scopes; share links and passcodes; where plan and flag checks sit; UI gates that only hide; and tests. Use when adding a permission, role, guarded route, API key, share link, or a control only some people see.
 ---
 
 # Access control
@@ -111,6 +111,21 @@ A feature that's switched off answers as if the route didn't exist, before any o
 - **The last holder of the top role** can't be removed or demoted, so a scope never ends up with no one able to administer it.
 - Role changes on platform roles are audited (`api-architecture`'s audit log).
 
+## Invitations
+
+How a person gains a resource role:
+
+- **Single-use and expiring** (days, not months), stored as a hash like any token; resending replaces the old one.
+- **Bound to the invited email**, accepted only by a signed-in account whose verified email matches. A forwarded link is useless to anyone else.
+- **The role is fixed when it's sent**, by someone allowed to grant it (the rank rules below), and checked again on acceptance — if the inviter has since lost the right, the invite is void.
+- **The owner sees and revokes pending invites**; a pending invite grants nothing.
+
+## Operator safeguards
+
+- **Two people for the riskiest acts** (NIST AC-5, separation of duties): granting a platform role, a large refund or payout change, a bulk export or deletion. One operator requests, a second approves; nobody approves their own request, and both are audited.
+- **Access is reviewed on a schedule** — each quarter, the owner confirms every platform role is still needed, and unused ones are removed. **Offboarding** removes roles and revokes sessions the same day.
+- **Grants can expire:** a role given for a task (support on one account, an incident) carries an end date and lapses on its own. **Break-glass** access — the emergency path round the normal rules — is time-limited, alerts the owners when used, and is reviewed after.
+
 ## Claims go stale
 
 Claims are a cache of the stored roles, never the record:
@@ -146,7 +161,7 @@ Where clients read the store directly, the security rules mirror the same model 
 
 ## Do / Don't
 
-- **Do** check verbs; keep `can()` pure; resolve resource roles per request; load before checking so a hidden id is a 404; take ownership from the record and identity from the token; scope queries by tenant; revoke sessions when a role is removed; make links unguessable, expiring and revocable; test every verb both ways.
+- **Do** check verbs; bind invites to the invited email; require a second approver for the riskiest operator acts; review access on a schedule; keep `can()` pure; resolve resource roles per request; load before checking so a hidden id is a 404; take ownership from the record and identity from the token; scope queries by tenant; revoke sessions when a role is removed; make links unguessable, expiring and revocable; test every verb both ways.
 - **Don't** check a role name in a route or component; store permissions on a user document; put resource roles in claims; trust a body's owner or role field; give operators resource verbs; treat a UI gate as protection; let a role grant a role at or above its own; let a key outrank its creator; let a link perform an action.
 
 ## Related skills
