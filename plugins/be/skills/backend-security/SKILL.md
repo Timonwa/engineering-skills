@@ -1,18 +1,14 @@
 ---
 name: backend-security
 description: >-
-  Server-side application security mapped to OWASP Top 10 2025 and API Security Top 10 — authorization (BOLA, function-level, mass assignment, tenant isolation), authentication and sessions, injection and input validation, SSRF, resource-consumption limits, secrets and config, error hygiene, audit logging, file-upload safety, and CSRF. Use when building or reviewing route handlers, Server Actions, services, cron jobs, or webhooks.
+  Server-side security mapped to the OWASP Top 10 2025 and API Security Top 10 2023 — authorisation at object, function and field level, injection and stored rich HTML, SSRF, resource limits, business-flow abuse, races and idempotency, CSRF with Origin and Fetch Metadata, App Check and the Firebase web API key, secrets and config, failing closed, logging, and upstream APIs — each pointing to the skill that owns the mechanics. Use when building or reviewing route handlers, Server Actions, services, workers or webhooks.
 model: opus
 effort: high
 ---
 
 # Backend security
 
-In-depth **server-side / API security** for backends (route handlers, Server Actions, services, cron, webhooks). The server is the **only real trust boundary** — every control the client can't be trusted to enforce lives here. Its sibling **`frontend-security`** owns the browser; a full-stack app applies both, an API-only service may apply only this one.
-
-> **Delegations:** the client side (XSS, Content Security Policy (CSP), token storage, third-party scripts) → **`frontend-security`**; API _architecture_ (thin route → service, RBAC guard shape, rate-limit tiers, typed errors + response builders, cursor pagination, cron/webhook wiring) → `api-architecture`; sessions → `auth`; the role model → `access-control`; Firestore rules → `firestore` (+ `firebase-security-rules-auditor`); App Check → [references/app-check.md](references/app-check.md); Server Action / Proxy / route-handler mechanics → `nextjs`; Zod schemas → `typescript`; secrets, supply-chain hardening, security headers in CI → `devops`.
->
-> **Concrete snippets** (ownership check, field allowlist mapper, Server-Side Request Forgery (SSRF) URL guard, JWT verify, rate-limit tiers, safe query) → `references/server-hardening.md`. **A full app review** → the manual **`security-audit`** skill.
+The server is the only real trust boundary: anything the client could skip, the server enforces. This skill is the threat map — what each OWASP risk means on the server and the control that stops it — and it points to the skill that owns each mechanism rather than restating it. The browser's side is `frontend-security`; a full review is the manual `security-audit`.
 
 ## Project specifics first
 
@@ -21,98 +17,108 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## First principle — authorization is the whole game
+## The map
 
-Across the 2025 web and 2023 API Top 10s, **broken access control is #1** — Broken Object-Level Authorization (BOLA) is consistently the top-reported API vulnerability class. So the backend's core job: **re-authorize every request against the specific object, function, and fields it touches**, from the actor's server-verified identity — never from anything the client sent. Client checks are UX; the API is the gate.
+| Risk                                                                    | The control                                                           | Owner                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------- |
+| A01 Broken Access Control · API1 BOLA · API5 BFLA · API3 property level | Re-authorise every object, function and field from the verified actor | `access-control`, below                |
+| A01 (SSRF) · API7 Server-Side Request Forgery                           | Allowlisted destinations, resolved-IP checks, no redirects            | below                                  |
+| A02 / API8 Security Misconfiguration                                    | Tight CORS, debug off, secure defaults, restricted API keys           | below, `env`, `devops`                 |
+| A03 Software Supply Chain Failures                                      | Pinned actions, advisories, blocked build scripts                     | `devops`, `monorepo`                   |
+| A04 Cryptographic Failures                                              | TLS, field encryption, a CSPRNG for every secret value                | below, `field-encryption`              |
+| A05 Injection                                                           | Schemas at the boundary, parameterised queries, sanitised rich HTML   | below, `schemas-and-contracts`         |
+| A06 Insecure Design · API6 Sensitive Business Flows                     | Abuse cases designed in: limits, atomic flows, bot checks             | below, `rate-limiting`                 |
+| A07 Authentication Failures · API2 Broken Authentication                | Server-minted sessions, lockouts, MFA for operators                   | `auth`, `rate-limiting`                |
+| A08 Software or Data Integrity Failures                                 | No unsafe deserialisation; signed webhooks                            | below, `api-architecture`              |
+| A09 Security Logging and Alerting Failures                              | An audit log for privileged acts, a security log for refusals, alerts | `api-architecture`, `rate-limiting`    |
+| A10 Mishandling of Exceptional Conditions                               | Fail closed, generic errors, no stack traces                          | below                                  |
+| API4 Unrestricted Resource Consumption                                  | Budgets per tier, size and page caps, timeouts                        | `rate-limiting`, below                 |
+| API9 Improper Inventory Management                                      | Versioned routes, the API reference as inventory, no debug routes     | `api-architecture`, `openapi-registry` |
+| API10 Unsafe Consumption of APIs                                        | Validate, time-box and rate-limit every upstream call                 | below, `rate-limiting`                 |
 
-## The map — OWASP Top 10 2025 + API Security Top 10 2023
+## Authorisation
 
-- **A01 / API1 BOLA + API5 Broken Function-Level Authorization (BFLA) + API3 Broken Object-Property-Level Authorization (BOPLA)** — object-, function-, and property-level authorization. The dominant risk (below).
-- **A07 / API2 Broken Authentication** — sessions/tokens/passwords (auth below).
-- **A05 Injection** — SQL/NoSQL/command (validation below).
-- **A08 Software or Data Integrity Failures** — unsafe deserialization of untrusted data (validation below).
-- **API7 / A01 SSRF** — user-controlled outbound requests (SSRF below).
-- **API4 Unrestricted Resource Consumption** — rate/size/complexity limits (limits below).
-- **API6 Sensitive Business Flow abuse** — bots draining high-value flows (limits below).
-- **A02 / API8 Security Misconfiguration** — secrets, CORS, defaults, debug (config below).
-- **A04 Cryptographic Failures** — weak/missing encryption, bad randomness (data protection below).
-- **A09 Security Logging & Alerting Failures** — missing or unmonitored audit trails (audit logging below).
-- **A10 Mishandling of Exceptional Conditions** — fail-open, verbose errors (error hygiene below).
-- **A03 Software Supply Chain Failures** — dependency/CI compromise; delegated to `devops`.
-- **API9 Improper Inventory** + **API10 Unsafe Consumption of APIs** — old endpoints, blind trust in upstreams (below).
+Broken access control is the top risk in both lists, and object-level authorisation (BOLA) the most reported API flaw. The model and guards are `access-control`'s; the rules that make them hold:
 
-## Authorization (the core)
+- **Every id is re-authorised**, not just the one in the URL: "move task X into project Y" checks access to Y as well. A body never names the owner, the caller or their role.
+- **Every query is scoped to the tenant** the guard resolved; an id from the client alone never reaches another tenant's data, and a miss is a 404, never a 403 that confirms the id exists.
+- **Fields are authorised too.** Writes take a `.pick()` allowlist and responses a projection (`schemas-and-contracts`); never bind a body to a document, or return a document whole to a caller who may not see all of it.
+- **Only the guard decides.** The proxy, the service and the projection back it up, but the store's rules don't: the Admin SDK bypasses them, so they stop clients reaching the store directly and never catch a mistake in the guard (`firestore`).
 
-- **Object level (BOLA)** — on _every_ request that references a resource by id, verify the actor owns or may access **that specific object** before reading/writing it. Never infer access from "is authenticated" or from an id in the request body. **Re-authorize every id in the payload, not just the URL's** — a valid parent + attacker-controlled child/foreign-key id (`move task X into project Y`) must also check access to Y. Enforce **tenant/row isolation** so a query can't cross tenants (→ `references/server-hardening.md`).
-- **Function level (BFLA)** — every route/action asserts the required permission for _that operation_ (admin routes especially). A guard at the top, from a central policy (`can()`), not scattered `if` checks. The role model (claims + per-resource roles) → `firestore`; the guard shape → `api-architecture`.
-- **Property level (BOPLA = mass assignment + excessive data exposure)** — never bind a request body wholesale to a stored object, and never return a document wholesale.
-  - **Writes:** an **allowlist** schema — the write schema omits _every_ server-controlled field (ownership, role, status, timestamps, counters, billing). `.omit()`/`.partial()` are **fail-open**; prefer `.pick()` of exactly what the actor may set (→ `api-architecture` write-safety, `firestore`).
-  - **Reads:** map to an explicit **response Data Transfer Object (DTO)**; never `return { id, ...doc.data() }` to a less-privileged caller (leaks fields).
-- **Defense in depth** — re-check at each layer (edge/gateway → route → service → data rules). The data layer (Firestore/Storage security rules) is the last backstop, not the only one (→ `firebase-security-rules-auditor`).
+## Injection and input
 
-## Authentication & sessions (A07 / API2)
+- **Every input crosses a schema** — body, query, params, form data, headers the code reads (`schemas-and-contracts`). Unknown keys are dropped; lengths and ranges are bounded.
+- **No query or command built from strings:** parameterised SQL, scalar values in NoSQL filters (a raw request object as a filter is operator injection), no user input in a shell command, and no user input in a file path — resolve it and confine it to a base folder (path traversal).
+- **No unsafe deserialisation** (A08): untrusted JSON never deep-merges into an object whose prototype it can reach (`__proto__`, `constructor`), and user input never reaches `eval`, a template engine or a dynamic `import`.
 
-- **House flow** — client sign-in → ID token → **httpOnly, Secure, SameSite session cookie**, verified server-side with check-revoked; reject unverified email by default (→ `auth`). Accept `Bearer <ID token>` _or_ the cookie on the API (→ `api-architecture`).
-- **Tokens** — short-lived access tokens + **refresh rotation**; maintain a **revocation/blocklist** (a JWT can't otherwise be invalidated). **Verify signature, `iss`, `aud`, and `exp`** on every token; reject `alg: none` and unexpected algorithms. **JWTs are signed, not encrypted** — no secrets/PII in the payload.
-- **Passwords & accounts** — hash with **bcrypt/argon2/scrypt** (never fast hashes); enforce a **login lockout** on `(IP, email)` + rate limits to blunt credential stuffing; keep auth responses **uniform** to avoid account enumeration; offer/enforce **MFA** for privileged accounts.
-- **Reset / verification / magic-link tokens** (a top takeover vector) — high-entropy (CSPRNG), **single-use, short-TTL, hashed at rest**, invalidated on use or password change; never leak them in logs/URLs, and **don't build the reset link from a client `Host` header** (host-header poisoning) — use a configured base URL.
-- **Session lifecycle** — **invalidate all sessions/refresh tokens on password change, MFA reset, role/permission downgrade, and account recovery**; rotate the session id on privilege elevation (session-fixation defense).
+## Stored rich HTML
 
-## Injection & input validation
+- **Sanitise on the server, at write time,** with an allowlist policy — the tags, attributes and URL schemes allowed (`http`, `https`, `mailto`) — from a maintained sanitiser (`sanitize-html`, or DOMPurify on the server). Everything else is stripped before the value is stored.
+- **One policy, shared:** the allowlist sits in the shared constants, so the editor, the server's sanitiser and the browser's second pass (`frontend-security`) agree.
+- **Plain text stays plain** — React escapes it when rendering; a field that isn't meant to hold HTML never goes through `dangerouslySetInnerHTML`.
 
-- **Validate at the boundary with Zod** — body, query, **and route params** — and infer types from the schema (→ `typescript`). Reject unknown keys; bound lengths and ranges.
-- **Never build queries/commands from strings** — parameterized queries / the ORM's safe API for SQL, safe operators for NoSQL, no shelling out with user input (command injection), no user input in file paths (**path traversal** — resolve + confine to a base dir).
-- **Unsafe deserialization (A08)** — don't deserialize untrusted data into privileged types; **server-side prototype pollution** — guard deep-merge/`Object.assign` from untrusted JSON; avoid user-controlled template/`eval` paths (template injection, RCE).
+## SSRF
 
-## SSRF (server-side request forgery)
+When the server fetches a URL a user gave it — an import, a link preview, a customer's webhook endpoint, a URL an AI tool chose:
 
-When the server fetches a **user-supplied URL** (webhooks, image proxies, link previews, imports, LLM tools):
+- **Allowlist the scheme and host** where the set is known; otherwise refuse private, loopback, link-local and metadata addresses (`169.254.169.254`, `metadata.google.internal`, `fd20:ce::254`) after resolving **every** A and AAAA record.
+- **No redirects** (or re-check each hop), a tight timeout, and a response size cap. Pin the checked IP for the connection where the client allows it, or DNS rebinding swaps it afterwards.
+- The guard is in [references/server-hardening.md](references/server-hardening.md).
 
-- **Allowlist** destinations (scheme + host); reject everything else. Block private/loopback/link-local ranges and the **cloud metadata IP `169.254.169.254`**.
-- **Disable HTTP redirects** (or re-validate each hop); resolve DNS and validate the _resolved_ IP to defeat **DNS rebinding**; set tight timeouts.
-- **LLM/agent tools** — an SSRF vector via **prompt injection**; apply the same allowlist to any URL a model can cause the server to fetch.
+## Resource use and business flows
 
-## Resource consumption & abuse (DoS)
+- **Budgets per tier, lockouts and bot challenges** are `rate-limiting`'s; every route draws on one.
+- **Cap every input:** request body size, page size (`api-architecture`), upload size and pixels (`image-handling`), decompressed size (a zip bomb), and a timeout on every outbound call.
+- **No user-controlled regex**, and no regex on request input that can backtrack catastrophically (ReDoS).
+- **Design the abuse case** (A06, API6): for each flow worth automating — sign-up, checkout, invites, redeeming a code — decide its limits, who can trigger it how often, and what an attacker gains, before building it.
+- **Races:** a check and the action it guards commit together — a transaction or an atomic conditional update (`firestore`) — or a double-spend, a coupon reused or a seat oversold is one parallel request away.
+- **Repeats:** internal work that must not run twice takes a short first-seen claim (`redis`); a public API accepts an `Idempotency-Key` and replays the stored response; a webhook is recorded once by its event id (`api-architecture`).
 
-- **Rate-limit every endpoint by tier** (auth / sensitive / write / read / public), return **429 + `Retry-After`**; a route that fits no tier gets its own. Tier by _what it does_, not what it costs (→ `api-architecture`).
-- **Cap the inputs** — max request-body size, **mandatory pagination limits** (cursor, capped page size → `api-architecture`), upload size/count, and per-request timeouts.
-- **Algorithmic / CPU DoS** — treat regex and parsing as attack surface: no user-controlled or catastrophically-backtracking regexes on request input (**ReDoS**); bound parse work and **reject decompression/zip bombs** by capping decompressed size.
-- **GraphQL** (if used) — enforce **query depth + complexity** limits, **disable introspection in prod**, and cap **aliasing/batching** (batched or aliased operations bypass per-request rate limits).
-- **Sensitive business flows (API6)** — protect high-value flows (signup, checkout, invites, password reset) from automated abuse with lockout + bot mitigation, beyond raw rate limits.
+## CSRF
 
-## Concurrency & idempotency
+- **Cookie-authenticated mutations are checked in the proxy:** the `Origin` header must be on the allowlist, falling back to `Referer` when `Origin` is absent, and anything else is a 403. OWASP now adds **Fetch Metadata**: refuse a mutation whose `Sec-Fetch-Site` is `cross-site`. `SameSite=Lax` on the session cookie is a layer, not the defence (`auth`).
+- **A `Bearer` request isn't open to CSRF** — the browser never attaches it on its own — but the same route still runs the origin check when a cookie is present.
+- **A `GET` never changes state**, so no check is needed on it.
+- **A Server Action is a public `POST` endpoint**: it authorises and validates on its own, every time, like a route. Next compares its `Origin` with `Host`; set `serverActions.allowedOrigins` only for a known proxy, and never treat the encrypted closure as a place to keep a secret.
+- **Responses that vary on `Origin` or `Sec-Fetch-Site`** send `Vary` with those headers, so a cache can't serve one caller's answer to another.
 
-- **Race conditions / TOCTOU** — guard state transitions and limited-quantity flows (balance debits, redeem/claim, invite-accept, seat allocation) with a **transaction / atomic conditional update or a lock**. A check-then-act split across two calls is a double-spend / coupon-reuse bug.
-- **Idempotency for client mutations** — accept and enforce an **`Idempotency-Key`** on retriable POSTs (payments, orders, sends) and dedupe on it, so a retry or double-click can't create duplicate side effects (webhooks/cron dedupe the same way → `api-architecture`).
+## Firebase's public surface
 
-## Secrets, config & error hygiene
+- **The web API key is an identifier, not a secret** — it ships in every page. Restrict it in the Google Cloud console: **API restrictions** to the Firebase APIs the app uses, and for a web key, **application restrictions** to the tier's own domains. One key per tier, and never a non-Firebase API (a paid AI API, say) on the same key.
+- **App Check** attests that a call comes from the real app, for every Firebase product the client calls directly; enforce it in production after a monitoring period, and verify its token on any API route that wants the same proof ([references/app-check.md](references/app-check.md)).
+- **Clients reach no data directly** — the rules deny them (`firestore`) — except public files in the public bucket and uploads to a reserved path (`image-handling`).
 
-- **Secrets** — in a **Secret Manager**, never in code, `NEXT_PUBLIC_*`, or committed `.env`; rotate on a schedule; **least-privilege service accounts**; validate env at boot with Zod (→ `devops`, `nextjs`).
-- **Configuration** — tight **CORS** (specific origins, not `*`; `Allow-Credentials` only with an explicit origin), disable debug/introspection in prod, secure defaults, no directory listing or verbose banners (→ `api-architecture` proxy, `devops` headers).
-- **Error handling (A10) — fail closed.** A `catch` must **deny**, never grant. Return a **generic message + correlation id** to the client; log details server-side. Never leak stack traces, SQL, internal paths, or which check failed.
+## Secrets and configuration
 
-## Data protection (A04)
+- **Secrets** live in the secret manager, never in code, a public variable or a committed file; service accounts hold only the roles they use; a leaked secret is revoked at its issuer first (`env`).
+- **CORS** names exact origins, never `*`, and allows credentials only with an exact origin. No debug routes, introspection or verbose banners on a deployed tier; security headers are set in every app's config (`frontend-security`, `devops`).
+- **Secrets are compared in constant time** (`timingSafeEqual`), never with `===`; it throws on inputs of different lengths, so hash both sides first.
+- **Absolute URLs come from configured origins** — an email's link, a redirect, a continue URL — never from `Host` or `X-Forwarded-Host`, which a caller can set.
 
-- **In transit** — HTTPS everywhere + HTTP Strict Transport Security (HSTS) (→ `devops`). **At rest** — rely on the platform's encryption; **field-level encryption** for especially sensitive PII (→ `field-encryption`).
-- **Minimize & mask** — collect the least data needed; **never log secrets/tokens/PII** or put them in URLs (query strings hit proxy/CDN/browser logs); redact in logs and error reports.
-- **Randomness** — generate all security-sensitive values (tokens, nonces, ids, salts) with a **CSPRNG** (`crypto.randomBytes` / `crypto.randomUUID`), never `Math.random()` or timestamps.
+## Errors and logging
 
-## Audit logging & monitoring (A09)
+- **Fail closed** (A10): a `catch` around a check denies, never allows. A timeout on a security check is a failure (`redis`, `rate-limiting`).
+- **The client gets a generic message, a stable code and a correlation id**; the stack, the query, internal paths and which check failed stay in the server log (`api-architecture`).
+- **Never log secrets, tokens or passwords**, and never put them in a URL, which proxies and browsers log. **Personal data** — an email, an IP — goes only into the access-controlled audit and security logs, with a retention period, never the general application log.
+- **Privileged acts go to the audit log**, every other refusal to the security log with actor, method, path and IP, and spikes alert someone (`api-architecture`, `rate-limiting`).
 
-- **Log privileged/security-relevant actions** (auth events, role changes, admin mutations, deletes) with actor, action, target, and request metadata — action strings a typed union, not ad-hoc (→ `api-architecture`).
-- Make logs **tamper-resistant** and **alert** on anomalies (auth failure spikes, 4xx/5xx surges, new-device sign-ins). Don't log the sensitive payloads themselves.
+## Data in transit and at rest
 
-## File uploads
+HTTPS everywhere with HSTS (`frontend-security`); the platform's encryption at rest, and field encryption for the few values that warrant it (`field-encryption`); every token, nonce, id and salt from a CSPRNG (`crypto.randomBytes`, `crypto.randomUUID`), never `Math.random()` or a timestamp.
 
-Validate **type and size server-side** (never trust the client content-type or extension); store outside the web root / in object storage with least-privilege; prefer the **reserve-then-upload, rules-gated** model (→ `image-handling`); scan where feasible; serve via signed URLs, not by echoing user paths.
+## Upstream APIs and inventory
 
-## CSRF, webhooks & third-party APIs
+- **Data from a third-party API is untrusted input**: parse it with a schema, time-box the call, honour its rate limits (`rate-limiting`), and decide what happens when it fails.
+- **Webhooks and scheduled calls authenticate their own way** — a signature over the raw body or the scheduler's OIDC token, in constant time, with a replay window (`api-architecture`).
+- **Know every route that's live:** each is versioned and in the API reference, a retired version is deleted, and no debug or staging route ships to production (`openapi-registry`).
 
-- **CSRF** — for cookie auth, enforce `SameSite` **and** a server-side **Origin/Referer allowlist** on mutating requests (reject off-allowlist with 403) — the proxy owns this (→ `api-architecture`, `nextjs`).
-- **Webhooks / cron** — verify a **signature** (webhooks) or the scheduler's **OpenID Connect (OIDC) token** (cron) with a **constant-time compare** (`crypto.timingSafeEqual`, never `===`); reject events **outside a small signed-timestamp window** (replay defense); make handlers **idempotent** (dedupe by a deterministic id). They skip user rate-limiting but authenticate their own way (→ `api-architecture`).
-- **Unsafe consumption of upstream APIs (API10)** — don't blindly trust data from third-party APIs; validate/sanitize it, set timeouts, and handle their failures. **Inventory (API9)** — retire deprecated/`/v1` and staging endpoints; no debug routes in prod.
+Concrete snippets — the ownership check, the field mapper, the SSRF guard, token verification, the Fetch Metadata check, the sanitiser policy, failing closed — are in [references/server-hardening.md](references/server-hardening.md).
 
 ## Do / Don't
 
-- **Do** re-authorize every object/function/field server-side from the verified actor; allowlist writes and map reads to DTOs; verify token signature/iss/aud/exp with rotation + revocation; hash passwords with argon2/bcrypt + lockout; validate all input with Zod and use parameterized queries; allowlist SSRF targets and block metadata IPs; rate-limit + size/paginate/complexity-cap every endpoint; keep secrets in a manager with least-privilege service accounts; fail closed with generic errors + correlation ids; encrypt in transit/at rest and minimize PII; audit privileged actions; verify webhook signatures + cron OIDC and make handlers idempotent.
-- **Don't** trust client-sent ids/roles/fields for authorization; bind request bodies wholesale or return raw documents; accept `alg: none` or skip token claim checks; use fast hashes or leak auth timing/enumeration; string-build SQL/NoSQL/commands or deserialize untrusted data; fetch user URLs without an allowlist; leave an endpoint unlimited; commit secrets or over-scope service accounts; return stack traces or fail open in a catch; log secrets/PII; skip webhook/cron auth or idempotency.
+- **Do** re-authorise every id from the verified actor; scope queries by tenant; allowlist writes and project reads; parse every input; sanitise stored HTML on the server; guard outbound URLs; cap every input and design each flow's abuse case; commit checks and actions together; check Origin and `Sec-Fetch-Site` on cookie mutations; restrict the Firebase web key; fail closed with generic errors; keep secrets in the manager.
+- **Don't** trust a client-sent id, role or owner; return a document whole to a caller who may not see all of it; build a query from strings; store raw user HTML; fetch a user's URL unchecked or follow its redirects; leave a route without a budget; compare secrets with `===`; return a stack trace; log a token or put one in a URL; share one API key across tiers or APIs.
+
+## Related skills
+
+Browser-side threats `frontend-security` · sessions `auth` · roles and guards `access-control` · budgets and lockouts `rate-limiting` · route order, webhooks and audit `api-architecture` · schemas `schemas-and-contracts` · rules `firestore` (and `firebase-security-rules-auditor`) · uploads `image-handling` · secrets `env` · CI and supply chain `devops` · encrypted fields `field-encryption` · the review `security-audit`.

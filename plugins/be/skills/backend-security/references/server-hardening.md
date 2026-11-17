@@ -1,104 +1,125 @@
-# Server hardening — concrete patterns
+# Server hardening — snippets
 
-Companion to the `backend-security` skill. Copy-adaptable server-side snippets. The API _architecture_ these plug into (guards, response builders, rate-limit tiers) lives in `api-architecture`; the Firebase specifics in `firestore`.
+Copy-adaptable server-side snippets behind `SKILL.md`. The guards and response builders they plug into are `api-architecture`'s and `access-control`'s; budgets and tiers are `rate-limiting`'s.
 
-## Object-level authorization (Broken Object-Level Authorization, BOLA) — check ownership on the resolved doc
+## Contents
+
+- [Object-level authorisation](#object-level-authorisation)
+- [Fields: allowlist writes, project reads](#fields-allowlist-writes-project-reads)
+- [Token verification](#token-verification)
+- [SSRF-safe outbound fetch](#ssrf-safe-outbound-fetch)
+- [CSRF in the proxy](#csrf-in-the-proxy)
+- [Sanitising stored rich HTML](#sanitising-stored-rich-html)
+- [Parameterised queries](#parameterised-queries)
+- [Failing closed](#failing-closed)
+
+## Object-level authorisation
 
 ```ts
-// Decode the token ONCE, load the doc, resolve the actor's role on it, then assert.
-export async function loadResourceWithPermission(request: Request, id: string, perm: Permission) {
-  const actor = await getActor(request);                 // server-verified identity
-  const doc = await getResource(id);                      // load the SPECIFIC object
-  if (!doc) throw new NotFoundError();
-  if (doc.tenantId !== actor.tenantId) throw new NotFoundError(); // tenant isolation (404, not 403)
-  const role = resolveResourceRole(actor, doc);          // owner / editor / viewer
-  if (!can(role, perm)) throw new ForbiddenError();       // pure policy check
-  return { actor, doc };
+// Verify the token once, load the specific object, resolve the actor's role on it, then check.
+export async function loadProjectWithPermission(request: Request, projectId: string, permission: Permission) {
+  const actor = await requireSession(request); // identity from the verified token
+  const project = await getProject(projectId);
+  if (!project || project.tenantId !== actor.tenantId) throw new NotFoundError(); // 404, never 403
+  const resourceRole = resolveProjectRole(actor, project);
+  if (!can({ ...actor, resourceRole }, permission)) throw new ForbiddenError();
+  return { actor, project };
 }
 ```
 
-Never authorize from an id/role in the request body. Cross-tenant misses return **404**, not 403 (don't confirm the object exists).
+A second id in the body — a target project, a parent — goes through its own load-and-check.
 
-## Property-level (Broken Object-Property-Level Authorization, BOPLA) — allowlist writes, Data Transfer Object (DTO) reads
-
-```ts
-// WRITE: pick exactly what the caller may set. .omit()/.partial() are fail-open — a new
-// server-controlled field is silently writable. Allowlist instead.
-const UpdateProfileInput = ProfileSchema.pick({ displayName: true, bio: true });
-const data = UpdateProfileInput.parse(await request.json());
-await updateProfile(id, data);                            // service writes only these fields
-
-// READ: map to an explicit DTO — never return the raw document to a less-privileged caller.
-function toProfileDTO(doc: UserDoc) {
-  return { id: doc.id, displayName: doc.displayName, bio: doc.bio }; // no email/role/internal flags
-}
-```
-
-## JWT verification
+## Fields: allowlist writes, project reads
 
 ```ts
-const payload = jwt.verify(token, key, {
-  algorithms: ["RS256"],        // pin the algorithm — never accept "none" or a client-chosen alg
-  issuer: EXPECTED_ISS,
-  audience: EXPECTED_AUD,
-});                              // throws on bad signature / iss / aud / exp
-if (await isRevoked(payload.jti)) throw new UnauthorizedError(); // blocklist for logout/rotation
+// WRITE: pick exactly what the caller may set; .omit() lets every new server field through.
+const UpdateProfileSchema = ProfileSchema.pick({ displayName: true, bio: true });
+
+// READ: a projection for a less-privileged caller — never the document whole.
+const PublicProfileSchema = ProfileSchema.pick({ id: true, displayName: true, bio: true });
+export const toPublicProfile = (profile: Profile) => PublicProfileSchema.parse(profile);
 ```
 
-Short-lived access token + rotating refresh token in an httpOnly cookie. No secrets/PII in the payload (signed, not encrypted).
+## Token verification
 
-## SSRF (Server-Side Request Forgery)-safe outbound fetch
+For tokens the platform's SDK doesn't verify for you:
+
+```ts
+const { payload } = await jwtVerify(token, keySet, {
+  algorithms: ["RS256"], // pinned — never "none" or the token's own choice
+  issuer: EXPECTED_ISSUER,
+  audience: EXPECTED_AUDIENCE,
+}); // rejects a bad signature, issuer, audience or expiry
+if (await isRevoked(payload.jti)) throw new UnauthorisedError();
+```
+
+A JWT is signed, not encrypted: no secrets or personal data in its payload.
+
+## SSRF-safe outbound fetch
 
 ```ts
 import { lookup } from "node:dns/promises";
 import ipaddr from "ipaddr.js";
 
-const ALLOWED_HOSTS = new Set(["api.partner.com"]);
-
-export async function safeFetch(rawUrl: string) {
+export async function fetchUserUrl(rawUrl: string): Promise<Response> {
   const url = new URL(rawUrl);
-  if (url.protocol !== "https:") throw new BadRequestError("scheme"); // reject file:/gopher:/http: etc.
-  if (!ALLOWED_HOSTS.has(url.hostname)) throw new BadRequestError("host");
-  const records = await lookup(url.hostname, { all: true });  // ALL A + AAAA records, not just the first
+  if (url.protocol !== "https:") throw new BadRequestError("Only https URLs are allowed");
+  const records = await lookup(url.hostname, { all: true }); // every A and AAAA record
   for (const { address } of records) {
-    if (ipaddr.parse(address).range() !== "unicast") throw new BadRequestError("private/metadata ip");
-  }                                                            // blocks 169.254.169.254, 10/8, ::1, fc00::/7…
-  return fetch(url, { redirect: "error", signal: AbortSignal.timeout(5000) }); // no redirects, tight timeout
+    if (ipaddr.process(address).range() !== "unicast") throw new BadRequestError("That address isn't allowed");
+  } // refuses 169.254.169.254, 10/8, 127/8, ::1, fc00::/7 and IPv4-mapped forms of them
+  return fetch(url, { redirect: "error", signal: AbortSignal.timeout(5_000) });
 }
 ```
 
-Gaps to close beyond this sketch: there's a **validate-then-connect** TOCTOU (the resolver can return a different IP on the real connection — pin the validated IP for the actual socket where your client allows it), and cover IPv6/decimal/octal-encoded hosts. Apply the **same guard to any URL an LLM tool** can make the server fetch (prompt-injection SSRF).
+Still open in this sketch: the resolver can answer differently when the real connection is made (DNS rebinding) — pin the checked address for the socket where the HTTP client allows it — and the body size needs a cap while reading. The same guard covers every URL an AI tool can make the server fetch.
 
-## Rate-limit tiers
-
-```ts
-export const RATE_LIMITS = {
-  AUTH:      { windowMs: 60_000, max: 5 },    // login, signup, password reset — + (IP,email) lockout
-  SENSITIVE: { windowMs: 60_000, max: 10 },   // destructive or costly authed ops (delete, export, billing)
-  WRITE:     { windowMs: 60_000, max: 30 },   // normal authed writes
-  READ:      { windowMs: 60_000, max: 300 },  // authed reads
-  PUBLIC:    { windowMs: 60_000, max: 100 },  // anonymous reads
-} as const;
-
-// on limit: return 429 with Retry-After. Tier by what the route DOES, not what it costs.
-```
-
-## Parameterized query (no string-building)
+## CSRF in the proxy
 
 ```ts
-// GOOD — placeholders; the driver escapes values
-await db.query("SELECT id, name FROM users WHERE tenant_id = $1 AND id = $2", [tenantId, id]);
-// NoSQL: never pass a raw request object as a filter (operator injection) — pick scalar fields explicitly.
+const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function isCrossSiteMutation(request: Request): boolean {
+  if (!MUTATING.has(request.method)) return false;
+  if (request.headers.get("sec-fetch-site") === "cross-site") return true; // Fetch Metadata first
+  const origin = request.headers.get("origin") ?? originOf(request.headers.get("referer"));
+  return !origin || !ALLOWED_ORIGINS.includes(origin); // exact match, never a suffix check
+}
+// In the proxy: if (hasSessionCookie(request) && isCrossSiteMutation(request)) → 403.
 ```
 
-## Fail-closed error handling
+## Sanitising stored rich HTML
+
+```ts
+import sanitizeHtml from "sanitize-html";
+
+// The allowlist lives in the shared constants, so the editor and the browser's pass agree.
+const RICH_TEXT_POLICY: sanitizeHtml.IOptions = {
+  allowedTags: [...RICH_TEXT_ALLOWED_TAGS],
+  allowedAttributes: { a: ["href", "title", "rel"] }, // rel listed, or the transform's rel is stripped
+  allowedSchemes: ["http", "https", "mailto"],
+  transformTags: { a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer nofollow" }) },
+};
+
+export const sanitiseRichText = (html: string) => sanitizeHtml(html, RICH_TEXT_POLICY); // at write time
+```
+
+## Parameterised queries
+
+```ts
+// SQL: placeholders; the driver escapes the values.
+await db.query("SELECT id, name FROM users WHERE tenant_id = $1 AND id = $2", [tenantId, userId]);
+// NoSQL: build the filter from scalar fields — never pass a request object as the filter.
+```
+
+## Failing closed
 
 ```ts
 try {
-  await doPrivilegedThing(actor);
+  await runPrivilegedAction(actor);
 } catch (error) {
-  logger.error({ error, correlationId, actorId: actor.id }); // details server-side only
-  return errorResponse(error); // typed error → status + generic message; NEVER a stack trace to the client
+  logger.error({ error, correlationId, actorId: actor.uid }); // the detail stays on the server
+  return errorResponse(error); // a typed status and a generic message; never a stack trace
 }
-// A catch must DENY. Never `catch { return allow() }`.
+// A catch around a check denies. Never `catch { return allow() }`.
 ```
