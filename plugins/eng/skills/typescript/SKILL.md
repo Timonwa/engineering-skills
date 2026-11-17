@@ -1,6 +1,6 @@
 ---
 name: typescript
-description: Use when writing or reviewing TypeScript — typing code, designing types, configuring tsconfig, typing Next.js routes, or fixing type errors. Enforces strict, inference-first TypeScript 7 — no any or unsafe casts, discriminated unions, satisfies, utility types, erasable syntax only, tsconfig presets chosen by who resolves the imports, and typed routes. Zod schemas live in `schemas-and-contracts`; identifier naming in `naming`.
+description: Use when writing or reviewing TypeScript — typing code, designing types, configuring tsconfig, typing Next.js routes, or fixing type errors. Enforces strict, inference-first TypeScript 7 — no any or unsafe casts, discriminated unions, satisfies, utility types, erasable syntax only, tsconfig presets chosen by who resolves the imports, TypeScript 6's defaults and removed options, declaration emit and subpath imports for packages, type-aware lint, and typed routes. Zod schemas live in `schemas-and-contracts`; identifier naming in `naming`.
 ---
 
 # TypeScript
@@ -30,6 +30,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Utility types** over hand-rolled ones: `Pick`, `Omit`, `Partial`, `Required`, `Record`, `ReturnType`, `Awaited`. Compose, don't duplicate.
 - **Generics** with constraints (`<T extends …>`); don't over-generalise.
 - **`type` over `interface`**, which composes, unions and infers; use `interface` only for declaration merging or `implements`.
+- **Type guards over casts** — a `value is T` predicate, or a filter TypeScript infers one from (`.filter((x) => x !== undefined)`), narrows where an `as` would only assert.
 - **Errors are `unknown`** — `catch (error: unknown)` and narrow (`instanceof Error`, a schema parse) before touching one.
 - **Branded types** for ids where mixing two up is a real risk (`type UserId = string & { readonly __brand: "UserId" }`) — not for everything.
 - **`NoInfer<T>`** locks an inference site so a second argument can't widen what the first inferred.
@@ -55,10 +56,28 @@ Turning them on in an existing codebase: the first passes as soon as no file use
 | `react-library` | a package every consumer bundles | `module: "ESNext"`, `moduleResolution: "Bundler"`, `jsx: "react-jsx"`                             |
 | `node-library`  | a package plain Node loads       | `module: "NodeNext"`, `moduleResolution: "NodeNext"`                                              |
 
+### What TypeScript 6 changed
+
+TypeScript 6 changed the defaults, and TypeScript 7 removes what 6 deprecated:
+
+- **`types` defaults to `[]`** — no `@types` package is global unless listed. Each preset lists the globals its code uses: `["node"]` for `node-library` and anything reading `process`, the test runner's for test configs. `["*"]` restores the old behaviour at the old cost.
+- **`rootDir` defaults to the tsconfig's folder.** A package that emits sets `"rootDir": "./src"` beside `"outDir": "./dist"`, or its output lands in `dist/src/`.
+- **`noUncheckedSideEffectImports` is on**, so a side-effect import TypeScript can't resolve (`import "./globals.css"`) fails; declare it (`declare module "*.css";`) rather than turning the check off.
+- **`strict` is on by default** — the base still says so, for readers.
+- **Never write** `baseUrl` (put its prefix in each `paths` entry), `moduleResolution` `node`/`node10` or `classic`, `esModuleInterop` or `allowSyntheticDefaultImports` set to `false`, `target: "es5"`, `downlevelIteration`, `outFile`, `module` `amd`/`umd`/`system`, or `alwaysStrict: false`. `ignoreDeprecations: "6.0"` silences them only until TypeScript 7.
+
+### Packages
+
+- **A package that builds to `dist/` emits declarations** — `declaration`, `declarationMap` (so "go to definition" lands in the source) and `isolatedDeclarations`, which makes every export state its type so declarations can be emitted file by file. Its `exports` give each entry a `types` condition first.
+- **Inside a package, alias with subpath imports** — `"imports": { "#/*": "./src/*" }` in its `package.json`, imported as `#/utils/date.js` — rather than `paths`, which Node and the package's consumers never see. `paths` stays for apps.
+
+### Notes
+
 - **`NodeNext` requires the `.js` extension on relative imports** (`import { x } from "./x.js"`). That's the ESM spec, and it's what makes plain `tsc` output loadable by Node.
 - **An app's own `tsconfig.json`** extends its preset and adds the path alias (`"@/*": ["./src/*"]`). Add a second alias only with a reason.
 - **Strictness worth adopting knowingly:** `noUncheckedIndexedAccess` (indexed access yields `T | undefined`) is in the base; `exactOptionalPropertyTypes` (`?:` no longer accepts an explicit `undefined`) is a project's choice.
 - **A Next.js app type-checks with `next typegen && tsc --noEmit`,** because typed routes and `PageProps`/`LayoutProps` come from Next's generated types.
+- **Lint with type information:** typescript-eslint's `strictTypeChecked` with `parserOptions.projectService: true`, so `no-floating-promises`, `no-misused-promises` and `switch-exhaustiveness-check` catch what the compiler doesn't.
 - **When the linter's TypeScript parser lags a major version,** alias the linter package's own `typescript` dependency to the last major it supports, record why in the lint config's docs, and remove the alias once the parser catches up. Lint and the compiler then check with slightly different versions, so the compiler stays the authority.
 
 ## Typed routes
