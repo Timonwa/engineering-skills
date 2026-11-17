@@ -44,13 +44,20 @@ Read every changed line, then look at it from each angle. On a diff over a few h
 1. **Correctness** — wrong conditions, off-by-one, null and undefined, a missing `await`, `0` or `""` treated as missing, swallowed errors, a state that can't be reached or left, a loading or error state never shown.
 2. **Removed behaviour** — for every deleted or replaced line, what it guaranteed and where the new code still guarantees it. A dropped guard, error path or validation is a finding.
 3. **Callers** — every changed export: who imports it, and does each caller still hold (a new required prop, a changed return shape, a renamed field).
-4. **The intent** — does the change do what its issue or spec asked, all of it, and nothing it shouldn't?
-5. **The project's rules** — structure, naming, data and caching, API and auth, styling and the design system, as `AGENTS.md`, its guides and the house skills (`code-structure`, `naming`, `api-architecture`, `nextjs`, `design-system`) state them.
-6. **Reuse** — new helpers, hooks, schemas and constants checked against the project's packages (including the house packages it uses) and its own `lib/`. Name what it duplicates.
-7. **Security** — secrets reaching the client, input that skips validation, a missing guard or ownership check, unsafe HTML, an open redirect (`frontend-security`, `backend-security`, `access-control`).
-8. **Tests** — new shared code, services, routes, actions and hooks have specs beside them, mocking only the I/O boundaries; nothing weakened or deleted to go green (`testing`).
-9. **Docs** — an `AGENTS.md`, README or guide the change now contradicts, or a new command, route, env value or convention not written down, with the line to update.
-10. **The PR itself** — the branch, small Conventional commits, the template filled in honestly, issues linked (`ship-changes`). A promotion PR (a tier branch into the next) is checked only for green checks, no stray commits and the merge method (`devops`), never re-reviewed line by line.
+4. **Compatibility and data** — what's already out there when this deploys:
+   - documents stored under the old schema, which the new read must still parse or a migration must reshape (`schemas-and-contracts`);
+   - clients still on the old version — an open tab, a mobile build, an integrator — calling a changed route or reading a changed response;
+   - security rules and indexes that must deploy before the code that needs them, and a worker or another app that reads the same data;
+   - a new env value or secret that every tier needs before the deploy (`env`).
+5. **The intent** — does the change do what its issue or spec asked, all of it, and nothing it shouldn't?
+6. **The project's rules** — structure, naming, data and caching, API and auth, styling and the design system, as `AGENTS.md`, its guides and the house skills (`code-structure`, `naming`, `api-architecture`, `nextjs`, `design-system`) state them. Changed UI is checked for `accessibility` too: labels, keyboard use, focus, contrast.
+7. **Reuse** — new helpers, hooks, schemas and constants checked against the project's packages (including the house packages it uses) and its own `lib/`. Name what it duplicates.
+8. **Security** — secrets reaching the client, input that skips validation, a missing guard or ownership check, unsafe HTML, an open redirect (`frontend-security`, `backend-security`, `access-control`).
+9. **Performance and operations** — a query or call inside a loop, an unbounded list, a client bundle that grew, work on the request path that belongs in a queue; and whether a failure here would show in the logs and alerts.
+10. **Tests** — new shared code, services, routes, actions and hooks have specs beside them, mocking only the I/O boundaries; nothing weakened or deleted to go green (`testing`).
+11. **Docs** — an `AGENTS.md`, README or guide the change now contradicts, or a new command, route, env value or convention not written down, with the line to update.
+12. **Dependencies and design** — each new dependency earns its place: no house package or existing one already does it, it's maintained, its licence fits, and its size is worth it (`dependency-audit`). A new abstraction has a second caller or a reason; one used once is complexity, not design.
+13. **The PR itself** — the branch, small Conventional commits, the template filled in honestly, issues linked (`ship-changes`). A PR too large to review well — past a few hundred changed lines of logic, or mixing a refactor with a feature — is a finding that names how to split it. A promotion PR (a tier branch into the next) is checked only for green checks, no stray commits and the merge method (`devops`), never re-reviewed line by line.
 
 Then a simplification pass: state that could be derived, copy-pasted variants, dead code, effects syncing what could be computed, hand-written memoisation the compiler makes redundant.
 
