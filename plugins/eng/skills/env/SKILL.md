@@ -1,7 +1,7 @@
 ---
 name: env
 description: >-
-  Environment configuration for Next.js apps, an API and workers — secrets in env and public per-tier facts in committed constants, `APP_ENV` as the tier, a Zod env guard at boot, `NEXT_PUBLIC_` rules, a names-only `.env.example`, App Hosting secret grants and safe ops scripts. Use when adding a config value, a secret, a grant, a tier, or anything that reads env.
+  Environment configuration for Next.js apps, an API and workers — secrets in env and public per-tier facts in committed constants, `APP_ENV` as the tier, a Zod env guard at boot, `NEXT_PUBLIC_` rules, a names-only `.env.example`, App Hosting secret grants, rotating and responding to a leaked secret, and safe ops scripts. Use when adding a config value, a secret, a grant, a tier, or anything that reads env.
 ---
 
 # Env
@@ -23,6 +23,8 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **No → a committed constant**, however much it differs per tier: base URLs, cookie domains, CORS origins, project and bucket ids, a Firebase web config, a public API key, an analytics id. Keyed off the tier in a `site.ts` (or a shared constants file when several apps read it), so every tier's values are reviewable in one diff and a new deployment needs no new variables.
 
 A public value that isn't a secret has no reason to be an env var, so `NEXT_PUBLIC_` variables are rare.
+
+**A Client Component gets a per-tier fact as a prop**, or from a provider the layout fills: the layout, a Server Component, reads the constant and passes the value down (the client SDK's config, the API's origin). The tier comes from server-only env, so a client module never imports the constants file that reads it.
 
 ## The tier is `APP_ENV`
 
@@ -72,7 +74,7 @@ A public value that isn't a secret has no reason to be an env var, so `NEXT_PUBL
 
 ## `.env` and `.env.example`
 
-- **`.env` per app**, gitignored: the local secrets and `APP_ENV=local`.
+- **`.env` per app**, gitignored: the local secrets and `APP_ENV=local`. Its values come from the secret manager through a script (`env-setup` writing the file for the tier named), never passed around by hand — not in chat, an issue, a PR, a commit or an AI tool's prompt.
 - **`.env.example` beside it lists every key the app and its scripts read, with no values and no comments**, and is committed. A key no longer read is deleted from both.
 - **A parity check** (a small script, run in CI) fails when an app's `.env` and `.env.example` name different keys, so a new secret can't ship undocumented.
 
@@ -81,6 +83,12 @@ A public value that isn't a secret has no reason to be an env var, so `NEXT_PUBL
 - **A base `apphosting.yaml` plus one overlay per tier** (`apphosting.<tier>.yaml`). The overlay sets `APP_ENV` and any grant only that tier has; the base declares the grants every tier shares, and each project's Secret Manager holds its own value.
 - **Create the secret and grant the backend access before the next rollout.** A missing grant is the most common failed build, because the env guard throws during `next build`. The mechanics of `apphosting.yaml` and the secrets commands are the official `firebase-app-hosting-basics` skill's.
 - **Rotating a secret needs a new rollout**; a running backend keeps the value it started with.
+
+## Rotating and leaks
+
+- **Rotate on a schedule** for long-lived keys, and **at once** when someone with access leaves or a secret may have been seen.
+- **A signing or encryption secret rotates with an overlap:** the new one signs, the old one still verifies until everything it signed has expired, then it goes (`field-encryption` for keys that encrypt stored data).
+- **A leaked secret is revoked first, at its issuer**, then replaced and rolled out — deleting the commit doesn't help, because clones, forks, caches and scanners already have it. Then read the provider's logs for use while it was exposed, purge it from history if the repo is public, and record what happened.
 
 ## Workers and extensions
 
@@ -98,8 +106,8 @@ Every env var a build reads is listed in the build task's `env` in `turbo.json`,
 
 ## Do / Don't
 
-- **Do** ask "would leaking this hurt?" for every value; keep public per-tier facts in committed constants keyed by `APP_ENV`; validate at boot; require deployed-only values with `superRefine`; keep `.env.example` to names; grant secrets before the rollout that reads them.
-- **Don't** read `process.env` outside the carve-outs; set or branch on `NODE_ENV`; put a secret behind `NEXT_PUBLIC_`; add comments or values to `.env.example`; give an ops script a production default; commit a `.env` file.
+- **Do** ask "would leaking this hurt?" for every value; revoke a leaked secret at its issuer before anything else; pass per-tier facts to client code as props; keep public per-tier facts in committed constants keyed by `APP_ENV`; validate at boot; require deployed-only values with `superRefine`; keep `.env.example` to names; grant secrets before the rollout that reads them.
+- **Don't** read `process.env` outside the carve-outs; set or branch on `NODE_ENV`; put a secret behind `NEXT_PUBLIC_`; add comments or values to `.env.example`; give an ops script a production default; commit a `.env` file; paste a secret into chat, a ticket or a prompt.
 
 ## Related skills
 
