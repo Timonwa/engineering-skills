@@ -645,6 +645,7 @@ jobs:
     permissions: { contents: read }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
       - uses: ./.github/actions/setup
       - run: pnpm format:check
   lint-and-types:
@@ -653,6 +654,7 @@ jobs:
     permissions: { contents: read }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
       - uses: ./.github/actions/setup
       - run: pnpm check:env
       - run: pnpm audit --audit-level critical # reports every advisory, fails only on a critical
@@ -664,6 +666,7 @@ jobs:
     permissions: { contents: read }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
       - uses: ./.github/actions/setup
       - run: pnpm build
   # test: the same steps running `pnpm test` — only for the runners chosen in the interview

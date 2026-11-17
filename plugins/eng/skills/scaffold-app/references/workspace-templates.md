@@ -170,6 +170,7 @@ jobs:
       # Checkout must precede a LOCAL composite action — the runner reads it from the
       # workspace, so it does not exist until this step has run.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
       - uses: ./.github/actions/setup
       - run: pnpm format:check
   lint-and-types:
@@ -178,7 +179,7 @@ jobs:
     permissions: { contents: read }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { fetch-depth: 0 } # --affected diffs against the base, so it needs history
+        with: { fetch-depth: 0, persist-credentials: false } # --affected diffs against the base, so it needs history
       - uses: ./.github/actions/setup
       - run: pnpm check:env
       - run: pnpm audit --audit-level critical # reports every advisory, fails only on a critical
@@ -189,7 +190,7 @@ jobs:
     permissions: { contents: read }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - uses: ./.github/actions/setup
       - run: pnpm turbo run build $AFFECTED
   test:
@@ -202,7 +203,7 @@ jobs:
         package: [site, dashboard, admin, api, contracts, hooks, utils] # one job per app and package
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, persist-credentials: false }
       - uses: ./.github/actions/setup
       - run: pnpm turbo run test --filter=@<scope>/${{ matrix.package }} $AFFECTED
   # stories: installs Playwright's Chromium (cached on its version), then runs
