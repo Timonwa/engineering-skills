@@ -1,11 +1,12 @@
 ---
 name: tailwind
-description: Use when setting up Tailwind, organizing CSS into files, defining design tokens/theming, or styling components. Tailwind CSS v4 (CSS-first). Enforces the house setup — CSS split by concern and imported in order, a two-layer token system (raw vars + @theme inline), token-driven dark mode, the ui-prefix scope, cn() merging, semantic tokens over literals, and custom utilities/component classes over repeated class strings.
+description: >-
+  Tailwind CSS v4 set up CSS-first — one compilation per app with `@source` for packages, CSS split into ordered layer files with installed layers kept apart, three token layers (ramps in `@theme`, roles per mode, `@theme inline`), dark mode on `[data-mode]` with an OS fallback and a pre-paint script, complete class names in a scales file, `cn()` with custom scales registered, `@utility`, container queries and v3 migration. Use when setting up Tailwind, adding a token or utility, theming, or styling a component.
 ---
 
-# Tailwind design system (v4)
+# Tailwind
 
-Tailwind CSS **v4, CSS-first** — config lives in CSS via `@theme`, not a JS file (**no `tailwind.config.js`, no `content` array, no purge config**; v4 auto-detects sources).
+Tailwind CSS v4 is configured in CSS: `@import "tailwindcss"`, `@theme`, `@source`, `@utility` and `@custom-variant` replace the JavaScript config. Components style from **semantic tokens** — `bg-surface`, `text-heading`, `border-border` — so a rebrand, a dark mode or a second theme is a change to variables, never to components.
 
 ## Project specifics first
 
@@ -14,101 +15,58 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Setup & wiring
+## Setup
 
-- **Vite:** the `@tailwindcss/vite` plugin. **Webpack / Next.js:** `@tailwindcss/postcss` as the only PostCSS plugin. v4 needs no `postcss-import` or `autoprefixer`.
-- One CSS entry per compilation, starting with `@import "tailwindcss"`.
-- **v4 source detection skips `node_modules` and gitignored files.** A compilation that must style files outside its own source tree declares them with `@source` — in a monorepo the app's CSS entry adds `@source "../../packages/ui/src";` (or the UI package's exported CSS carries its own `@source`). Without it the app build generates **zero** utilities for package components.
+- **The bundler's plugin:** `@tailwindcss/postcss` as the only PostCSS plugin in Next.js, `@tailwindcss/vite` in Vite. No `tailwind.config.js`, `content` array, `postcss-import` or `autoprefixer`; `@config` loads a legacy JavaScript config only while migrating.
+- **One compilation per app**, from one CSS entry that starts with `@import "tailwindcss"`. A shared UI package isn't compiled on its own: the app compiles it, with no prefix.
+- **`@source` brings in files outside the app.** Source detection skips `node_modules` and gitignored files, so an app's entry names the UI package's source, relative to the stylesheet (`@source "../../packages/ui/src";`), or it gets no CSS for any package component. In a monorepo whose builds run from the root, `@import "tailwindcss" source("../src")` sets the base path. `@source not "…/**/*.stories.tsx"` keeps stories out, and `@source inline("…")` forces a class that appears nowhere as a literal.
 
-## CSS file organization — split by concern
+## The CSS files
 
-Never dump styles into one file. Split into small files, each one concern, imported **in order** by a single entry (`globals.css`):
+- **One entry, small files, imported in order** — the theme, then element defaults, typography, utilities, animations, then components and section families. Every authored rule sits in a layer (`@layer base`, `@layer components`) or an `@utility`: CSS outside any layer beats every layer, utilities included, so an unlayered class can't be overridden by a utility. Within one layer the later rule wins. Skeletons for each file, and which file a new rule goes in: [references/layer-files.md](references/layer-files.md).
+- **Installed layers stay apart from owned ones.** Files a base library's CLI installs are reinstalled with `--overwrite`; the project's own rules live in separate files the reinstall doesn't touch, and the entry's header lists what to add back after one (`design-system`).
+- **In a monorepo** the files live once in a shared config package that every app's entry imports; a rule only one app uses stays in that app.
 
-```css
-/* globals.css — the app entry (always unprefixed) */
-@import "tailwindcss";
-@import "tw-animate-css";      /* plugins, if any */
+## Tokens, in three layers
 
-@import "./tokens.css";        /* 1. raw CSS variables (+ .dark overrides) */
-@import "./theme.css";         /* 2. @theme inline — map vars → Tailwind keys */
-@import "./base.css";          /* 3. @layer base — element defaults */
-@import "./utilities.css";     /* 4. @utility — custom utilities */
-@import "./animations.css";    /* 5. keyframes + the classes using them */
-@import "./components.css";    /* 6. @layer components — shared class patterns */
+1. **Ramps in `@theme`** — the brand's palette steps (`--color-jade-50 … -950`), the type scale, radius and spacing steps. Clear the defaults you replace (`--color-*: initial`) so stray `bg-red-500` stops existing.
+2. **Roles per mode** — semantic variables on `:root` and `[data-mode="dark"]` pointing at ramp steps (`--surface: var(--color-neutral-50)`), named by job, never by value. A rebrand edits layer 1; a dark-mode fix edits layer 2.
+3. **`@theme inline`** exposes the roles as utilities (`--color-surface: var(--surface)`). `inline` writes the variable reference into each utility, so a role overridden on `[data-mode]` or inside one section flows through; without it the value resolves where the theme variable is defined and the override is lost. `@theme static` emits every variable even when unused, for code that reads them.
 
-@custom-variant dark (&:where(.dark, .dark *)); /* opt-in manual toggle; selector is project-specific */
-```
-
-- **`tokens.css`** — raw design tokens as CSS custom properties on `:root` (OKLCH): semantic (`--background`, `--primary`, `--card`, `--border`, `--radius`) plus any decorative palette. A `.dark { … }` (or `[data-theme="dark"]`) block overrides the **same token names**.
-- **`theme.css`** — `@theme inline { … }` maps the raw vars to Tailwind keys (`--color-primary: var(--primary)`, `--radius-*`, `--font-*`). See "two-layer tokens".
-- **`base.css`** — `@layer base { … }` element defaults (body bg/color/font, focus & scroll behavior, `prefers-reduced-motion`).
-- **`utilities.css`** — `@utility <name> { … }` custom low-level utilities (e.g. `no-scrollbar`).
-- **`animations.css`** — `@keyframes` plus the classes that use them. **Before `components.css`**, so a component class can override an animation class and reference a keyframe; nothing here needs a component class.
-- **`components.css`** — `@layer components { … }` + `@apply` for **repeated class patterns only** (section rhythm, marketing typography like `.section`, `.section-eyebrow`, `.section-heading`). Real UI = primitives in `components/ui`, **not** classes here.
-- **Feature/domain CSS** as needed — `typography.css`, `dialog.css`, `shop.css`, `cookie-consent.css`.
-- **A skeleton for each file** — what belongs in it, what does not, and which file a new rule goes in → [references/layer-files.md](references/layer-files.md).
-- **Monorepo:** these files live once in a shared **`packages/tailwind-config`** (`base/themes/utilities/sections/heroes/shared-styles.css`). Apps import the **bundled** entry; the prefixed `packages/ui` build imports layers individually (see the `ui:` prefix section). New utilities go in the shared `utilities.css` only when reusable across apps — otherwise in the app's local `components.css`. Single app: everything lives in the app's `src/styles/`.
-
-## Two-layer tokens (the important bit)
-
-Tokens are defined **twice, on purpose**:
-
-1. **Raw vars** in `tokens.css`: `--primary: oklch(0.58 0.18 265);` — with a `.dark` block overriding the same names.
-2. **`@theme inline`** in `theme.css`: `--color-primary: var(--primary);`.
-
-The **`inline`** keyword is what makes it work: generated utilities (`bg-primary`, `text-foreground`) keep pointing at the **live** CSS vars, so `.dark` overrides — and any scoped per-section/per-feature override of `--primary` — flow through automatically. Map the raw var; **never bake a literal into `@theme`**.
-
-- Variants: plain `@theme` has generated utilities reference the theme variable itself (runtime overrides of the _underlying_ var don't flow through); **`@theme inline`** embeds the value (here `var(--primary)`) directly — what makes token-driven theming work; **`@theme static`** emits every theme variable into the CSS even when unused (useful when JS reads tokens).
-- **OKLCH** for all colors.
-- Keep **semantic** roles (`--primary`; `--accent` = muted hover surface) separate from a **decorative** palette (`--tint-1…5`) so roles never collide; consume decoratives with opacity modifiers (`bg-tint-1/10`, `border-tint-1/20`).
+- **Components use roles only.** A palette step in a component (`bg-jade-600`) is drift; the exceptions — brand artwork — are listed in the project's docs.
+- **Hex or OKLCH, consistently.** OKLCH's lightness is perceptual, which makes ramps and dark variants easier to step; either way, every text and surface pair passes contrast in both modes (`accessibility`).
+- **Tokens shared with design tools** are sourced once in the Design Tokens format (DTCG, `$value` and `$type` in JSON) and generated into these files, so the CSS and the design file can't disagree.
 
 ## Dark mode
 
-v4's default is `prefers-color-scheme` (auto/OS). We opt into a **manual toggle** via `@custom-variant dark (…)`, driven by a theme hook. The **selector is a project fact** — a `.dark` class or a `[data-theme="dark"]` attribute (document which in `AGENTS.md`). It's **token-driven**: `.dark` overrides the raw tokens in `tokens.css`; components never hardcode light/dark pairs.
+- **On an attribute:** `@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));`, with the roles overridden under `[data-mode="dark"]`. Components never hard-code light and dark pairs.
+- **No choice follows the OS:** the same overrides inside `@media (prefers-color-scheme: dark) { :root:not([data-mode="light"]) { … } }`, and `color-scheme` set in each mode so form controls and scrollbars match.
+- **A pre-paint script** in `<head>` reads the saved choice — or, with none, `matchMedia("(prefers-color-scheme: dark)")` — and sets `data-mode` on `<html>` before the first paint, so `dark:` utilities follow the OS too and nothing flashes. The root element takes `suppressHydrationWarning` in Next.js, because the server can't know the attribute. It's an inline script, so the page's CSP must allow it (`frontend-security`).
 
-## Writing styles
+## Writing classes
 
-- **Tokens, not literals** — style from semantic tokens (`bg-primary`, `text-foreground`); never hex/rgb or arbitrary values (`bg-[#1a1a1a]`) except a genuine one-off.
-- **`@utility`** for a low-level reusable; **`@layer components` + `@apply`** for a repeated multi-utility pattern. But prefer a real **`components/ui` primitive** over a CSS class whenever it's a component (not just typography rhythm).
-- **`@apply` in a separate compilation unit** (a CSS module, a framework `<style>` block) needs `@reference "../globals.css";` first, or the theme isn't visible there.
-- **Merge with `cn()`** (clsx + tailwind-merge) so a caller's `className` wins. (See `reusables`.)
-- **Mobile-first** — base styles, then responsive prefixes upward. Custom breakpoint scales reset the defaults first (`--breakpoint-*: initial`) so stale defaults can't leak; prefer **one** mobile→desktop break per component (start responsive work at `md:`).
-- **Container queries** — v4 ships `@container` / `@min-*` / `@max-*`; prefer them over viewport breakpoints for reusable components, which can't know how wide their slot is.
-- **Comment the non-obvious** — explain _why_ a token/utility exists (a role distinction, a workaround), not what the class plainly does.
+- **Tokens, not literals:** no hex, `rgb()` or arbitrary values (`bg-[#1a1a1a]`, `p-[13px]`) except a genuine one-off, commented.
+- **Complete class names only.** Tailwind finds classes as literal strings in source, so `` `bg-${tone}` `` produces no CSS. A prop maps to complete strings in one scales file (`SIZES`, `RADII`, `TONES` → classes); to accept fewer values, narrow the prop's type (`Exclude<Radius, "full">`) rather than write a second map.
+- **`cn()` merges** — `clsx` plus `tailwind-merge`, so a caller's `className` wins. Custom theme scales the merge can't know (a `--text-display` size, a `--shadow-raised`) are registered with `extendTailwindMerge`'s `theme`, or `text-display` and `text-heading` are treated as one conflict group and one silently drops; a custom `@utility` (`gap-rhythm-*`) needs its own `classGroups` entry.
+- **State through data attributes:** style `data-[state=open]:`, `data-[disabled]:` and a component's `data-slot` parts, rather than conditional class strings.
+- **`@utility` for a reusable low-level rule**, so it takes variants (`hover:`, `md:`) like a built-in; functional utilities read their value with `--value()`. **`@layer components`** only for repeated arrangement that isn't a component — anything with props or state is a component (`reusables`).
+- **`@reference` the entry** before `@apply` or `@variant` in a CSS module or a `<style>` block, which compiles separately. Read theme values as CSS variables (`var(--color-primary)`); `theme()` is deprecated.
+- **Mobile first**, one breakpoint per component where possible; **container queries** (`@container`, `@md:`) for a component that can't know how wide its slot is.
+- **Motion respects the OS:** `motion-safe:` on decorative animation, or `motion-reduce:` to stop it (`accessibility`).
 
-## Monorepo `ui:` prefix
+## Fonts
 
-The apps and `packages/ui` are **separate Tailwind compilations**; the prefix isolates the package's CSS from each app's. Corollary: a `ui:` class used outside the package **fails silently** — no error, the styles just drop — so `ui:` never appears in app code or stories. A single app has no prefix.
+The UI package chooses the families and loads them (`next/font`, self-hosted files); each app maps them to roles in `@theme inline` (`--font-sans: var(--font-body)`, `--font-heading: var(--font-display)`), keeping the variable names the loader generated.
 
-The prefix is enabled in the **package's own CSS entry**; app entries stay bare:
+## From v3
 
-```css
-/* packages/ui/src/styles/globals.css — the prefixed compilation */
-@import "tailwindcss" prefix(ui);
-@import "@acme/tailwind-config/theme.css";     /* individual layers, NOT the bundle */
-@import "@acme/tailwind-config/base.css";
-@import "@acme/tailwind-config/utilities.css";
-@import "./components.css";
+Run `npx @tailwindcss/upgrade` (Node 20+) on a branch, then check by hand: `theme.extend` becomes `@theme`, `@tailwind` directives become `@import "tailwindcss"`, `darkMode: "class"` becomes `@custom-variant`, `content` goes, and renamed utilities (`shadow-sm` → `shadow-xs`, `ring` → `ring-3`, `outline-none` → `outline-hidden`) are checked visually. Behaviour changes the tool can't see: borders, dividers and `ring` default to `currentColor` (and `ring` to 1px); `bg-[--x]` is `bg-(--x)`; the `!` important modifier goes at the end; stacked variants apply left to right; `hover:` applies only on devices that hover; `space-*` uses a new selector; and the floor is Safari 16.4, Chrome 111 and Firefox 128.
 
-@custom-variant dark (&:where(.dark, .dark *)); /* must be re-declared here */
-```
+## Do / Don't
 
-- **Prefix first, always:** `ui:sm:flex`, never `sm:ui:flex`.
-- The prefix renames only Tailwind-**generated** utilities (`ui:flex`); hand-authored class names stay unprefixed (`btn-primary`) — see `naming`.
-- **Bundled vs individual layers:** apps import the bundled baseline; the prefixed build can't load preset layers full of unprefixed `@apply`, so the package entry imports the layers it needs individually.
-- **Dark variant:** a package entry that skips the bundled CSS must re-declare `@custom-variant dark`, or `ui:dark:*` silently compiles to media-query dark instead of the class toggle.
-- **twMerge:** inside the prefixed package, `cn()` must be built with `extendTailwindMerge({ prefix: "ui" })` — plain `twMerge` doesn't recognize `ui:` classes, so conflict resolution silently fails.
-- **Component-utility classes** are _defined_ with `@apply ui:*` in the package's `components.css`, but _consumed_ unprefixed in JSX (`className="btn-primary"`).
-- **Responsive `ui:` classes are unreliable for show/hide** across the prefixed compilation — use a `matchMedia`-based `useBreakpoint` hook for display toggling instead of `ui:md:hidden`.
-- Some tokens (e.g. an error color) may not get an `@apply`-able utility in a prefixed setup — fall back to raw CSS `var(--color-error)`.
+- **Do** compile once per app with `@source` for packages; keep installed layers apart; layer tokens as ramps, roles and `@theme inline`; switch dark mode on `[data-mode]` with an OS fallback and a pre-paint script; map props to complete classes in a scales file; register custom scales with `tailwind-merge`; use container queries for reusable components.
+- **Don't** add a JavaScript config or a prefix; leave an authored class outside a layer; put a palette step or a literal in a component; build a class name from a template string; hard-code a light/dark pair; reach for `@layer components` when it's a component; skip `@reference` in a CSS module.
 
-## v3 → v4 (only when migrating an old project)
+## Related skills
 
-| v3                                    | v4                                           |
-| ------------------------------------- | -------------------------------------------- |
-| `tailwind.config.js` `theme.extend`   | `@theme` / `@theme inline` (map vars) in CSS |
-| `@tailwind base/components/utilities` | `@import "tailwindcss"`                      |
-| `darkMode: "class"`                   | `@custom-variant dark (…)`                   |
-| `content: [...]` purge                | automatic — no config                        |
-
-> **Audit:** review this domain on demand with the manually-invoked `conventions-audit` / `frontend-audit` command (see `audit-all` for the whole suite).
+Governance, tiers and when something earns a token `design-system` · visual quality `frontend-design` · building one component `reusables` · contrast and motion `accessibility` · documenting tokens as stories `storybook` · class and token names `naming`.

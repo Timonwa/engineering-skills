@@ -119,7 +119,7 @@ Builders and fakes follow the function rules: `buildUser`, `createFirestoreFake`
 
 ## Design tokens
 
-Structured, hierarchical — `{category}-{property}-{concept}-{variant}-{state}`, dropping parts that don't apply: `color-bg-primary`, `color-text-foundation-muted`, `color-border-primary-hover`, `space-inline-sm`. Defined in CSS (see `tailwind`).
+Two kinds, named for what they hold. **Ramps** name the hue and step (`--color-brand-600`, `--color-neutral-50`); **roles** name the job, never the value, and are what components use — `--surface`, `--foreground`, `--muted-foreground`, `--border`, `--primary`, `--on-primary`, exposed to Tailwind as `--color-surface` and used as `bg-surface`, `text-muted-foreground`. A state is a suffix (`--primary-hover`). Defined in CSS (`tailwind`).
 
 ## Assets
 
