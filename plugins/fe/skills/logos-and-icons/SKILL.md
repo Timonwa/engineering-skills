@@ -1,20 +1,12 @@
 ---
 name: logos-and-icons
 description: >-
-  A brand's logo and icon assets — the seven logo types, the standalone brand icon, favicons, PWA and maskable icons, and apple-touch icons, with outlined type, platform safe zones (maskable 40% circle, Android adaptive 66/72/108dp, Apple's no-alpha and no-pre-rounding rules), the minimal modern favicon set, and the WCAG logotype exemption. Use when creating or regenerating a logo, icon or favicon set.
+  A brand's logo and icon assets, and how they're used — the seven logo types, outlined type, numbers derived not guessed, an opaque plate behind every icon, the favicon set (an ICO for search, an SVG for the tab), PWA maskable, Android adaptive and Apple icons with their safe zones, PNG copies for email, a one-off asset run or a committed generator, clear space and minimum sizes, and the accessible name. Use when creating, regenerating or placing a logo, icon or favicon.
 ---
 
-# Logo generation
+# Logos and icons
 
-Producing the brand's own marks. This is a different job from drawing an icon or a diagram: a logo is an **exportable asset** that has to survive leaving the codebase — into Figma, a press kit, a social template, someone else's slide deck — and an **installable asset** that has to survive every platform's mask, crop, and theme.
-
-> **Scope: media files only, written to one output folder.** This skill produces image assets — SVGs and rasters — and nothing else. It does **not** edit stylesheets, manifests, components, config, or add scripts to a project.
->
-> **It runs anywhere.** A codebase, an empty directory, a web session — it makes no difference. Never assume a framework, a `public/` folder, or a repo. Write everything to **`media/`** in the working directory (creating it if needed), tell the owner what each file is for, and let them decide where it belongs. Only move files into a project's own directories if the owner explicitly asks.
->
-> **Ask which slots are actually needed.** Generating a full platform matrix for a brand that only needs a favicon leaves the owner deleting files. A plain website needs a logo, an icon and a favicon — nothing more. PWA maskable icons, Android adaptive layers and App Store masters exist only if the brand ships an installable app.
->
-> **Clean up after yourself.** Scratch directories, downloaded fonts, ad-hoc `npm install`s, preview harnesses and temp screenshots are all removed before finishing. The owner ends up with the assets and nothing else — no tooling on their system, no stray files, no half-wired config.
+A logo is an **exportable asset** that has to survive leaving the codebase — into a design file, a press kit, someone else's slide deck — and an **installable asset** that has to survive every platform's mask, crop and theme. It's produced once, used everywhere, and must look the same in all of them.
 
 ## Project specifics first
 
@@ -23,271 +15,118 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## First: which of the seven logo types is this?
+## How it runs
 
-"Logo" is not one shape of asset. The industry taxonomy is seven types — two built from text, three from imagery, two blended — and **the type decides which assets exist at all**, so settle it before drawing anything.
+Ask which of two jobs this is:
 
-| Type                      | Built from                       | Examples             | Survives 16px?                                            |
-| ------------------------- | -------------------------------- | -------------------- | --------------------------------------------------------- |
-| **Wordmark** (logotype)   | the full name, as type           | Google, FedEx        | No — needs a derived mark for icon slots                  |
-| **Lettermark** (monogram) | initials, as drawn letterforms   | IBM, HP, Netflix "N" | Yes — it _is_ the icon                                    |
-| **Pictorial mark**        | a literal, nameable image        | Apple, Target        | Yes, if simple                                            |
-| **Abstract mark**         | non-literal geometry             | Nike, Mastercard     | Yes, if simple                                            |
-| **Mascot**                | a character                      | Michelin Man         | Rarely — derive a simplified head/silhouette              |
-| **Combination mark**      | mark + wordmark in a lockup      | most startups        | The mark detaches and serves alone                        |
-| **Emblem**                | name locked inside a shape/badge | Starbucks, crests    | No — least scalable type; draw a separate simplified icon |
+- **A one-off set** — a new brand, a redesign, assets for someone else. Write everything to `media/` in the working directory, say what each file is for, and let the owner place it. Install tooling outside the project, and leave nothing behind: no scratch directories, fonts, preview pages or screenshots.
+- **A project's own marks, used by several apps or tiers.** A committed generator renders every raster from the authored SVGs with one command, so a logo change is one SVG edit and a re-run ([references/rendering.md](references/rendering.md)).
 
-Choosing, when the owner hasn't: short distinctive name → wordmark; long name → lettermark; established brand → pictorial or abstract; personality → mascot; heritage/institutional → emblem; new brand or unsure → **combination mark**, because the mark detaches cleanly for every icon slot and the name rides along everywhere else.
+Either way, **ask which slots are needed**. A plain website needs a logo, an icon and a favicon. Maskable, adaptive and store icons exist only if the brand ships an installable or native app.
 
-Two consequences people miss:
+## First: which of the seven types?
 
-- **Every brand needs a square icon; not every brand needs a lockup.** A pictorial-mark brand may never ship a wordmark asset. A wordmark brand still must derive a mark (usually a lettermark) because full names die at 16px.
-- **A lettermark is a mark, not text.** Netflix's "N" is a drawn shape that happens to be a letter. It follows the icon rules below, not the wordmark rules.
+The type decides which assets exist at all, so settle it before drawing.
+
+| Type                      | Built from                       | Examples             | Survives 16px?                                  |
+| ------------------------- | -------------------------------- | -------------------- | ----------------------------------------------- |
+| **Wordmark** (logotype)   | the full name, as type           | Google, FedEx        | No — needs a derived mark for icon slots        |
+| **Lettermark** (monogram) | initials, as drawn letterforms   | IBM, HP, Netflix "N" | Yes — it _is_ the icon                          |
+| **Pictorial mark**        | a literal, nameable image        | Apple, Target        | Yes, if simple                                  |
+| **Abstract mark**         | non-literal geometry             | Nike, Mastercard     | Yes, if simple                                  |
+| **Mascot**                | a character                      | Michelin Man         | Rarely — derive a simplified head or silhouette |
+| **Combination mark**      | mark + wordmark in a lockup      | most startups        | The mark detaches and serves alone              |
+| **Emblem**                | name locked inside a shape/badge | Starbucks, crests    | No — draw a separate simplified icon            |
+
+For a new brand with no preference, a **combination mark** is the safe default: the mark detaches for every icon slot and the name rides along everywhere else. Every brand needs a square icon; a wordmark brand derives one (usually a lettermark), because full names die at 16px. A lettermark is a drawn shape that happens to be a letter, and follows the icon rules.
 
 ## Ask before drawing
 
-Never infer a brand. Gather in one batch:
+Never infer a brand. In one batch: the type, or 2–3 directions to choose from; whether a mark already exists; the **exact brand colour** and where it lives (never invent a hex); the default background; the variants needed (light, dark, monochrome, knockout); where it will be used (web only, a native app, social, email, print); and the typeface, its weights and its licence. Show real renders, not descriptions — the owner's taste outranks yours.
 
-- **Which of the seven types** the brand is — or, for a new brand, present 2–3 type-appropriate directions and let the owner choose.
-- **Whether a mark already exists** that the icon must be derived from, or whether one must be designed.
-- **Brand colour** — the exact value, and where it lives (a token, a committed constant, a hex in the brand guide). If the project has one, use it; never invent a hex.
-- **The default variant** — which background is the logo's "home", light or dark.
-- **Which variants are needed** — light, dark, monochrome (single-colour for stamps/embroidery/Android themed icons), and any inverted or knockout version.
-- **Where it will be used** — favicon and web app icons only, or also a native app (pulls in Apple's and Android's store rules below), social cards, README headers, merch, print (pulls in CMYK and mono).
-- **The font** — the wordmark's typeface, its weights, and whether its licence permits outlining (below).
+## The deliverables
 
-Offer options and let the owner choose; a logo is a subjective call and the owner's taste outranks yours. Show real renders, not descriptions.
+| Artifact            | Contains                                                         | Used for                                      |
+| ------------------- | ---------------------------------------------------------------- | --------------------------------------------- |
+| **Primary logo**    | whichever of the seven types the brand is                        | site header, README, press, decks             |
+| **Lockup variants** | combination brands: horizontal and, if needed, stacked           | wide headers vs. square-ish placements        |
+| **Brand icon**      | the mark alone — derived for wordmarks, simplified for emblems   | favicon, app icon, avatar, notification badge |
+| **Icon set**        | the brand icon rasterised at each platform's sizes and safe zone | browser tab, home screen, install surfaces    |
 
-## The deliverables, and don't conflate them
+A lockup built as live HTML text beside an SVG isn't a logo: it inherits the site font, so a font change silently changes the brand, and it can't be exported.
 
-| Artifact                   | Contains                                                                     | Used for                                      |
-| -------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------- |
-| **Primary logo**           | whichever of the seven types the brand is                                    | site header, README, press, decks             |
-| **Lockup variants**        | combination brands: horizontal and, if needed, stacked                       | wide headers vs. square-ish placements        |
-| **Brand icon**             | the mark alone — derived for wordmark brands, simplified for emblems/mascots | favicon, app icon, avatar, notification badge |
-| **Favicon / app icon set** | rasterised brand icon at platform sizes and safe zones                       | browser tab, home screen, install surfaces    |
+## Drawing it
 
-The most common mistake is building the lockup as live HTML text next to an SVG. That is a **header composition**, not a logo: it inherits the site font, so a font change silently changes the brand, and it can't be exported at all.
+- **Outline the type.** The wordmark ships as `<path>` data, never `<text font-family>`, which renders in whatever font the viewer has. Outlining redistributes the glyphs, so **check the licence first** — OFL and Apache-2.0 allow it, many commercial licences don't. Record the font, weights and source in a comment inside the SVG.
+- **The colour is a literal** from the brand guide, baked into the SVG — never `currentColor` or a themeable token. If a project themes `--primary` per area, a logo using it would change colour with the page. A header that renders the mark inline needs its own non-overridable token; prefer pointing it at the exported asset.
+- **Derive every number** — round shapes overshoot square ones (~6–11%), centring is optical, a secondary line sits at 0.5–0.6× the wordmark, the mark's height equals the measured text block, and radii are ratios of the tile ([references/geometry.md](references/geometry.md)).
+- **Design for 16px first.** Test at 16, 20, 24 and 32, on light and dark, with a throwaway preview page; detail that dies below 24px doesn't exist. One idea, simple geometry.
+- **One mark, one geometry** — identical in the lockup and the standalone icon.
 
-## Outline the type — always
+## Plates
 
-The wordmark must ship as `<path>` data, never `<text font-family="…">`.
+Every raster icon is **opaque**: the brand icon sits on a square plate of a brand colour, chosen so the mark reads on it. A transparent PNG can't adapt to the surface under it, and the surfaces that need a raster — a home screen, an email client, a search result — choose their own background. iOS shows transparent corners as black and the App Store rejects any alpha, and Google wants the logo it shows to look right on white. The SVG favicon takes the plate too, unless it recolours itself for the browser's theme ([references/rendering.md](references/rendering.md)).
 
-- `<text>` renders with whatever font the _viewer_ has. Outside your site that is the wrong font or a fallback.
-- Outlined paths render identically everywhere, with no font to install and no `@font-face` to embed.
-- The trade: the text is no longer editable or selectable, and it won't be found by search or screen readers — so give the root an accessible name (below) and keep the source font noted for future edits.
+## Icon slots and safe zones
 
-**Check the licence first.** Outlining redistributes the glyph outlines. OFL and Apache-2.0 fonts permit it; many commercial licences restrict embedding or modification. If the licence forbids it, either license the font properly, or draw a custom wordmark.
+**Only for a brand that ships an installable or native app.** Every slot takes a square file, but platforms crop to circles, squircles and rounded squares, so the artwork sits inside the inscribed circle with padding, never stretched to fill.
 
-### Workflow
+| Slot                 | Canvas                           | Guaranteed safe zone                                                | Rules                                                                                            |
+| -------------------- | -------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **PWA maskable**     | square, 512px                    | a centred circle of radius **40%** of the edge (W3C)                | an opaque plate to the edges — the OS fills transparency itself                                  |
+| **Android adaptive** | 108×108dp per layer              | the logo within the inner **66dp**; 18dp a side is bleed            | background (opaque), foreground, and a **monochrome** layer, or Android themes it itself         |
+| **apple-touch-icon** | 180×180px                        | iOS applies its own rounded mask                                    | opaque plate to the edges, the mark inset about 11% (20px), **no alpha, no pre-rounded corners** |
+| **Apple app icon**   | 1024px (watchOS 1088px), layered | the system's mask — rounded on iPhone, iPad and Mac, round on Watch | from iOS 26 and macOS 26, built in Icon Composer as Liquid Glass layers (below)                  |
 
-Fonts loaded via `next/font/google` (or any CDN) leave no file in the repo — fetch the actual file the service serves, then outline it. Install the tooling **outside the project** so a one-off asset build never lands in `package.json`:
-
-```bash
-# 1. Find the real font file behind the CSS
-curl -s "https://fonts.googleapis.com/css2?family=Geist:wght@400;700" \
-  -H "User-Agent: Mozilla/5.0" | grep -oE "https://[^)]+\.(ttf|woff2)"
-
-# 2. Fetch the weights the wordmark uses
-curl -s -o /tmp/font-700.ttf "https://fonts.gstatic.com/…"
-
-# 3. Outliner in a scratch dir, not the project
-mkdir -p /tmp/fonttool && cd /tmp/fonttool && npm install opentype.js
-```
-
-Generate with `getPath().toPathData()`, and take advance widths from the font so the layout is measured rather than guessed:
-
-```js
-const opentype = require("opentype.js");
-const fs = require("fs");
-const bold = opentype.parse(fs.readFileSync("/tmp/font-700.ttf").buffer);
-
-const size = 34;
-const d = (font, text, x, y) => font.getPath(text, x, y, size).toPathData(2);
-const w = (font, text) => font.getAdvanceWidth(text, size);
-```
-
-`opentype.loadSync()` is deprecated — use `parse(readFileSync(path).buffer)`.
-
-Delete the scratch dir afterwards, and **do not commit the generator**. A logo is a one-time artifact, not a build step: it is finished when the owner is satisfied, and brands are redesigned in years, not sprints. A committed script implies a pipeline that doesn't exist, and dropping a non-standard file into a linted repo tends to break tooling that never expected it.
-
-Instead, record the recipe **in a comment inside the generated SVG** — font, weights, sizes, and the source URL — so a future regeneration is reproducible without carrying code:
-
-```svg
-<!-- Wordmark: Geist 700 @34px + Geist 400 @19px, outlined via opentype.js.
-     Source: fonts.gstatic.com/s/geist/v5/…ttf -->
-```
-
-## Brand colour must not be a themeable token
-
-If the project themes `--primary` per route, per tenant, or per product area, the brand mark **cannot** use it — the logo would change colour depending on where it appears, which is the one thing a logo may never do.
-
-Check before assuming: grep the stylesheets for `--primary` and look for scoped redefinitions.
-
-The asset's own colour is therefore **a literal**, taken from the brand guide and baked into the SVG — never `currentColor` or a themeable var, so the exported file is correct everywhere.
-
-If the project renders the mark from live markup rather than the asset, it needs a dedicated non-overridable token — but **that is a hand-off, not this skill's edit**:
-
-```css
-/* For the owner to add, if the header renders the mark inline: */
---brand: oklch(0.555 0.18 265); /* the logo's colour — never overridden */
-```
-
-Prefer pointing the header at the exported asset instead; then no token is needed at all.
-
-## Derive every number — never invent one
-
-The failure mode is picking sizes that "look about right" and shipping a mark that is subtly, permanently wrong. Every dimension comes from either a measurement or an established ratio.
-
-### Optical overshoot: circles must be bigger than squares
-
-A circle inscribed in a box fills only π/4 ≈ **78.5%** of it; a square fills ~100%. Give them the same nominal size and the circle reads as smaller. Round shapes therefore **overshoot** their keyline.
-
-Material's icon keylines codify the amount — on a 24dp grid the square keyline is 18×18 while the circle is **Ø20**, an ~11% overshoot. Apply the same idea:
-
-| Sibling shapes                     | Overshoot                                 |
-| ---------------------------------- | ----------------------------------------- |
-| circle beside a hard-edged square  | ~10–11%                                   |
-| circle beside a **rounded** square | ~6–8% (the rounding already removes area) |
-| pointed shapes (triangle, diamond) | more again — they fill least              |
-
-A mark whose round and square elements share identical bounding boxes has this bug. Check it by rendering large with keyline rectangles drawn over both shapes.
-
-### Optical, not mathematical, centring
-
-- Centre a glyph on its **visual mass**, not its bounding box. Asymmetric marks (a play triangle, a lone descender) need nudging.
-- Align a mark to the wordmark's **cap height** or optical centre, never to its box, which includes ascender and descender space the eye doesn't see.
-- Overshoot deliberately breaks mathematical symmetry. That's correct: optics win.
-
-### Proportional type scale
-
-- A secondary line ("by <Creator>", a tagline) sits at roughly **0.5–0.6×** the wordmark's size. Below ~0.45× it stops reading as part of the lockup and starts looking like a mistake.
-- WCAG formally exempts logotype text from contrast minimums (below), but treat **4.5:1 as the design floor** for any secondary line anyway — a light grey that "looks subtle" at 40px is illegible at 16px, and an unreadable tagline shouldn't exist.
-- Derive the lockup's own dimensions from font metrics: `getBoundingBox()` for ink extents, `getAdvanceWidth()` for widths. Then the mark's height can be set **equal to the measured text block**, so the two stay aligned if the type size ever changes.
-
-### Keep proportions relative
-
-Express the tile's corner radius and the inner glyph's scale as ratios of the tile size, so resizing preserves the design instead of distorting it:
-
-```js
-const r = (ICON * 11) / 48; // corner radius keeps its ratio
-const k = ICON / 48;        // inner glyph scales with the tile
-```
-
-Baked-in rounding is for surfaces that apply no mask of their own (README, in-app rendering, avatars you control). Platform icon slots mask for you — see the safe-zone rules below before rounding anything.
-
-## Design for the smallest size first
-
-A mark lives at 16px in a browser tab far more often than at 512px. Detail that dies below ~24px is detail that doesn't exist.
-
-- Test at **16, 20, 24, 32** before considering the design settled. Concepts that need fine detail (a fanned multi-tool, a detailed animal, lettering inside a shape) reliably fail here.
-- Build a throwaway preview harness — an HTML page rendering each candidate at every size, on light **and** dark backgrounds — and screenshot it. Judging a logo from source or at one size is guessing.
-- Prefer simple geometry with one idea. A mark that encodes the name beats a generic one.
-
-## Composing the lockup
-
-- Measure, don't eyeball: derive the SVG's `viewBox` width from the outlined text's advance widths plus the mark and the gap.
-- Align the wordmark's baseline to the mark's optical centre, not its bounding box.
-- A "by <Creator>" line is set smaller, in a muted tone, and aligned to one edge of the wordmark — usually right-aligned under it, so the lockup stays a tidy rectangle.
-- Keep the mark's own geometry identical between the lockup and the standalone icon. Two slightly different marks is the drift this skill exists to prevent.
-
-If the header renders the logo as live text for responsive reasons, accept it as a _second_ implementation of the same design and keep it visually identical — or point the header at the asset and let CSS swap the dark variant.
-
-## Icon geometry: square canvas, circular safe zone
-
-**Only relevant if the brand ships an installable or native app.** For a plain website, skip to the asset set — a favicon and a square icon are the whole job. Ask before generating any of the slots below.
-
-Every icon slot takes a **square file**, but the artwork must never fill it: platforms crop icons to circles, squircles, and rounded squares you don't control, and every one of those masks eats the corners. The universal rule is **square canvas, content inside the inscribed circle** — the mark is centred with padding, whatever its own shape, and never stretched to fit.
-
-The exact safe zones, from the platform specs:
-
-| Slot                               | Canvas                    | Guaranteed safe zone                                                                                | Rules                                                                                                                                        |
-| ---------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **PWA maskable** (W3C)             | square, 512px recommended | circle, radius **40%** of the edge (the inner 80%; ~51px padding per side at 512)                   | padding **opaque** brand background, never transparent — the OS fills transparency with white or black                                       |
-| **Android adaptive**               | 108×108dp per layer       | Ø**66dp** circle guaranteed; **72dp** max ever visible; 18dp margin per side is mask/parallax bleed | three layers: background (fully opaque), foreground, **monochrome** (required for Android 13+ themed icons)                                  |
-| **apple-touch-icon**               | 180×180px                 | iOS masks the corners with its own superellipse                                                     | full-bleed opaque artwork, **no alpha channel, no pre-rounded corners** — pre-rounding double-rounds and transparent corners render as black |
-| **App Store master** (native apps) | 1024×1024px               | same corner mask                                                                                    | flattened, fully opaque; App Store Connect rejects any alpha channel even on an opaque image                                                 |
-| **watchOS**                        | square                    | circle                                                                                              | circular mask, full stop                                                                                                                     |
-| **macOS**                          | 1024×1024px               | none — **the one exception**                                                                        | macOS keeps the shape you ship: transparency allowed, and you bake in your own corner radius                                                 |
-
-Manifest discipline that follows from this — **report these as notes for the owner; do not edit their manifest**:
-
-- **Never combine `purpose: "any maskable"` on one entry.** A maskable icon carries 10% padding per side; reused as a plain `any` icon it renders visibly smaller than its neighbours. Ship separate files — plain `icon-192/512.png` with `purpose: "any"`, padded `icon-maskable-192/512.png` with `purpose: "maskable"`.
-- Add a `purpose: "monochrome"` entry if the brand has a mono variant — it feeds themed-icon surfaces the same way Android's monochrome layer does.
-- **Dead formats — don't generate them:** `browserconfig.xml` and `mstile-*.png` (Windows tiles died with Windows 10 Mobile) and Safari's `mask-icon` pinned-tab SVG (replaced by the standard SVG favicon).
-
-**Native Apple apps changed in iOS 26.** Icons are now layered "Liquid Glass" — up to four depth groups composed in Apple's Icon Composer (ships with Xcode 26) into a single `.icon` file covering six appearance modes (default, dark, clear ×2, tinted ×2). A flat 1024px PNG still works but gets a default composited effect and looks dated beside native icons. If the brand ships a native iOS/macOS app, export the mark as **separate layers** (background / midground / glyph) so it can be composed there; complex single-layer illustrations convert badly. This skill's flat pipeline is the web path.
+- **Never `purpose: "any maskable"` on one manifest entry.** A maskable icon fits the mark inside the 40% circle — about a 21% inset a side for a square mark — and renders visibly small as an `any` icon, which takes a smaller inset of its own. Ship separate files for each purpose, plus `"monochrome"` if the brand has a single-colour version. From Android 16 QPR 2, Android themes an icon with no monochrome layer itself, so ship the layer to control the result. These are notes for the owner's manifest.
+- **Native Apple apps** now compose their icon from up to four layers in Icon Composer, which renders six appearances — default, dark, clear light and dark, tinted light and dark. Export the mark as separate layers (background, midground, glyph); a flat image still works but gets a default effect.
+- **Dead formats** — `browserconfig.xml`, `mstile-*.png`, Safari's `mask-icon` — aren't generated.
 
 ## The asset set
 
-Everything lands in **`media/`**. The modern set is small — a handful of files, not the thirty a legacy generator emits. Generate rasters **from the SVG**.
+The modern set is a handful of files, every raster rendered **from the SVG**:
 
-**Default set — every brand, website or not:**
+| File                             | Size       | For                                                                                                              |
+| -------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `logo.svg`, `logo-dark.svg`      | vector     | the primary logo, per background                                                                                 |
+| `icon.svg`                       | vector     | the brand icon — the source of every raster, and the browser tab's favicon                                       |
+| `favicon.ico`                    | 16, 32, 48 | browsers and Google Search, which reads only raster favicons (ICO, PNG…)                                         |
+| `icon.png`                       | 96 or 192  | a linked raster above 48px, which Google prefers — a multiple of 48                                              |
+| `icon-512.png`                   | 512        | avatars, social profiles, the Organization `logo` in structured data (112px or more; a raster is safest — `seo`) |
+| `apple-icon.png`                 | 180        | iOS home-screen bookmarks                                                                                        |
+| PNG copies of each mark          | as used    | email, which drops SVG — Gmail strips it and Outlook never rendered it (`transactional-email`)                   |
+| `icon-192.png`, maskable 192/512 | 192, 512   | **only** a web app with a manifest, or one that installs                                                         |
+| `icon-mono.svg`                  | vector     | **only** Android themed icons, embroidery, single-colour print                                                   |
 
-| File                         | Size   | Notes                                                                                                                                                     |
-| ---------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `logo.svg` / `logo-dark.svg` | vector | primary logo, per background                                                                                                                              |
-| `brand-icon.svg`             | vector | the mark alone — single source for every raster below                                                                                                     |
-| `favicon.ico`                | 32×32  | multi-size only if the 16px downscale is poor. Belongs at the **site root** once the owner places it — crawlers probe `/favicon.ico` without reading HTML |
-| `icon-512.png`               | 512    | general-purpose square raster: avatars, social profiles, structured data                                                                                  |
+`sharp` renders each raster from the SVG onto its plate, and a few lines pack PNGs into `favicon.ico` ([references/rendering.md](references/rendering.md)). In a Next.js app, `icon` and `apple-icon` files in `app/` become the `<link>` tags by name; `favicon.ico` goes in `public/`, declared through `metadata.icons` with `sizes: "32x32"` — the file convention marks it `sizes="any"`, which lets Chrome pick it over the theme-aware SVG (`code-structure`'s `references/next-files.md`); everything a manifest or a URL references goes in `public/`.
 
-**Only if the owner confirms they need them:**
+## Using the logo
 
-| File                                             | Size      | Needed when                                                 |
-| ------------------------------------------------ | --------- | ----------------------------------------------------------- |
-| `icon.svg`                                       | vector    | they want a self-theming favicon (below)                    |
-| `apple-icon.png`                                 | 180×180   | iOS home-screen bookmarks — full-bleed, opaque, un-rounded  |
-| `icon-192.png`                                   | 192       | a web app manifest exists                                   |
-| `icon-maskable-192.png`, `icon-maskable-512.png` | 192 / 512 | **the app is installable** — padded for the platform's crop |
-| `icon-mono.svg`                                  | vector    | Android themed icons, embroidery, single-colour print       |
-
-A brand with an ordinary website needs the default set and nothing else. Generating maskable icons for a site nobody installs just hands the owner files to delete.
-
-The SVG favicon can adapt to the browser theme — the one trick no raster can do:
-
-```svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <style>
-    path { fill: #111; }
-    @media (prefers-color-scheme: dark) { path { fill: #eee; } }
-  </style>
-  <path d="…" />
-</svg>
-```
-
-```js
-// sharp renders SVG → PNG; density raises the rasterisation resolution first
-await sharp(svg, { density: 600 }).resize(size, size).png().toFile(out);
-```
-
-**`sharp` cannot write `.ico`.** It needs a dedicated tool (`png-to-ico`, ImageMagick, or a generator) — so `favicon.ico` is the one asset that silently keeps the old mark after a rebrand. Check it explicitly.
-
-In a Next App Router project, `src/app/icon.png`, `apple-icon.png` and `favicon.ico` are picked up by convention; `public/` holds everything referenced by the manifest or by URL. The square icon also serves as the Organization `logo` in structured data — Google requires **≥112×112px** at an absolute, crawlable URL (→ `seo`; usage → `branding`).
+- **Clear space** on every side at least the height of the mark's smallest element; nothing intrudes into it.
+- **A minimum size**, below which the brand icon replaces the full logo.
+- **Never distort, recolour, stretch, crop, outline or add effects** to it; use the variant made for the background it sits on.
+- **Import it from the shared assets**, never a copy pasted into a feature; its location is the project's (`AGENTS.md`).
 
 ## Accessibility
 
-- A standalone logo is **informative**: `role="img"` on the root plus a `<title>` as the first child (or `aria-label` if a hover tooltip is unwanted). The name is the brand name, since outlined type is invisible to assistive tech. Ids must be unique per page — derive from `useId()` when inlined in React.
-- A logo inside a link takes its accessible name **from the link, describing the destination** — `aria-label="<Brand> — home"`, with the SVG `aria-hidden="true"`. "Acme logo" tells a screen-reader user nothing about where the link goes.
-- Purely decorative repetitions of the mark get `aria-hidden="true"` and no role.
-- `focusable="false"` was an IE/legacy-Edge fix; current browsers don't need it.
-- **The WCAG logotype exemption, stated precisely** (SC 1.4.3): _"Text that is part of a logo or brand name has no minimum contrast requirement."_ Its limits matter more than the exemption — it does **not** cover brand colours used for body text, buttons, or headings, and a logo serving as the home link is still a UI component that must be identifiable under SC 1.4.11 (3:1 non-text contrast). Verification → `accessibility`.
+- A standalone logo is informative: `role="img"` on the SVG root with a `<title>` (or `aria-label`) naming the brand, since outlined type is invisible to assistive technology. Ids are unique per page (`useId()` when inlined in React).
+- A logo inside a link takes its name from the link, describing the destination (`aria-label="<Brand> — home"`), and the SVG is `aria-hidden="true"`.
+- Decorative repetitions are `aria-hidden="true"`.
+- WCAG 1.4.3 exempts "text that is part of a logo or brand name" from contrast minimums and 1.4.11 carries the exemption over to a logo that is the home link — but not to brand colours used for text, buttons or headings. Where the guidelines allow, a higher-contrast variant on low-contrast surfaces is encouraged, not required (`accessibility`).
 
 ## Checklist
 
-- [ ] The logo's **type** (of the seven) was established first, and the asset list derived from it — including a derived mark for wordmark brands and a simplified icon for emblems/mascots.
-- [ ] Brand colour, default variant, and the required variant list came from the owner, not from you.
-- [ ] Round elements overshoot their square siblings (~6–11%), verified with keylines at large size.
-- [ ] Secondary line is 0.5–0.6× the wordmark and passes 4.5:1 as a design floor.
-- [ ] Mark height derived from the measured text block; radius and inner scale expressed as ratios.
-- [ ] Wordmark type is outlined; no `font-family` anywhere in the asset. Font licence permits outlining, and is recorded.
-- [ ] The asset's colour is a literal from the brand guide — never `currentColor` or a themeable var.
-- [ ] Mark renders legibly at 16px, verified by screenshot, on light and dark.
-- [ ] Lockup and standalone icon share identical mark geometry.
-- [ ] Only the slots the owner confirmed were generated — no speculative platform matrix.
-- [ ] If installable-app icons were asked for: maskable content sits inside the **40%-radius circle** with opaque padding, as separate entries — never `"any maskable"` combined; `apple-icon.png` is full-bleed, opaque, alpha-free and **not** pre-rounded; no dead formats (`browserconfig.xml`, `mstile-*`, `mask-icon`).
-- [ ] Every raster generated from the SVG — including `favicon.ico`, which needs separate tooling.
-- [ ] Everything written to `media/`; no project file edited, no script committed, no manifest touched.
-- [ ] Wiring reported as a hand-off list, not applied.
-- [ ] Scratch dirs, downloaded fonts, ad-hoc installs, preview harnesses and temp screenshots all deleted.
-- [ ] Standalone logos have `role="img"` + a name; linked logos are named by the link and the SVG hidden.
-- [ ] Files named per `naming`; optimised per `svg-generation`.
+- [ ] The type was settled first, and the asset list follows from it.
+- [ ] Brand colour, default background and variants came from the owner.
+- [ ] Type is outlined, the licence allows it, and the recipe is in a comment in the SVG.
+- [ ] Round shapes overshoot, proportions are ratios, and the mark reads at 16px on light and dark.
+- [ ] Lockup and icon share one mark geometry.
+- [ ] Every raster is opaque on a plate and rendered from the SVG, `favicon.ico` included.
+- [ ] Only the slots the owner confirmed exist; maskable icons are separate entries, padded inside the 40% circle; `apple-icon.png` is opaque and unrounded.
+- [ ] PNG copies exist for email.
+- [ ] A one-off run left only the assets in `media/`; a generator is one command, with its outputs committed.
+- [ ] Logos have an accessible name; linked logos are named by the link.
+
+## Related skills
+
+Clear space, colour tokens and visual identity `design-system` · the Organization logo in structured data `seo` · metadata file names `code-structure` · email images `transactional-email` · contrast and names `accessibility` · file and asset names `naming` · other hand-drawn SVGs and diagrams `tw:images-and-diagrams`.
