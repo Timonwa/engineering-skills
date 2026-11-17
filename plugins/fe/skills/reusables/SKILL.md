@@ -1,12 +1,12 @@
 ---
 name: reusables
 description: >-
-  The design of reusable UI components, custom hooks and utility functions — self-contained and context-agnostic, owning their own animation, state and behaviour, fully controllable via props with sensible defaults, no hardcoded magic values, accessible, and de-duplicated. Use when building or refactoring a primitive, shared widget, overlay, dialog, dropdown, hook or generic helper — not one-off page or feature sections.
+  Designing one reusable React component, hook or helper — agnostic and pure where shared, owning its own animation, focus and lifecycle, the native element's props passed through with `ref`, controlled or uncontrolled inputs, variant, size and radius from the design scales, copy through a `labels` prop, `data-state` and `data-slot` hooks, compound parts as named exports, empty regions rendering nothing, a skeleton on the same shell, and promotion on the second consumer. Use when building or refactoring a shared component, hook or helper.
 ---
 
-# Self-contained, fully-controllable reusables
+# Reusables
 
-The user builds every reusable component, hook, and helper to be **dropped in anywhere and controlled entirely from the outside**. A reusable must never depend on a specific parent, data source, route, or hidden global, and never hardcode a value a caller might reasonably want to change.
+A reusable component, hook or helper drops in anywhere and is controlled entirely from outside. It never depends on a particular parent, data source, route or hidden global, never hard-codes a value a caller might reasonably change, and owns the behaviour its callers shouldn't have to wire up. Where it lives and which tier it belongs to are `design-system`'s and `code-structure`'s; React practice inside it is `react`'s.
 
 ## Project specifics first
 
@@ -15,48 +15,66 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - A rule here that the project records a deviation from, with its reason, gives way to the project's version there.
 - A rule here that the project contradicts without a recorded reason: ask before following either. An audit reports it as a finding instead.
 
-## Component rules
+## Before building
 
-1. **Self-contained & agnostic.** No coupling to specific data, routes, parent state, or global singletons. It must work identically wherever it's dropped. Take everything it needs through props.
+- **Search first** — the shared UI package, the house helper packages, other features and apps. The card or dialog you need is often already built, sometimes trapped in one feature.
+- **Promote on the second consumer**, not before: the first copy lives beside its feature; when a second feature in the same app needs it, it moves to the app's own `src/ui/`; when a second app needs it, to the shared package (`design-system`). Each move strips local data and hooks and turns what differs into props. Never paste a second variant.
 
-2. **It owns its own behaviour.** A component encapsulates its **own** animation, transitions, open/close lifecycle, focus management, scroll-lock, click-outside, portalling, etc. The consumer just flips a prop (e.g. `open`) — it never has to wire up the animation or lifecycle itself. Example: a `Drawer`/`Dialog` animates itself in **and out** (stay mounted through the exit transition, unmount on `transitionend`); the caller only passes `open` + `onOpenChange`. If two components share such behaviour, **extract a hook** rather than duplicating (e.g. `useMountTransition`, `useOverlayDismiss`, `useClickOutside`).
+## Components
 
-3. **Fully controllable via props, with sensible defaults.** Expose real control: `variant`, `size`, `className` (merged via `cn`, never overwritten), controlled `value` + `onChange`, `disabled`, `placeholder`, `aria-*`, and callbacks. Default the common case so simple usage stays short, but let a caller override anything reasonable. Prefer a **controlled** API (`value`/`onChange`) for inputs. Implement `variant`/`size` as plain class maps applied through `cn()` (no CVA); `cn()` also resolves Tailwind conflicts so a caller's `className` wins. **Prop-surface mechanics:** extend the native element's props (`ComponentPropsWithoutRef<'button'>` + a `...rest` spread) so every native attribute passes through; merge `className` **last** via `cn()`; `ref` is a normal prop (React 19), exposed only on form-control bases where forms/focus/a11y need the element — not by default everywhere. In a `ui:`-prefixed package, `cn()` must use `extendTailwindMerge({ prefix: 'ui' })` or conflict resolution silently fails (mechanics in `tailwind`).
+- **Self-contained and agnostic.** Everything it needs arrives as props; it works the same wherever it's dropped.
+- **It owns its behaviour.** Animation in and out, open and close, focus moving in and back, outside-click and Escape — the caller flips `open` and listens to `onOpenChange`, nothing more. Overlays build on the native `<dialog>` (`showModal()`) and the `popover` attribute, which put them in the top layer — no portal, no z-index fight — and handle Escape and, for a modal, the inert page (`semantic-html`, `accessibility`). A dialog stays mounted through its exit transition (`@starting-style` and `transition-behavior: allow-discrete` animate the native one). Behaviour two components share becomes a hook (`useMountTransition`, `useDismiss`).
+- **The native element's props pass through.** Props extend the element's own (`ComponentPropsWithRef<"button">`) and spread onto it, so every attribute, handler, `aria-*` and `ref` reaches the element; `className` is merged last with `cn()`, so the caller's classes win (`tailwind`). A component that also needs the element itself (to move focus) merges its own ref with the caller's in a ref callback.
+- **A button that is a link** takes `asChild` (or a `render` prop): the component's styling and behaviour land on the child the caller passes — a `<Link>` — instead of rendering a second element. Never a button wrapping a link.
+- **Variants, sizes and radii come from the design scales** — `variant`, `size`, `radius`, `tone`, using the scale's words — as plain class maps applied with `cn()`. A difference the system already names is a prop value, never a second component (`design-system`).
+- **Inputs work controlled or uncontrolled.** `value` with `onChange` when the caller owns the state; `defaultValue` with a `name` when a form Action reads it from `FormData`, which React resets after the action succeeds (`react`). One hook manages both, so neither path is second-class.
+- **No copy of its own.** Every visible string and accessible name comes in through props — a typed `labels` object where there are several (`labels={{ close, next, previous }}`) — so the component works in any product and language. The app defines its common labels once and passes them.
+- **No magic values.** Durations, option lists, ids (`useId`), limits and links come from props or the project's constants, never literals inside the component.
+- **Styling hooks:** state and parts are exposed as `data-state="open"`, `data-disabled`, `data-slot="header"`, so a caller can style them without a new prop.
+- **A region given nothing renders nothing.** An optional header, footer or actions slot with no content leaves no empty wrapper behind — no stray padding, border or landmark.
+- **Its skeleton uses the same shell.** `<CardSkeleton>` renders the card's own frame at the same size with placeholders inside, so loading never shifts the layout (`design-system`).
+- **Accessible as shipped** — the right element, roles and states, keyboard paths and focus handling are part of done, not a caller's job (`semantic-html`, `accessibility`).
 
-4. **Purity contract (Global tier).** A reusable takes **formatted display values + `onX` callbacks** — never whole domain objects or raw enums. No data fetching, no Server Actions, no `lib/server` imports, no `next/headers`, no router hooks; a type a reusable needs may be mirrored locally instead of imported from app code. Cross-component variant class maps (e.g. a status palette consumed by both Badge and Tag) live in **one shared record**, not duplicated per component.
+## Composition
 
-5. **No baked-in magic values.** Durations, IDs (`useId`), option lists, endpoints, list/group IDs, etc. come from props / `@/lib/constants` / `@/lib/config` — not literals buried in the component.
+- **Compound parts are separate named exports** (`Accordion`, `AccordionItem`, `AccordionTrigger`), never static properties (`Accordion.Item`): a Server Component can't reach a property of a client module, and statics defeat tree-shaking through barrels. A part reads its parent through a context whose value is a small interface — state, actions, and meta such as ids.
+- **`children` over render props**, unless the caller genuinely needs values from inside.
+- **A list component is generic over its item** (`<Select<TItem>>` with `getLabel` and `getValue`), so it takes the caller's records without a cast.
+- **A structured block ships both**: a data-driven wrapper for the common case (`<Accordion items={…} />`) and the parts for everything else.
+- **One `data-*` handler** for a list of items, not a closure per item (`react`).
 
-6. **Accessibility is part of "done".** Real roles/semantics, `aria-*`, labels, keyboard paths (Escape, arrows where relevant), and focus handling (move focus in, restore on close). A reusable ships these itself — the full contract is the `accessibility` skill.
+## Shared means pure
 
-7. **Composition where it fits.** Offer compound parts (`Card` + `CardHeader`/`CardContent`/`CardFooter`) so callers assemble what they need, instead of a mega-prop config object. Ship the parts as **separate named exports** (`Accordion`, `AccordionItem`) — never static properties (`Accordion.Item`), which break tree-shaking through barrels. A block with internal structure ships the pair: a data-driven wrapper (`<Accordion items={…} />`) **and** the composable parts.
+A component in a shared package, used by more than one app:
 
-8. **File conventions.** Each component file opens with a 1–3-line `@description` JSDoc that disambiguates siblings ("Badge is non-interactive; Tag can be clicked/closed"); `"use client"` goes after the JSDoc, before imports. Multi-version components (e.g. a marketing and an app variant of the same pattern) split the shared shape into `<name>-types.ts` + `<name>-defaults.ts` + `<name>-shared.tsx`, with one file per version — so versions can't drift.
+- **Takes display values and callbacks** — formatted strings, booleans, `onX` handlers — never whole domain records or raw enums it would have to interpret.
+- **Fetches nothing**, calls no Server Action, reads no router, cookie or header, and imports no app code. It may import the shared contracts package's types and constants.
+- **Shares its class maps**: a palette two components use (a status colour on a badge and a tag) lives in one record both import.
+- **Ships its story** in the same change (`storybook`).
 
-## Hook & function rules
+Components inside one app may use that app's hooks and data; only the shared layer must be pure.
 
-- **Hooks** encapsulate one reusable behaviour, are parameterized, and return a small typed surface. Extract a hook the moment a behaviour is shared by two components (don't wait). No hidden module state that leaks between callers. Return a **named object** when a hook exposes more than two values or the ordering isn't obvious; a 2-tuple matching the React idiom (`[value, setValue]`) is fine. Expose `loading`/`error` (plus `success`/`reset` where there's a confirmation state) for async hooks.
-- **Functions** are pure and parameterized — inputs in, value out, no hidden globals, no side effects unless that IS the function. Generic helpers live in `@/lib/utils/<concern>/` and are reused, never re-implemented inline.
-- Prop, hook, and helper names follow the `naming` skill (`use*` hooks, `on*` callback props, boolean assertions).
+## Files
 
-## Scope — build it at the narrowest scope that covers its reuse
+- **`"use client"` is the first line** of a component that needs it, before a short JSDoc `@description` that tells it apart from its siblings ("Badge is static; Tag can be removed").
+- **A component with versions** (one for the marketing site, one for the app) keeps the shared shape in `<name>-types.ts`, `<name>-defaults.ts` and `<name>-shared.tsx`, with one file per version, so they can't drift.
+- **Props are documented by their types and the story**; a prop comment says what the type can't.
 
-Decide up front; don't wait for "used twice". Before building, **check if it already exists** (search the shared UI folder + other features/apps) — the same card/modal/empty-state is often already built but trapped in one place. If it's generic, **promote it** (strip local hooks/data, props-ify, move it up) rather than copy-pasting a second variant.
+## Hooks and helpers
 
-| Scope    | Reused by                                       | Home                                                                                                |
-| -------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Global   | more than one app, or a design-system primitive | `components/ui/` — tiered base/blocks/patterns/layouts (monorepo: `packages/ui`) — **must be pure** |
-| App      | multiple features in one app                    | `components/_shared/`                                                                               |
-| Feature  | multiple parts of one feature                   | `components/<feature>/_shared/`                                                                     |
-| One-time | a single page/section                           | alongside its section                                                                               |
+- **A hook does one thing**, takes its inputs as parameters, keeps no module-level state shared between callers, and renders on the server: a browser value it reads (the viewport, online status, a media query) comes from `useSyncExternalStore` with a server snapshot, never an effect that sets state (`react`). It returns a named object once it has more than two values; a pair matching React's own (`[value, setValue]`) is fine.
+- **An async hook exposes its state** — `pending`, `error`, and `reset` where there's a result to clear.
+- **A helper is pure**: inputs in, value out, no hidden globals, no side effects unless that is the function. It lives in its `lib/utils` file and is reused, never rewritten inline.
+- **Names follow `naming`**: `use*` hooks, `on*` callback props, booleans that read as assertions.
 
-Promote as it grows: Feature → App `_shared/` → Global. Only the **Global** tier must be pure (props-only, no app hooks/data); lower tiers may use local hooks and data. The base/blocks/patterns/layouts tiers and where files live are `code-structure`'s domain; token usage and `cn()` mechanics are `tailwind`'s. A Global reusable ships its Storybook story in the same change (`storybook-story-writing`).
+## Before you finish
 
-## The test before you finish
+- Would it work unchanged in another feature or app? If not, something it depends on should be a prop.
+- Is any value hard-coded that a caller might want different — a string, a duration, a size?
+- Does the caller manage animation, focus or lifecycle that the component could own?
+- Does a native attribute, `ref` or `className` fail to reach the element?
+- Is this behaviour already written somewhere else?
 
-- Could I drop this component/hook into a different feature/app unchanged? If not, it's leaking a dependency — take it as a prop.
-- Is there any value hardcoded that a caller might want different? Lift it to a prop or a constant/config.
-- Does the consumer have to manage animation, focus, open/close, or lifecycle that the component could own itself? Move it inside.
-- Is this behaviour/helper duplicated anywhere? Extract a shared hook/util.
+## Related skills
 
-> **Audit:** review this domain on demand with the manually-invoked `frontend-audit` (and `storybook-audit` for story coverage) skill (see `audit-all` for the whole suite).
+Tiers, tokens and drift `design-system` · where files live `code-structure` · `cn()` and tokens `tailwind` · React practice `react` · markup `semantic-html` · keyboard, focus and names `accessibility` · stories `storybook` · names `naming` · types `typescript` · the audits `frontend-audit`, `storybook-audit`.
