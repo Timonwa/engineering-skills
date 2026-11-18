@@ -37,6 +37,7 @@ packages:
   - **A tool aliased to an older major**, such as a linter whose TypeScript parser lags a release (`typescript`).
 - **Dependency build scripts are blocked by default.** Allow the few that must build with `allowBuilds` in `pnpm-workspace.yaml`, a name → boolean map (`sharp: true`, `esbuild: true`). `onlyBuiltDependencies` was the pnpm 10 form and is removed in 11, where an unreviewed build fails the install. Never switch scripts on for everything.
 - **pnpm 11 holds back versions newer than its minimum release age**, a supply-chain guard. A version needed sooner goes in `minimumReleaseAgeExclude`, named exactly (`zod@4.5.1`), and comes out once it ages past the window.
+- **Leave pnpm 11's other supply-chain defaults on** — `strictDepBuilds` (an unallowed build script fails the install) and `blockExoticSubdeps` (transitive dependencies only from trusted sources) — and set `trustPolicy: no-downgrade`, which refuses a version whose publishing trust dropped.
 - **Never force a version inside a third-party dependency's tree** (`overrides`) to silence an advisory; the fix is that dependency releasing it. How advisories are reported and which fail CI is `devops`'.
 
 ## Serverless workers

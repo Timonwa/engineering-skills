@@ -64,7 +64,8 @@ TypeScript 6 changed the defaults, and TypeScript 7 removes what 6 deprecated:
 - **`rootDir` defaults to the tsconfig's folder.** A package that emits sets `"rootDir": "./src"` beside `"outDir": "./dist"`, or its output lands in `dist/src/`.
 - **`noUncheckedSideEffectImports` is on**, so a side-effect import TypeScript can't resolve (`import "./globals.css"`) fails; declare it (`declare module "*.css";`) rather than turning the check off.
 - **`strict` is on by default** — the base still says so, for readers.
-- **Never write** `baseUrl` (put its prefix in each `paths` entry), `moduleResolution` `node`/`node10` or `classic`, `esModuleInterop` or `allowSyntheticDefaultImports` set to `false`, `target: "es5"`, `downlevelIteration`, `outFile`, `module` `amd`/`umd`/`system`, or `alwaysStrict: false`. `ignoreDeprecations: "6.0"` silences them only until TypeScript 7.
+- **Never write** `baseUrl` (put its prefix in each `paths` entry), `moduleResolution` `node`/`node10` or `classic`, `esModuleInterop` or `allowSyntheticDefaultImports` set to `false`, `target: "es5"`, `downlevelIteration`, `outFile`, `module` `amd`/`umd`/`system`/`none`, or `alwaysStrict: false`. `ignoreDeprecations: "6.0"` silences them only until TypeScript 7.
+- **Never write the deprecated syntax** either: a namespace declared with `module Foo {}` (write `namespace Foo {}`), an import `asserts { type: "json" }` (write `with`), or a `/// <reference no-default-lib="true"/>` directive.
 
 ### Packages
 

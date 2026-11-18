@@ -18,7 +18,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Pages
 
 1. **Thin entries.** `app/**/page.tsx` only imports a composed `…PageContent` and renders it — no markup, data or logic inline. A `layout.tsx` is an entry too: it renders a shell from `ui/layouts/` and passes this app's regions (nav items, footer) in as props. The one thing an entry may hold beyond that is a guard; what the check does and where the real check belongs are `auth`'s.
-2. **One file per section.** Split the page into section components — PascalCase, **named export**, one concern each (`Hero.tsx`, `HowItWorks.tsx`, `Pricing.tsx`). Named, not default, so the file name, the export and every import match.
+2. **One file per section.** Split the page into section components — PascalCase, **named export**, one concern each, named for the page they belong to (`PricingHero.tsx`, `PricingTiers.tsx`, `PricingFaq.tsx`), so two pages never ship a bare `Hero` each (`naming`). Named, not default, so the file name, the export and every import match.
 3. **`index.tsx` composes.** It imports the sections and stacks them into a named-exported `…PageContent` that owns the page's layout wrapper.
 4. **Sections are self-contained.** A section owns its wrapper and markup; `index.tsx` and the entry only import and stack. Section-local data and constants live with the section, never in the entry.
 5. **Extract repeated UI.** Anything two pages share becomes a component with props for what differs; anything every page in a route group shares goes in that group's layout.

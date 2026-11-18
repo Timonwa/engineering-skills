@@ -76,7 +76,7 @@ A public value that isn't a secret has no reason to be an env var, so `NEXT_PUBL
 
 - **`.env` per app**, gitignored: the local secrets and `APP_ENV=local`. Its values come from the secret manager through a script (`env-setup` writing the file for the tier named), never passed around by hand — not in chat, an issue, a PR, a commit or an AI tool's prompt.
 - **`.env.example` beside it lists every key the app and its scripts read, with no values and no comments**, and is committed. A key no longer read is deleted from both.
-- **A parity check** (a small script, run in CI) fails when an app's `.env` and `.env.example` name different keys, so a new secret can't ship undocumented.
+- **A parity check** (a small script, run in CI) fails when an app's `.env.example` and the keys its `env.ts` schema reads differ, so a new secret can't ship undocumented. CI has no `.env`, so the schema is the other side; locally, the same script can also compare `.env`.
 
 ## Deployed tiers on Firebase App Hosting
 
