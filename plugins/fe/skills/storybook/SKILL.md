@@ -81,6 +81,7 @@ export const Controlled: Story = {
 ## Titles
 
 - **Tier first:** `Foundations/…`, `Assets/…`, `Icons/…`, `Base/…`, `Components/…`, `Blocks/…`, `Layouts/…`, `Pages/…` — the tiers `design-system` defines, in the order the preview sorts them.
+- **An app's own components** — in its `src/ui/` or `components/` — take the app's name first, then the same tiers (`Admin/Blocks/AccountTable`), so they sort after the shared package's and match the folder Storybook would derive the title from.
 - **A tier that grows takes subcategories by behaviour** — `Disclosure`, `Display`, `Feedback`, `Forms`, `Navigation`, `Overlay` (`Components/Overlay/Dialog`). Never by product domain in a shared package, and never by shape: there's no "Cards" bucket. A new subcategory is a decision recorded with the tiers, not drift.
 
 ## Which stories, in what order

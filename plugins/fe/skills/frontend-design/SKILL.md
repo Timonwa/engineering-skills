@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Type
 
 - **The project's type scale only**; hierarchy comes from steps on it.
-- **Measure:** 45–75 characters for body copy, never past 80 (WCAG 1.4.8) — a `ch`-based max width, not the full container.
+- **Measure:** 45–75 characters for body copy, never past 80 (WCAG 1.4.8, level AAA) — a `ch`-based max width, not the full container.
 - **Leading falls as size rises:** about 1.5 for body text (WCAG's figure for readable blocks), tighter for large headings; longer lines need more.
 - **Balance display headings** (`text-wrap: balance`) and only those; it's for a few lines, not paragraphs.
 - **Numbers that compare** — tables, prices, counters — use tabular figures (`tabular-nums`).

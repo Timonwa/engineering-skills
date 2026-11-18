@@ -71,7 +71,7 @@ The headers block, both CSP setups and the sanitiser are in [references/frontend
 
 ## Framing and messages
 
-- **Framing is denied** (`frame-ancestors 'none'` and `X-Frame-Options: DENY`) unless the app is built to be embedded, and then only named ancestors are allowed.
+- **Framing is denied** (`frame-ancestors 'none'` and `X-Frame-Options: DENY`) unless the app is built to be embedded. Then only named ancestors are allowed, and `X-Frame-Options` is left out: it can't name an origin, and a browser that ignores `frame-ancestors` would block the embed.
 - **`postMessage`:** every received message checks `event.origin` against an allowlist and parses the payload with a schema before acting; every sent message names its target origin, never `"*"`.
 - **Third-party embeds sit in a sandboxed iframe** with only the permissions they need. `allow-scripts` with `allow-same-origin` undoes the sandbox only for a document from your own origin — never give both to one — while a cross-origin embed (a video, a map) often needs both and can't reach your origin. Embeds that set cookies load only after consent (`cookie-consent`).
 

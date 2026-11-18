@@ -79,7 +79,7 @@ Types, properties and builders: [references/structured-data.md](references/struc
 - **Core Web Vitals, at the 75th percentile:** LCP under 2.5 s, INP under 200 ms, CLS under 0.1 (`performance-audit`).
 - **One host and one URL shape** — HTTPS, one of www or not, one trailing-slash and case policy — enforced with 301s.
 - **Server-rendered content and real `<a href>` links**, so nothing important needs JavaScript to be found (`semantic-html`).
-- **One `<h1>`** and a heading hierarchy that doesn't skip; images with meaningful `alt`, descriptive filenames and set dimensions.
+- **One `<h1>` is good practice, not a rule** — Google doesn't require it — with a heading hierarchy that doesn't skip; images with meaningful `alt`, descriptive filenames and set dimensions.
 - **Multi-locale pages** list every locale and an `x-default` with `hreflang`, each locale canonical to itself.
 
 ### Architecture and programmatic pages

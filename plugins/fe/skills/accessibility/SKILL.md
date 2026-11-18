@@ -34,7 +34,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Operable
 
 - **Everything works from the keyboard (2.1.1), and nothing traps it (2.1.2).** Enter and Space on buttons, Escape to dismiss, arrow keys inside composites (one tab stop per widget, a roving `tabindex`). `tabindex="0"` joins the natural order, `-1` takes focus only from code, a positive value never.
-- **Focus is always visible (2.4.7)** — a `:focus-visible` ring with 3:1 contrast against what's behind it, in both themes; removing the outline only with a replacement — Tailwind's `outline-hidden`, never `outline-none`, so forced-colours mode still draws one.
+- **Focus is always visible (2.4.7)** — a `:focus-visible` ring with 3:1 contrast against what's behind it (1.4.11), in both themes; removing the outline only with a replacement — Tailwind's `outline-hidden`, never `outline-none`, so forced-colours mode still draws one.
 - **Focus order follows the reading order (2.4.3)**, so the DOM order is the visual order; CSS `order` and absolute positioning never reorder meaning.
 - **Focus isn't entirely hidden (2.4.11)** under a sticky header, footer or cookie banner (fully unobscured is 2.4.12, AAA): `scroll-padding` on the scrolling container matches their height.
 - **Dialogs and drawers:** focus moves in when they open, stays inside while modal (the page behind is `inert`), Escape closes, and focus returns to the control that opened them. Native `<dialog>` with `showModal()` does most of this; the Popover API is always non-modal, so it suits menus and tooltips, never a modal drawer. Every dialog is named by its heading (`aria-labelledby`).
