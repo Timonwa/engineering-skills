@@ -1,0 +1,53 @@
+{
+  "skill_name": "tailwind",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Set up Tailwind in our new Next 16 app: create tailwind.config.js with content paths for src and ../../packages/ui, and add a `ui:` prefix so the shared package's classes don't clash.",
+      "expected_output": "Should set up Tailwind v4 CSS-first: @tailwindcss/postcss as the only PostCSS plugin, one CSS entry starting with @import \"tailwindcss\", no tailwind.config.js and no content array. Should bring in the UI package with an @source line relative to the stylesheet, and add no prefix, because the app compiles the shared package once with the same classes.",
+      "files": [],
+      "expectations": [
+        "Uses @tailwindcss/postcss with no tailwind.config.js or content array",
+        "Starts the CSS entry with @import \"tailwindcss\"",
+        "Adds an @source line for packages/ui, relative to the stylesheet",
+        "Refuses the ui: prefix and explains one compilation per app"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Make the Button support sizes and tones: className={`px-${size} py-2 bg-${tone}-600 text-white`}.",
+      "expected_output": "Should explain that Tailwind only generates classes it finds as complete strings, so the template literal produces no CSS. Should map each size and tone to complete class strings in one scales file, use semantic role tokens instead of palette steps like bg-jade-600, merge with cn() so the caller's className wins, and narrow the prop's type to accept fewer values rather than writing a second map.",
+      "files": [],
+      "expectations": [
+        "Explains why the interpolated class names produce no CSS",
+        "Maps props to complete class strings in a scales file",
+        "Uses role tokens rather than palette steps in the component",
+        "Merges with cn() so a caller's className wins"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add dark mode. Use the class strategy, and in components write bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100.",
+      "expected_output": "Should switch dark mode on a data-mode attribute with @custom-variant, override the role variables under [data-mode=\"dark\"], and expose them through @theme inline, so components use role tokens and never hard-coded light/dark pairs. Should add the OS fallback through prefers-color-scheme, set color-scheme per mode, and use a pre-paint script that sets data-mode before first paint, with suppressHydrationWarning on the root element.",
+      "files": [],
+      "expectations": [
+        "Uses @custom-variant on [data-mode] rather than the class strategy",
+        "Overrides roles per mode instead of pairing colours in components",
+        "Exposes roles through @theme inline",
+        "Adds the OS fallback, color-scheme and a pre-paint script"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our design-system docs, linked from AGENTS.md, list one exception: \"The marketing hero artwork uses palette steps directly (bg-jade-600, bg-coral-400) — brand artwork.\" Review apps/web/src/components/home/Hero.tsx, which uses bg-jade-600, and apps/app/src/components/dashboard/StatCard.tsx, which uses bg-jade-600 too.",
+      "expected_output": "Should read the project's docs first and treat the hero's palette steps as the recorded exception. Should flag the dashboard StatCard's bg-jade-600 as drift and replace it with a semantic role token. Should not extend the exception beyond the brand artwork it names.",
+      "files": [],
+      "expectations": [
+        "Reads the linked design-system docs before judging",
+        "Accepts the hero's palette steps as a recorded exception",
+        "Flags the StatCard palette step as drift and proposes a role token",
+        "Does not widen the exception to other components"
+      ]
+    }
+  ]
+}

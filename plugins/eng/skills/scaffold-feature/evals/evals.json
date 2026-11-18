@@ -1,0 +1,50 @@
+{
+  "skill_name": "scaffold-feature",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scaffold a tickets feature: create a ticket, list an event's tickets, and refund one.",
+      "expected_output": "Should read two or three neighbouring features for paths and helpers, then present the full list of files to create and change and wait for approval. The refund gets a stub with a TODO; no refund rules, amounts or copy are invented.",
+      "files": [],
+      "expectations": [
+        "Reads neighbouring features first",
+        "Presents the file plan and waits",
+        "Writes stubs with TODOs",
+        "Invents no refund business logic"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The tickets data file will query by eventId ordered by createdAt. What else does the store need?",
+      "expected_output": "Should add the collection path to the shared constants (no literal), an entry for that query in the committed index file, and the collection's security rule: deny-all when every read and write goes through the API.",
+      "files": [],
+      "expectations": [
+        "Adds the collection path constant",
+        "Adds the composite index entry",
+        "Adds a deny-all rule for API-only access"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write the createTicket Server Action so it throws an error when validation fails.",
+      "expected_output": "Should validate with the schema and answer with an action result carrying per-field errors, never a thrown error, and call updateTag on what it changed.",
+      "files": [],
+      "expectations": [
+        "Returns an action result instead of throwing",
+        "Validates with the schema",
+        "Calls updateTag after the write"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Use date-fns to format the ticket dates.",
+      "expected_output": "Should check the project's packages and lib/ for an existing date helper first. If a new dependency is still needed, list it in the plan for approval rather than installing it.",
+      "files": [],
+      "expectations": [
+        "Checks for an existing date helper",
+        "Lists date-fns in the plan if still needed",
+        "Doesn't install without approval"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "skill_name": "review-pr",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review PR #42. It adds DELETE /api/v1/events/[eventId]/photos/[photoId]; the handler reads the session, then calls photoService.delete(photoId) without checking that the photo belongs to the event or the caller.",
+      "expected_output": "Should read the PR, its linked issue and AGENTS.md, then report a Must fix: an object-level authorisation gap, quoting the handler line and stating the failure (any signed-in user deletes another account's photo by changing the id). Should stay read-only: no edits, comments or approvals.",
+      "files": [],
+      "expectations": [
+        "Reads the intent and the project's rules",
+        "Reports the missing ownership check as Must fix",
+        "Quotes the line and gives the failure scenario",
+        "Posts no comment and makes no edit"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review PR #57 and post your findings on it.",
+      "expected_output": "Should treat posting as the requested --comment step: review, confirm, then post the table and details as one review. Never approve or merge; request changes only when there is a Must fix and the owner agrees.",
+      "files": [],
+      "expectations": [
+        "Posts one review with the findings",
+        "Does not approve or merge",
+        "Requests changes only with owner agreement"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review PR #63, which adds a settings form. While reading, you notice an untouched file on the base branch, lib/legacy.ts, with a hardcoded https://api.example.com URL.",
+      "expected_output": "Should judge only the lines the PR adds, removes or depends on. The base-branch problem is mentioned once at the end under 'Already on the base branch', never as a blocker.",
+      "files": [],
+      "expectations": [
+        "Keeps findings to the PR's change",
+        "Lists the base-branch issue separately at the end",
+        "Does not block the PR on it"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Review PR #71. Its only test change is expect(totalMinor).toBe(15000) becoming expect(totalMinor).toBe(13500), and the PR's issue says nothing about prices changing.",
+      "expected_output": "Should flag a weakened assertion: the expected value changed to match new output with no requirement behind it. That's a finding (Must fix if the old value was right), quoting both lines and asking which behaviour is intended.",
+      "files": [],
+      "expectations": [
+        "Flags the changed assertion",
+        "Notes the issue doesn't justify it",
+        "Quotes both lines",
+        "Asks which value is correct"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "skill_name": "code-structure",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add an About page to the marketing site. It's small, so put the hero markup and the team list straight into app/(marketing)/about/page.tsx.",
+      "expected_output": "Should keep page.tsx a thin entry that imports and renders AboutPageContent. Sections go in components/marketing/about/ as named-export files named for the page (AboutHero.tsx, AboutTeam.tsx), composed by index.tsx; the team records go in lib/data/team.data.ts or stay with their section, never in the entry.",
+      "files": [],
+      "expectations": [
+        "Keeps page.tsx to an import and a render",
+        "Creates AboutHero and AboutTeam as named exports",
+        "Composes them in an index.tsx exporting AboutPageContent",
+        "Keeps data out of the route entry"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create src/lib/billing/ with hooks.ts, types.ts and utils.ts for the new billing feature.",
+      "expected_output": "Should refuse a domain folder at the lib/ root: lib/ is kind-first and flat, with the domain as a filename prefix. The files become lib/hooks/use-<subject>.ts, lib/types/billing.type.ts (only if no schema or const already infers the type) and lib/utils/billing.utils.ts, each added to its kind's barrel with one explicit export line.",
+      "files": [],
+      "expectations": [
+        "Refuses lib/billing/",
+        "Places files by kind with the billing prefix",
+        "Uses the <domain>.<kind>.ts grammar and use-<subject>.ts for hooks",
+        "Adds one explicit export line per file to each barrel"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Only apps/web uses formatCurrency today, but move it into packages/utils now so it's ready to share.",
+      "expected_output": "Should keep it in apps/web's lib/utils: consumer count decides placement, and code moves to a package on its second consumer, never before. Should check the project's AGENTS.md first and follow a recorded rule that says otherwise.",
+      "files": [],
+      "expectations": [
+        "Keeps formatCurrency in the app",
+        "Cites promotion on the second consumer",
+        "Checks AGENTS.md for a recorded exception"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "In a Client Component I wrote: import { ROUTES } from \"@/lib/config\". The build now fails with a server-only error. What's wrong?",
+      "expected_output": "Should explain that the config barrel is server-only because it re-exports env, which reads secrets, so a client import of the barrel fails the build. The fix is importing the one file by path: import { ROUTES } from \"@/lib/config/routes\".",
+      "files": [],
+      "expectations": [
+        "Identifies the config barrel as server-only",
+        "Explains it re-exports env",
+        "Gives the by-path import of routes"
+      ]
+    }
+  ]
+}

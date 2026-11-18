@@ -1,0 +1,55 @@
+{
+  "skill_name": "webhook-delivery",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "When an order is paid, call `await fetch(endpoint.url, { method: 'POST', body: JSON.stringify(order) })` for each customer endpoint right in the payment route.",
+      "expected_output": "Should write an event record in the same transaction as the change (the outbox pattern) and return at once; a worker fans out one delivery per subscribed endpoint, each an idempotent record (id from event id + endpoint id, created with create()) and its own queue task. The payload is built through the projection that account may see, never the stored document, and nothing on the request path calls a customer's server.",
+      "files": [],
+      "expectations": [
+        "Removes delivery from the request path",
+        "Writes the event in the change's transaction",
+        "Fans out from a queue with idempotent deliveries",
+        "Projects the payload for the account"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Sign our webhooks with ed25519 using the v1a scheme from Standard Webhooks — asymmetric is the spec's preference, right?",
+      "expected_output": "Should correct it: the Standard Webhooks spec deprecates v1a in favour of v2a, which signs `endpoint_id.msg_id.timestamp.payload` so a signature for one endpoint fails at another, and one key pair serves every endpoint. Symmetric v1 (HMAC-SHA256 over `id.timestamp.body` with a per-endpoint `whsec_` secret) remains the common choice. Either way, sign each attempt afresh with that attempt's timestamp.",
+      "files": [],
+      "expectations": [
+        "Says v1a is deprecated",
+        "Names v2a and what it signs",
+        "Does not claim the spec prefers asymmetric signing",
+        "Re-signs each attempt with its own timestamp"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Customers can register any webhook URL. Validate it's a valid URL with z.url() and follow redirects so moved endpoints still work.",
+      "expected_output": "Should treat it as SSRF (OWASP API7): HTTPS only, a hostname not an IP literal, a standard port; resolve and refuse loopback, private, CGNAT, link-local (169.254.169.254), unique-local IPv6 and IPv4-mapped forms; pin the connection to the checked address; check at registration and on every attempt. Never follow redirects — a 3xx is a failure and the customer updates the URL. Send from a network that can't reach internal services.",
+      "files": [],
+      "expectations": [
+        "Names SSRF",
+        "Refuses private and metadata addresses after resolving",
+        "Pins to the resolved IP",
+        "Checks on every attempt, not only registration",
+        "Never follows redirects"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Retry failed deliveries 3 times, 1 second apart, using setTimeout in the worker. And guarantee each event is delivered exactly once, in order.",
+      "expected_output": "Should retry with backoff and jitter over about three days, each attempt a new queue task, never a sleep in a worker; honour 410 (disable), 429/502/503/504 with Retry-After. Should refuse promising exactly-once or ordered delivery: it's at least once, in no particular order, so document that and include state or version so receivers can ignore older events and dedupe on webhook-id.",
+      "files": [],
+      "expectations": [
+        "Retries over days with backoff and jitter",
+        "Uses a queue task per attempt, not setTimeout",
+        "Disables on 410",
+        "Refuses exactly-once and ordering promises",
+        "Tells receivers to dedupe on webhook-id"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "skill_name": "ship-changes",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Commit my changes. (git branch --show-current prints main; AGENTS.md lists main, dev and staging as protected.)",
+      "expected_output": "Should check the branch first and stop because main is protected. Should propose a type/short-description branch cut from the up-to-date default branch and wait for the owner, never committing on main unless the owner explicitly asks for that commit.",
+      "files": [],
+      "expectations": [
+        "Checks the branch before anything else",
+        "Refuses to commit on main",
+        "Proposes a type/short-description branch",
+        "Waits for the owner before creating it"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Commit everything in stages. git status shows: a new ticket schema, a ticket service and its test, a POST route, two React components, a changed .env.local, and docs/roadmap.md, which was already staged before this session.",
+      "expected_output": "Should list what is staged, unstaged and untracked, and present a plan before staging anything: groups by layer in build order (schema, then service with its test, then route, then components), each with its subject. Should leave .env.local out entirely, unstage docs/roadmap.md and ask whether to include it, then stage and show one commit at a time and wait for a yes on each.",
+      "files": [],
+      "expectations": [
+        "Presents the group plan before staging",
+        "Groups by layer in build order with tests beside their code",
+        "Never stages .env.local",
+        "Unstages the pre-staged file and asks about it",
+        "Waits for approval on each commit"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "You showed me commit 1 and I said yes. Commits 2 to 4 are the same kind of thing, so just do them without asking.",
+      "expected_output": "Should commit the approved commit 1 only, then present commit 2 with its files and message and wait. A yes approves the one commit shown; 'commit everything in stages' or 'just do them' approves the process, never an unattended commit.",
+      "files": [],
+      "expectations": [
+        "Commits only the approved commit",
+        "Presents the next commit's files and message",
+        "Waits for a fresh yes per commit",
+        "Explains that one yes covers one commit"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "The pre-commit hook failed on a Prettier check. Just commit with --no-verify, it's only formatting.",
+      "expected_output": "Should refuse --no-verify. Should fix the formatting the hook reported, re-stage the same paths and present the commit again for approval.",
+      "files": [],
+      "expectations": [
+        "Refuses --no-verify",
+        "Fixes what the hook reported",
+        "Presents the commit again for approval"
+      ]
+    }
+  ]
+}

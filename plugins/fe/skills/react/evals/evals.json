@@ -1,0 +1,54 @@
+{
+  "skill_name": "react",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Clean up this component for performance: `const [fullName, setFullName] = useState(''); useEffect(() => { setFullName(first + ' ' + last) }, [first, last]);` Also wrap handleSelect in useCallback and the filtered list in useMemo. The app has the React Compiler on.",
+      "expected_output": "Should replace the synced state with a value derived during render, explaining that setState in an effect body renders twice and can drift. Should not add useCallback or useMemo: the React Compiler memoises, and manual memoisation stays only as an escape hatch (an identity an effect or a library compares) with a comment saying which. Should say that performance work follows a profile.",
+      "files": [],
+      "expectations": [
+        "Derives fullName during render and removes the state and effect",
+        "Does not add useCallback or useMemo by reflex",
+        "Names the escape-hatch cases where manual memoisation stays, with a comment",
+        "Mentions profiling before performance changes"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add an edit drawer to the members table. Keep isDrawerOpen and selectedMemberId in useState, and give each row an onClick={() => openDrawer(member.id)}.",
+      "expected_output": "Should put the drawer's state in the URL (for example ?panel=edit&member=<id>), so it survives a refresh and can be shared, and Back closes it. Opening pushes a history entry; closing a drawer the reader arrived at through a shared link replaces it. The component reading search params sits behind <Suspense>. Should use one handler reading a data-member-id attribute through event.currentTarget instead of a closure per row.",
+      "files": [],
+      "expectations": [
+        "Moves the drawer state into search params rather than useState",
+        "Opening pushes a history entry so Back closes the drawer",
+        "Handles a shared-link arrival with replace",
+        "Uses one data-* handler reading event.currentTarget.dataset",
+        "Wraps the search-param reader in <Suspense>"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our contact form uses a Server Action with useActionState. After a failed submit every field is empty. Make each input controlled with useState so the values survive.",
+      "expected_output": "Should keep the fields uncontrolled and explain that React resets them when the action completes, including on an error result. Should have the action return the submitted values in its result and feed them back as each input's defaultValue, with fieldErrors shown beside each field. The submit button reads the pending state with useFormStatus.",
+      "files": [],
+      "expectations": [
+        "Keeps the inputs uncontrolled rather than adding useState per field",
+        "Returns submitted values from the action and uses them as defaultValue",
+        "Shows fieldErrors beside their fields",
+        "Uses useFormStatus or the pending flag for the submit button"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md for apps/admin says: \"The React Compiler is off in apps/admin until the data-table library is replaced (it trips incompatible-library). Column definitions use useMemo there.\" Add an Email column to the members table in apps/admin.",
+      "expected_output": "Should follow the project's recorded deviation: wrap the column definitions in useMemo in apps/admin, because the compiler is off there for a stated reason, and add a short comment pointing at the reason. It should not apply the same memoisation to apps where the compiler is on, and should not argue the project out of its recorded choice.",
+      "files": [],
+      "expectations": [
+        "Reads the app's AGENTS.md before changing the table",
+        "Uses useMemo for the column definitions in apps/admin as the project records",
+        "Leaves a comment naming why the memoisation is there",
+        "Does not extend manual memoisation to apps where the compiler is on"
+      ]
+    }
+  ]
+}

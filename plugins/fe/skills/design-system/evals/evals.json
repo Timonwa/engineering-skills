@@ -1,0 +1,53 @@
+{
+  "skill_name": "design-system",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create PrimaryButton, SecondaryButton and DangerButton components in packages/ui so the teams stop styling buttons by hand.",
+      "expected_output": "Should refuse the variant family and extend the one Button with props from the shared vocabularies — variant or tone (for example primary, secondary, danger), size and radius — mapped to classes in the scales file. Danger is a status role, so it doesn't rely on colour alone and its label names the action.",
+      "files": [],
+      "expectations": [
+        "Rejects separate PrimaryButton/DangerButton components",
+        "Configures one Button through variant or tone and size props",
+        "Uses the shared vocabularies and the scales file",
+        "Notes that colour is never the only signal for danger"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "MetricCard is only used in apps/admin, but apps/app might need it later. Move it into packages/ui/src/patterns/ now.",
+      "expected_output": "Should keep MetricCard in apps/admin's own src/ui/ until a second app needs it, because promotion happens on the second consumer, never before. Should also reject a patterns tier: a metric card composed of components is a block, so it would go in blocks/ in either place, keeping the same tier when it moves.",
+      "files": [],
+      "expectations": [
+        "Keeps it in the app until a second consumer exists",
+        "Rejects the patterns/ tier",
+        "Places it in blocks/ by what it composes",
+        "Notes the tier stays the same when promoted"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our installed Select (from the base library's registry CLI) has a misaligned chevron. Copy the latest Select source from the library's docs site over packages/ui/src/base/select.tsx.",
+      "expected_output": "Should refuse to copy from the docs. The installed file is the project's to fix: correct the chevron in place and add the change to the project's list of local edits, so it's reapplied after a reinstall, or reinstall through the CLI with --overwrite and reapply the listed edits. Should check the project's AGENTS.md or docs for where local edits are recorded.",
+      "files": [],
+      "expectations": [
+        "Does not copy source from the docs site",
+        "Fixes the installed file in place or reinstalls through the CLI",
+        "Records the edit in the project's list of local edits",
+        "Looks up where the project records local edits"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "The project's design-system doc, linked from AGENTS.md, says: \"size ladder: sm, md, lg only; tone roles: neutral, brand, success, warning, danger.\" Add a large, info-toned Badge.",
+      "expected_output": "Should read the project's recorded vocabularies and work within them: offer lg for size, and note that info isn't a recorded tone. It should ask whether to add an info role (with text and surface values that pass contrast in both modes) rather than inventing one or reusing an accent as a status.",
+      "files": [],
+      "expectations": [
+        "Reads the vocabularies from the project's doc",
+        "Uses lg from the recorded size ladder",
+        "Asks before adding an info tone that isn't recorded",
+        "Doesn't reuse an accent colour as a status"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "skill_name": "seo-aeo-geo",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add FAQPage JSON-LD to every help article so we get the FAQ dropdowns in Google, and add an llms.txt so ChatGPT cites us more.",
+      "expected_output": "Should explain that Google no longer shows FAQ rich results, so the markup won't produce them; FAQPage markup is valid only for questions and answers visible on the page. Should say llms.txt is optional (Google doesn't use it) and that being cited depends on allowing each engine's search crawler (OAI-SearchBot for ChatGPT search), being in Bing's index with IndexNow, and writing answer-first content.",
+      "files": [],
+      "expectations": [
+        "States that FAQ rich results are gone from Google Search",
+        "Marks up only content that is on the page",
+        "Calls llms.txt optional and not a citation lever",
+        "Points to search crawlers, Bing indexing and answer-first writing"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Our metadata factory is `export function buildMetadata({ title, description, path = '/' }) { return { title, description, alternates: { canonical: path } } }`. Some pages don't pass a path. Is that fine?",
+      "expected_output": "Should flag the default path as a bug: every page that forgets its path would declare the home page as its canonical. The factory should have no default path and set a canonical only when the page passes its own. The root layout sets metadataBase and the title template, and openGraph and twitter are built in full on every page because they replace the parent's object.",
+      "files": [],
+      "expectations": [
+        "Identifies the default '/' as making pages canonical to the home page",
+        "Removes the default and sets a canonical only from the page's own path",
+        "Mentions metadataBase in the root layout",
+        "Notes that openGraph and twitter replace the parent's object"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "When an event is deleted, its page component calls notFound() inside a component under <Suspense>. robots.ts disallows /api/. Is our setup right for search?",
+      "expected_output": "Should explain that a status counts only if it's sent before streaming starts: under Suspense the response is already 200, so notFound() only injects noindex. A deleted record should answer 410 from the proxy or a route handler. Should also flag that disallowing /api/ blocks the /api/og card route, which the platforms that fetch share cards obey, so robots.txt must allow it.",
+      "files": [],
+      "expectations": [
+        "Explains that the streamed response is already 200",
+        "Sends 410 for deleted records from the proxy or a route handler",
+        "Flags that /api/ disallow blocks the share-card route",
+        "Allows the card route in robots.txt"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md records: \"Training crawlers GPTBot, ClaudeBot and Google-Extended are blocked (business decision, 2026-03).\" Update robots.ts to block every AI bot, including OAI-SearchBot and PerplexityBot, to protect our content.",
+      "expected_output": "Should keep the recorded training-crawler blocks, and explain that search crawlers are separate: blocking OAI-SearchBot removes the site from ChatGPT search answers, and blocking PerplexityBot removes it from Perplexity's results. Because AGENTS.md records a decision only for training crawlers, it should ask before blocking search crawlers rather than doing it silently.",
+      "files": [],
+      "expectations": [
+        "Keeps the recorded training-crawler blocks",
+        "Explains that search crawlers are separate from training crawlers",
+        "States what blocking OAI-SearchBot and PerplexityBot costs",
+        "Asks before blocking search crawlers, since nothing records that decision"
+      ]
+    }
+  ]
+}

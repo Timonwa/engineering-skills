@@ -1,0 +1,43 @@
+{
+  "skill_name": "emails",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write the password-changed email. Subject: 'Important information about your account'. Body: 'Hi! Please note that your password was updated. While you're here, check out our new Pro plan!'",
+      "expected_output": "Should rewrite it: a specific subject of about 50 characters ('Your password was changed'), a preheader that adds the next thing to know, and a first sentence that carries the message. Say what changed, when and from which device or place, and give one way to secure the account. No marketing in a transactional email, no tracking in a security email, and no 'please' (per the copywriting rules). Should present current text, proposed text and the rule, and wait for approval before editing.",
+      "files": [],
+      "expectations": [
+        "Replaces the vague subject with a specific one",
+        "Removes the Pro plan promotion",
+        "States when and from which device",
+        "Gives one action to secure the account",
+        "Drops 'please'",
+        "Shows current and proposed text and waits for approval"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "For the receipt email, attach the invoice PDF and add a line asking customers to reply with their card's last four digits if anything looks wrong.",
+      "expected_output": "Should refuse both: no attachments on transactional email — link to the invoice in the product instead; never ask for personal or card details by email, which is what phishing does. The email leads with the amount in the account's currency and what it's for, with the facts in one panel and a reference for support.",
+      "files": [],
+      "expectations": [
+        "Removes the attachment in favour of a link",
+        "Refuses to ask for card details by email",
+        "Leads with the amount and what it's for",
+        "Includes a reference and how to get help"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Draft the storage-alert email. Tell them they're at 90% and that we offer unlimited storage on the Business plan.",
+      "expected_output": "Should check the claim against the project's feature docs before writing it — 'unlimited storage on the Business plan' must be what the product does today. If the docs don't back it, ask rather than write it. The email has one job and one action, names the account, and follows the project's voice from AGENTS.md and its linked docs.",
+      "files": [],
+      "expectations": [
+        "Checks the unlimited-storage claim against the feature docs",
+        "Asks rather than inventing the claim if unbacked",
+        "Keeps one job and one action",
+        "Reads the voice from the project's docs"
+      ]
+    }
+  ]
+}

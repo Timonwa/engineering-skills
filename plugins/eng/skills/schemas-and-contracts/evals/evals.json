@@ -1,0 +1,50 @@
+{
+  "skill_name": "schemas-and-contracts",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write the body schema for PATCH /events/:id as EventSchema.omit({ id: true, ownerId: true }).partial().",
+      "expected_output": "Should build a write schema as a .pick() allowlist of the fields a caller may set, so a field added later isn't writable by accident. For the partial update, should use the helper that strips defaults, because .partial() keeps .default() and would reset fields the caller never sent.",
+      "files": [],
+      "expectations": [
+        "Uses .pick() rather than .omit()",
+        "Explains the allowlist fails closed",
+        "Strips defaults for the partial update"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The ticket form has an optional price field. I'm using z.coerce.number().optional().",
+      "expected_output": "Should flag that Number(\"\") is 0, so a blank optional field saves as zero. The empty string is turned into undefined before coercion. Money is an integer in the minor unit beside its currency code, never a float.",
+      "files": [],
+      "expectations": [
+        "Explains the empty-string-to-zero trap",
+        "Turns an empty value into undefined first",
+        "Stores the price as an integer in minor units with a currency"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add a website field to the profile schema with z.url(); we show it as a link on the public profile.",
+      "expected_output": "Should use z.httpUrl(), which allows only http and https. Plain z.url() accepts javascript: and other schemes, which become an XSS hole when rendered as a link.",
+      "files": [],
+      "expectations": [
+        "Uses z.httpUrl()",
+        "Explains z.url() accepts javascript:",
+        "Ties it to rendering the link"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Rename the stored field venue to location across the contracts package and the API. We have live data.",
+      "expected_output": "Should treat it as a destructive change on live data: expand, then contract. The read schema accepts both shapes, writes use location, stored documents are migrated, and only then does venue go. After changing the contracts package, rebuild its dist and restart the API that reads it.",
+      "files": [],
+      "expectations": [
+        "Uses expand then contract",
+        "Keeps a read schema tolerant of both names",
+        "Migrates stored documents before removing the old field",
+        "Rebuilds the contracts package and restarts the API"
+      ]
+    }
+  ]
+}

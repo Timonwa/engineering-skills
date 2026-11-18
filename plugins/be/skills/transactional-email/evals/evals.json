@@ -1,0 +1,52 @@
+{
+  "skill_name": "transactional-email",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "In placeOrder(), after saving the order, `await sendReceipt(order)` — if it throws, roll back so we don't have orders without receipts.",
+      "expected_output": "Should refuse: a send never throws into the work that caused it, so a failed receipt never undoes the order. The client logs the failure (type, sender, recipient count — never the address or body) and returns false. Take one claim per message keyed by type, recipient and the order id, released if the send fails, passing it as the provider's idempotency key where supported; retry only transient failures (timeout, 5xx, 429) with backoff and jitter.",
+      "files": [],
+      "expectations": [
+        "Does not roll back the order on a send failure",
+        "Logs without the address or body and returns false",
+        "Claims each message by type, recipient and event",
+        "Retries only transient failures"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add an unsubscribe link to the weekly digest: GET /unsubscribe?email=ada@example.com removes them from the list.",
+      "expected_output": "Should add RFC 8058 one-click unsubscribe: a `List-Unsubscribe` header with one HTTPS URI and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, both covered by DKIM, plus a visible link. The URI identifies recipient and list by a signed token, not a raw email. The POST unsubscribes with no page and no redirect; a GET only shows a confirmation page, because link scanners send GETs. Honour it at once, within two days at most.",
+      "files": [],
+      "expectations": [
+        "Adds List-Unsubscribe and List-Unsubscribe-Post headers",
+        "Covers both headers with DKIM",
+        "Uses a signed token instead of a raw email",
+        "Never unsubscribes on GET, citing scanners",
+        "Honours it within two days"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The forgot-password endpoint should return 404 'No account with that email' so users know they typed it wrong.",
+      "expected_output": "Should refuse: a reset request is queued and answered with the same generic success in the same time whether or not the address has an account (OWASP, account enumeration). Add a per-recipient budget on reset sends however many IPs ask.",
+      "files": [],
+      "expectations": [
+        "Refuses to reveal whether the account exists",
+        "Same response and timing either way",
+        "Adds a per-recipient send budget"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Use our marketing ESP's click tracking on all emails, including password resets, so we can measure engagement. Same domain for everything is fine.",
+      "expected_output": "Should refuse tracking pixels and rewritten links on security and auth mail — rewriting can expose a sign-in token to a third party and break single-use links. Separate transactional from marketing mail by provider, or at least by stream and subdomain (`mail.` and `news.`), so marketing complaints never sink a sign-in link into spam.",
+      "files": [],
+      "expectations": [
+        "Refuses tracking on auth and security mail",
+        "Explains token exposure and broken single-use links",
+        "Separates transactional and marketing streams or subdomains"
+      ]
+    }
+  ]
+}

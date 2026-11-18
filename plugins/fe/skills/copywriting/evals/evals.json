@@ -1,0 +1,54 @@
+{
+  "skill_name": "copywriting",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "AGENTS.md links docs/brand-voice.md (warm, plain, confident), docs/word-list.md (\"event\", never \"gig\"; \"sign in\") and a banned-words list that includes \"seamless\" and \"unlock\". Write the homepage hero: I'm thinking 'Unlock seamless gig management. Get started!'",
+      "expected_output": "Should read the linked voice, word list and banned words first, then rewrite: no 'unlock' or 'seamless', 'event' instead of 'gig', and a tagline that says what the product does and for whom. The call to action is named for what the reader gets, never 'Get started', with exclamation marks used sparingly. Each change gives the current text, the proposed text and the rule behind it.",
+      "files": [],
+      "expectations": [
+        "Reads the project's voice, word list and banned words",
+        "Removes 'unlock' and 'seamless'",
+        "Uses 'event' instead of 'gig'",
+        "Replaces 'Get started' with a specific call to action",
+        "Lists the current text, proposed text and the rule for each change"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Rewrite our form errors: 'Oops! Invalid input. Please try again.' for an email field, and 'This field is required' for the name field.",
+      "expected_output": "Should rewrite each error to say what happened and how to fix it, specific to its field: 'Enter an email address like name@example.com' and 'Enter your name'. No 'Oops', 'please', 'invalid' or exclamation marks, and the same words appear beside the field and in the summary.",
+      "files": [],
+      "expectations": [
+        "Says what's wrong and how to fix it for each field",
+        "Removes 'Oops', 'Please' and 'Invalid'",
+        "Has no exclamation marks in errors",
+        "Keeps the field message and summary wording the same"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our delete confirmation says 'Are you sure?' with buttons [Yes] [No]. It deletes the selected photos.",
+      "expected_output": "Should name the consequence and whether it can be undone ('Delete 3 photos? You can't undo this'), label the destructive button with what goes ('Delete photos') and the other 'Cancel', and avoid relying on colour alone to mark the destructive action.",
+      "files": [],
+      "expectations": [
+        "Names what is deleted and that it can't be undone",
+        "Labels the button with a verb and object, not 'Yes'",
+        "Uses 'Cancel' (or similar) instead of 'No'",
+        "Doesn't rely on colour alone"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "There's no brand voice doc in this repo. Write the empty state for the Projects list and the sign-up link in the header ('Sign up').",
+      "expected_output": "Should note that no voice is recorded and use the baseline (clear, helpful, confident without superlatives, active, concise). The empty state says what will appear and offers the action that fills it, distinct from a no-results state. It should use one pair of account words, recommending 'Create an account' beside 'Sign in' instead of 'Sign up', and ask the owner to record the voice and account words.",
+      "files": [],
+      "expectations": [
+        "Notes the missing voice doc and applies the baseline",
+        "Empty state says what appears and gives the filling action",
+        "Replaces 'Sign up' with 'Create an account' alongside 'Sign in'",
+        "Suggests recording the voice and account words"
+      ]
+    }
+  ]
+}

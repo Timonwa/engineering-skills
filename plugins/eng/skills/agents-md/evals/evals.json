@@ -1,0 +1,55 @@
+{
+  "skill_name": "agents-md",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Set up an AGENTS.md for this repo, and add a CLAUDE.md beside it so Claude Code picks it up too.",
+      "expected_output": "Should write the AGENTS.md from what the repo shows, asking only for the gaps. Should not add a CLAUDE.md by default: recent Claude Code reads AGENTS.md itself, but only when no CLAUDE.md, .claude/CLAUDE.md or CLAUDE.local.md exists, so adding one stops every AGENTS.md loading. Should explain that a CLAUDE.md is only for sessions that can't read AGENTS.md, holds @AGENTS.md, and then needs a matching CLAUDE.md in every folder with a nested AGENTS.md. Should not commit.",
+      "files": [],
+      "expectations": [
+        "Writes AGENTS.md from detected commands, structure and branches",
+        "Does not add a CLAUDE.md by default",
+        "Explains that a CLAUDE.md switches off AGENTS.md loading",
+        "Says a needed CLAUDE.md holds @AGENTS.md, with one per nested folder",
+        "Does not commit"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Tidy our AGENTS.md. It's 340 lines: it lists every dependency with its version, says 'no any' and 'derive, don't sync', has a 'Payments' section that just says 'None.', and has 60 lines about the admin app's sidebar.",
+      "expected_output": "Should cut what the code shows (the dependency list) and general standards a skill or linter enforces, unless stated as a project choice; drop the empty section rather than keep 'None.'; move the admin-only rules into the admin app's own AGENTS.md. Should keep every project fact, bring the root file under 200 lines, and report what changed with the line count before and after.",
+      "files": [],
+      "expectations": [
+        "Removes the dependency list",
+        "Removes or reduces the general-standard lines",
+        "Deletes the empty Payments section",
+        "Moves the admin sidebar rules to the admin app's AGENTS.md",
+        "Reports the line count before and after"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our AGENTS.md says 'Tests may call the real staging Firestore.' The house testing standard says mock only the I/O boundary with fakes. Bring AGENTS.md in line with the house standard.",
+      "expected_output": "Should check whether the project records this as a deviation with a reason. Finding none, should ask the owner whether it is a deliberate deviation or drift, rather than silently rewriting the line or silently keeping it. If deliberate, it goes in the Deviations section with what differs, why and a link; if drift, the line returns to the standard.",
+      "files": [],
+      "expectations": [
+        "Looks for a recorded reason before changing the line",
+        "Asks whether it is a deviation or drift",
+        "Does not silently rewrite or keep the line",
+        "Records a confirmed deviation in the Deviations section with its reason"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "next dev keeps adding a block between <!-- BEGIN:nextjs-agent-rules --> and <!-- END:nextjs-agent-rules --> to apps/web/AGENTS.md. Delete it, it's noise.",
+      "expected_output": "Should keep the block: from Next.js 16.3 next dev writes it into each app's AGENTS.md and puts it back on the next run, so deleting it only creates churn. Should advise committing it and never editing between the markers, and leave the rest of the file as it is.",
+      "files": [],
+      "expectations": [
+        "Declines to delete the block",
+        "Explains that next dev writes it back",
+        "Advises committing the block",
+        "Does not edit inside the markers"
+      ]
+    }
+  ]
+}

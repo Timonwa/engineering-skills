@@ -1,0 +1,58 @@
+{
+  "skill_name": "access-control",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a route so project admins can archive a project: POST /v1/projects/[projectId]/archive. Just check `if (member.role !== 'admin') return 403` at the top, that's the quickest.",
+      "expected_output": "Should refuse the role-name check and guard the route with a permission verb instead — add `project.project.archive` to the verb registry, decide which roles hold it (exclusion roles get it automatically unless excluded; allowlist roles only if added), and guard with `loadProjectWithPermission(request, projectId, 'project.project.archive')`. Should load the project before checking so a caller who can't see it gets 404, not 403. Should add the reverse verb `unarchive` as its own verb, assert both directions in the role-map test, and gate the UI control with the same verb.",
+      "files": [],
+      "expectations": [
+        "Does not check a role name in the route",
+        "Adds an `archive` verb to the registry in the `scope.resource.action` shape",
+        "Uses a resource guard that loads before checking (404 before 403)",
+        "Treats `unarchive` as a separate verb",
+        "Updates the role-map test in both directions",
+        "Gates the UI control with the same verb"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Our invite endpoint takes { email, role } and the frontend only shows roles below yours, so a member can't pick 'owner'. Ship it.",
+      "expected_output": "Should say the UI filter protects nothing and the API must enforce the rank rule: a member may invite only a role strictly below their own, nobody grants a role at or above theirs. Should bind the invite to the invited email (accepted only by a signed-in account whose verified email matches), make it single-use, expiring in days and stored as a hash, and re-check the inviter's right at acceptance so an invite from someone who has since lost it is void.",
+      "files": [],
+      "expectations": [
+        "States that the UI filter is not protection",
+        "Enforces the strictly-below rank rule in the API",
+        "Binds the invite to the verified email",
+        "Makes the invite single-use, expiring and hashed",
+        "Re-checks the inviter's right on acceptance"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add share links for albums so a client can view photos without signing in. Use the album id in the URL like /share/a1B2c3 and add Disallow: /share/ to robots.txt so Google doesn't index them.",
+      "expected_output": "Should refuse a derived or sequential id and generate at least 120 random bits (a v4 UUID or 16 random bytes). The link grants one read verb on one album, expires or is single-use, is revocable, and a wrong, expired or revoked link answers 404. Should not disallow the path in robots.txt — Google never sees a noindex on a page it can't crawl, so a blocked URL can still be indexed from links elsewhere; send `noindex` as a meta tag and `X-Robots-Tag` instead, plus `Referrer-Policy: no-referrer` and no third-party scripts.",
+      "files": [],
+      "expectations": [
+        "Uses at least 120 random bits, not the album id",
+        "Grants one read verb on one resource",
+        "Expiring, revocable, and 404 for wrong, expired or revoked links",
+        "Rejects the robots.txt Disallow and explains why",
+        "Uses noindex via meta tag and X-Robots-Tag",
+        "Sets Referrer-Policy: no-referrer"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our AGENTS.md says: 'Organisation roles are stored in custom claims so guards cost no read — we accept the staleness because members change roles at most monthly.' Add a route that lets an org admin delete a project.",
+      "expected_output": "Should notice the project records a deviation (resource roles in claims) with a reason, and follow it for this route rather than overriding it, while keeping everything the deviation doesn't cover: a permission verb (`project.project.delete`), not a role name; load before check so a hidden id is 404; tenant scoping from the record. Should still revoke sessions when a role is taken away, since the recorded reason covers staleness of grants, not keeping removed powers live — and may point out that risk without blocking.",
+      "files": [],
+      "expectations": [
+        "Recognises the recorded deviation and follows it",
+        "Still guards with a verb, not a role name",
+        "Still loads before checking (404 before 403)",
+        "Does not silently rewrite the project's choice"
+      ]
+    }
+  ]
+}

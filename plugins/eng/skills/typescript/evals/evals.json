@@ -1,0 +1,52 @@
+{
+  "skill_name": "typescript",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Imports from @/components aren't resolving. Add \"baseUrl\": \".\" and \"moduleResolution\": \"node\" to tsconfig.json to fix it.",
+      "expected_output": "Should refuse both: TypeScript 6 deprecates baseUrl and moduleResolution node/node10, and 7 removes them. The alias goes in paths with its full prefix (\"@/*\": [\"./src/*\"]), and a Next.js app uses Bundler resolution from its preset, NodeNext only for what plain Node loads.",
+      "files": [],
+      "expectations": [
+        "Refuses baseUrl",
+        "Refuses moduleResolution node",
+        "Puts the prefix in each paths entry",
+        "Chooses Bundler for a Next.js app"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write an enum for event statuses: Draft, Published, Cancelled.",
+      "expected_output": "Should not write a TypeScript enum, which erasableSyntaxOnly refuses. Should use an as const array of stored values with a derived union type, and z.enum over the same array where it's validated.",
+      "files": [],
+      "expectations": [
+        "Does not use enum",
+        "Uses an as const array",
+        "Derives the union type from the array",
+        "Notes z.enum can read the same array"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "This line errors: const order = JSON.parse(await request.text()) as Order. Make the error go away.",
+      "expected_output": "Should not use as to launder unknown data. Should parse the body with the order's Zod schema (or request.json() into unknown, then the schema), so the type comes from the schema and bad input fails at the boundary.",
+      "files": [],
+      "expectations": [
+        "Refuses the as cast",
+        "Treats the parsed body as unknown",
+        "Validates with a schema",
+        "Lets the type come from the schema"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "In the nav config I wrote href: `/events/${eventId}` as Route. Is that fine?",
+      "expected_output": "Should say no: as Route accepts paths that no longer exist, and Route excludes dynamic routes. A parameterised path is a function in routes.ts typed by its template (`/events/${string}`); as Route is kept only for a path known solely at runtime, with a comment saying which.",
+      "files": [],
+      "expectations": [
+        "Rejects as Route here",
+        "Moves the path into a typed function in routes.ts",
+        "Keeps as Route only for runtime-only paths"
+      ]
+    }
+  ]
+}

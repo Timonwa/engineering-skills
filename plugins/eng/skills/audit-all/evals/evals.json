@@ -1,0 +1,41 @@
+{
+  "skill_name": "audit-all",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/eng:audit-all on a single Next.js app with no Redis, no Firestore and no Storybook. The fe and be plugins are installed.",
+      "expected_output": "Should detect the scope and run only the audits that apply, one subagent each, telling each to read its audit's SKILL.md by path. Redis, Firestore and Storybook audits are listed as skipped with the reason. Should write _reports/audit-all.md with the roll-up and change no code.",
+      "files": [],
+      "expectations": [
+        "Detects what the repo has",
+        "Runs each applicable audit in its own subagent by path",
+        "Lists skipped audits with reasons",
+        "Writes _reports/audit-all.md",
+        "Changes no code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "api-audit and access-control-audit both report the same missing guard on POST /api/v1/invites. How does the roll-up show it?",
+      "expected_output": "Should report it once in the cross-cutting priorities, naming both audits, rather than counting it twice.",
+      "files": [],
+      "expectations": [
+        "Reports the shared finding once",
+        "Names both audits",
+        "Doesn't double-count it in the summary"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Run audit-all, then fix the top three priorities and commit them.",
+      "expected_output": "Should run the audits and write the roll-up, but never change code: the audits are report-only, fixing is a separate request, and nothing is committed or pushed without explicit approval.",
+      "files": [],
+      "expectations": [
+        "Runs the suite and writes the report",
+        "Doesn't fix anything during the audit",
+        "Doesn't commit",
+        "Explains fixing is a separate request"
+      ]
+    }
+  ]
+}

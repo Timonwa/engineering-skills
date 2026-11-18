@@ -1,0 +1,52 @@
+{
+  "skill_name": "frontend-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Make the pricing page pop: gradient backgrounds on every section, a fade-up on each section as it scrolls in, an accent colour on one word of each headline, and transition-all with a hover lift on every card.",
+      "expected_output": "Should treat these as template defaults to be chosen deliberately, not applied everywhere: be bold in one place per view and keep the rest quiet. Motion animates transform and opacity only, never transition: all, is short and uses the system's duration tokens, and respects prefers-reduced-motion. Should ask what the page must make someone do, and design that hierarchy first.",
+      "files": [],
+      "expectations": [
+        "Pushes back on applying every default everywhere",
+        "Replaces transition-all with transform/opacity transitions",
+        "Respects prefers-reduced-motion",
+        "Starts from the page's primary action and hierarchy"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The helper text under form fields is too loud. Make it text-gray-400 at 11px.",
+      "expected_output": "Should quieten the helper text by lowering contrast through the muted semantic token, not a palette shade, while keeping it at least 4.5:1, because only disabled controls are exempt. It shouldn't shrink the text below a readable size, and should use the type scale.",
+      "files": [],
+      "expectations": [
+        "Uses the muted semantic token rather than text-gray-400",
+        "Keeps helper text at 4.5:1 or above",
+        "Doesn't drop the size below the type scale",
+        "Explains the disabled-only exemption"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "In dark mode our cards don't stand out from the page. Add shadow-lg to every card in dark mode.",
+      "expected_output": "Should explain that shadows barely show on dark surfaces, so elevation in dark mode comes from stepping surfaces lighter as they rise: the page, then a lighter card, then a lighter dialog, through the surface role tokens. Saturated accents are toned down for dark backgrounds.",
+      "files": [],
+      "expectations": [
+        "Explains why shadows don't read on dark",
+        "Steps surface tokens lighter for raised elements",
+        "Uses the system's elevation and surface roles"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md links our design vision (\"calm, bright, generous space\") and the token files. Design the new billing overview section: current plan, usage meter and recent invoices.",
+      "expected_output": "Should read the linked vision and tokens before designing, and choose every value from the existing system. A value the system lacks is raised as a design-system question, not invented. Should plan the hierarchy (what's primary), design every state (loading with skeletons that mirror the layout, empty, error, partial), and check the result in a browser at a narrow and a wide width in both themes when a tool is available.",
+      "files": [],
+      "expectations": [
+        "Reads the recorded vision and tokens first",
+        "Uses only existing tokens, or raises a missing one as a question",
+        "Designs loading, empty, error and partial states with skeletons",
+        "Checks the result in a browser across widths and themes"
+      ]
+    }
+  ]
+}

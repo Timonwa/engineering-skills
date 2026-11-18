@@ -1,0 +1,54 @@
+{
+  "skill_name": "storybook",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a story for Button: `import type { Meta, StoryObj } from '@storybook/react'; const meta: Meta<typeof Button> = { title: 'Button', component: Button, argTypes: { onClick: { action: 'clicked' } } };`. The project uses Storybook 10 with @storybook/nextjs-vite.",
+      "expected_output": "Should import the types from the framework package (@storybook/nextjs-vite), since eslint-plugin-storybook's no-renderer-packages rule fails @storybook/react. It should write `satisfies Meta<typeof Button>` instead of an annotation, use fn() from storybook/test for onClick instead of an action argType, give the title its tier (Base/Button), type every story as Story, and add a JSDoc comment to each.",
+      "files": [],
+      "expectations": [
+        "Imports types from @storybook/nextjs-vite, not @storybook/react",
+        "Uses satisfies Meta<typeof Button>",
+        "Replaces the action argType with an fn() spy from storybook/test",
+        "Uses a tier-first title such as Base/Button",
+        "Adds a JSDoc comment on each story"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write stories for our Dialog, which is controlled (open, onOpenChange). Include a Default story, a DarkMode story, and a test that it closes on Escape.",
+      "expected_output": "Should keep the open arg in step with useArgs (or a small state wrapper), because a bare spy would freeze a controlled component. Should drop the DarkMode story, since the toolbar shows every story in dark mode. The Escape test is a keyboard play story: tab to the trigger, open it with Enter, find the dialog through screen by role and name, press Escape, and assert that focus returns to the trigger and onOpenChange was called with false — asserting behaviour, never tags or classes.",
+      "files": [],
+      "expectations": [
+        "Uses useArgs or a wrapper so the controlled arg updates",
+        "Does not add a DarkMode story and explains the toolbar",
+        "Writes a keyboard play story reaching the trigger with Tab",
+        "Asserts focus returns and onOpenChange(false), by role, not markup"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Axe fails our Combobox story because of a third-party listbox. Set parameters: { a11y: { test: 'todo' } } on that story until upstream fixes it.",
+      "expected_output": "Should refuse to mark the story todo or switch off a rule: axe fails the run on every story. Should fix the violation in the copy the project owns, or wrap the third-party component so the wrapper passes, and keep the story's keyboard test.",
+      "files": [],
+      "expectations": [
+        "Does not set a11y test to todo or disable a rule",
+        "Fixes the owned copy or wraps the component",
+        "Keeps axe failing the run for this story"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Visual tests run in Chromatic (@chromatic-com/storybook); story tests run in CI through the Vitest addon.\" Set up Storybook 10 for packages/ui in our Next.js monorepo.",
+      "expected_output": "Should create the Storybook app with @storybook/nextjs-vite, install only the a11y, vitest and docs addons plus @chromatic-com/storybook (because the project records it) and eslint-plugin-storybook, with every Storybook package at one version. The preview imports the global CSS, pins the tier order, adds providers as decorators, adds the dark-mode toolbar global and sets a11y test to error. Stories run in CI through the Vitest addon.",
+      "files": [],
+      "expectations": [
+        "Uses @storybook/nextjs-vite as the framework package",
+        "Adds the Chromatic addon because AGENTS.md records it",
+        "Installs only a11y, vitest and docs on top of the built-in essentials",
+        "Sets a11y test to error in the preview",
+        "Wires story tests into CI through the Vitest addon"
+      ]
+    }
+  ]
+}

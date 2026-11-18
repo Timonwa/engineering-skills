@@ -1,0 +1,55 @@
+{
+  "skill_name": "api-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run the API audit on apps/api. src/app/api/v1/orders/route.ts POST does: `const body = await request.json(); await applyRateLimit(request, 'WRITE', 'orders:create'); const actor = await requireSession(request); const order = await db.collection('orders').add(body); return Response.json(order);`",
+      "expected_output": "Should report several findings with file:line: validation missing (raw `request.json()` with no schema), the body spread into a write (no `.pick()` allowlist), store access in the route around the service layer, a hand-rolled `Response` instead of the shared builders (so no `no-store` and no envelope), and the steps out of order (the body read before the rate limit). Each verified, ordered worst-first, written to `_reports/api-audit.md`; no code edited.",
+      "files": [],
+      "expectations": [
+        "Flags the missing schema validation",
+        "Flags the body spread into the write",
+        "Flags Firestore access in the route",
+        "Flags the hand-rolled Response",
+        "Orders findings worst-first with file:line",
+        "Does not edit code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit the API. The health route at /v1/health has no guard and no audit step, and GET /v1/me/profile has a session check but no permission verb.",
+      "expected_output": "Should not flag either: health and docs need no guard (but still take a generous public rate-limit tier), non-privileged routes need no audit step, and a route on the caller's own record needs a session, not a verb. Should check that health has its own rate limit and reveals no dependencies.",
+      "files": [],
+      "expectations": [
+        "Does not flag the unguarded health route",
+        "Does not flag the missing verb on the caller's own record",
+        "Checks health still has a rate limit",
+        "Checks health reveals no dependencies"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit the API's maintenance mode and email sending. The maintenance gate returns 200 with a 'down for maintenance' JSON body, and our DNS has SPF and DKIM but I'm not sure about DMARC.",
+      "expected_output": "Should flag the 200: maintenance answers 503 with Retry-After and no-store (RFC 9110), never a 200 that crawlers index and monitors read as healthy. DMARC and DNS records aren't in the repo, so mark them 'needs confirmation' rather than a finding or a pass. Sections the app lacks score N/A.",
+      "files": [],
+      "expectations": [
+        "Flags the 200 maintenance response",
+        "Requires 503 with Retry-After and no-store",
+        "Marks DMARC as needs confirmation",
+        "Scores absent sections N/A"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit the outgoing webhooks. src/server/services/webhook.service.ts signs with one global WEBHOOK_SECRET for all customers and computes the signature when the event is queued.",
+      "expected_output": "Should flag a shared secret across endpoints (each endpoint needs its own `whsec_` secret, so one leak affects one customer) and signing at queue time (each attempt is re-signed with its own timestamp, or retries hours later fail receivers' tolerance). Cite Standard Webhooks; report only.",
+      "files": [],
+      "expectations": [
+        "Flags the shared secret",
+        "Flags signing at queue time",
+        "Cites Standard Webhooks",
+        "Does not edit code"
+      ]
+    }
+  ]
+}

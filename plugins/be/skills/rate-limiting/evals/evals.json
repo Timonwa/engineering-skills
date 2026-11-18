@@ -1,0 +1,54 @@
+{
+  "skill_name": "rate-limiting",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add rate limiting to sign-in: 5 attempts per minute per IP using `request.headers.get('x-forwarded-for')?.split(',')[0]`, fixed window.",
+      "expected_output": "Should read `x-forwarded-for` from the right, trusting only hops the project's own infrastructure appended; the leftmost value is whatever the client sent. Key IPv6 by its /64 and unmap IPv4-mapped addresses. Use a sliding window, never fixed. A per-IP budget alone locks out shared addresses, so add a lockout counting failures per (IP, email) and per account, failing closed, lapsing on its own, and answering exactly like a wrong password.",
+      "files": [],
+      "expectations": [
+        "Rejects the leftmost x-forwarded-for",
+        "Keys IPv6 by /64",
+        "Uses a sliding window",
+        "Adds a per-account lockout as well as per-IP",
+        "The credential tier fails closed",
+        "A locked account answers like a wrong password"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "If Upstash is unreachable, let all requests through so an outage doesn't take down the app. Default ratelimit timeout is fine.",
+      "expected_output": "Should fail by tier: open for ordinary tiers (logged), closed for credentials and guessable secrets, because an open window there is unlimited guessing. `@upstash/ratelimit` resolves a timeout as success with `reason: \"timeout\"`, which a closed tier must read as a denial. Its timeout defaults to 5 seconds, which stalls the request path during an outage — set it to a few hundred milliseconds.",
+      "files": [],
+      "expectations": [
+        "Fails closed on credential tiers",
+        "Fails open on the rest",
+        "Treats reason 'timeout' as a denial on closed tiers",
+        "Says the default timeout is 5 seconds and lowers it"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our AGENTS.md says: 'Sign-in tier allows 30/min per IP — users sign in from carrier NAT, recorded 2026-03 after support tickets.' A teammate wants to drop it to 5 to match the default. Do it?",
+      "expected_output": "Should keep the project's recorded budget: it records the deviation with its reason, so the project wins. Point out that the account lockout, not the IP budget, ends the guessing, and that a test should keep the lockout stricter than the IP budget on the same route.",
+      "files": [],
+      "expectations": [
+        "Keeps the recorded 30/min budget",
+        "Cites the recorded reason",
+        "Relies on the per-account lockout for guessing",
+        "Mentions the lockout-stricter-than-budget test"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Monthly API call quotas per plan — put that in the rate limiter with a 30-day window.",
+      "expected_output": "Should separate a quota from a rate limit: calls per billing period are a product limit, counted and enforced as an entitlement (`plan-entitlements`). A rate limit protects the service over seconds or minutes; a plan may raise a rate budget, read from the account's plan, never the request.",
+      "files": [],
+      "expectations": [
+        "Says a quota is not a rate limit",
+        "Points quotas to plan-entitlements",
+        "Keeps rate limits to seconds or minutes"
+      ]
+    }
+  ]
+}

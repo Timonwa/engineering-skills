@@ -1,0 +1,58 @@
+{
+  "skill_name": "accessibility-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /fe:accessibility-audit on packages/ui. button.tsx has `focus:outline-none` with no other focus style; dialog.tsx renders a fixed <div> overlay that doesn't move focus or trap it and has no Escape handler; icon-button.tsx renders an X icon with no aria-label or visible text.",
+      "expected_output": "Should report three findings with file:line evidence, each tied to its success criterion: the missing focus indicator (2.4.7, and outline-hidden plus a 3:1 ring as the fix); the dialog not moving or keeping focus and not closing on Escape (2.4.3, 2.1.2, with native <dialog> and showModal() as the fix); and the unnamed icon button (4.1.2 and 1.1.1). Because these are shared components many pages use, each is at least HIGH, and CRITICAL where they block a core task. Each finding is verified by a concrete failure case. Writes _reports/accessibility-audit.md and never edits code.",
+      "files": [],
+      "expectations": [
+        "Reports the outline-none focus failure under 2.4.7 with a fix",
+        "Reports the dialog focus and Escape failures with the native dialog fix",
+        "Reports the unnamed icon button under 4.1.2",
+        "Rates shared-component failures HIGH or above",
+        "Cites file:line evidence for each finding",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Tokens: --muted-foreground is #8a8a8a on --background #ffffff in the light theme; the disabled button's text is #c4c4c4; the logo text in the header is #9fd8c8 on white. There's no dark-theme override for --muted-foreground in the token file.",
+      "expected_output": "Should compute contrast on the tokens. The muted foreground at about 3.4:1 fails 1.4.3 for normal text and is a finding. Disabled-control text and logo text are exempt and are not findings. With no dark-theme value to check, dark-theme contrast for the muted token is marked needs confirmation (or checked against whatever the dark theme resolves it to), not assumed to pass.",
+      "files": [],
+      "expectations": [
+        "Flags the muted foreground at roughly 3.4:1 under 1.4.3",
+        "Treats disabled-control text as exempt",
+        "Treats logo text as exempt",
+        "Checks or marks needs confirmation for the dark theme",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit apps/app/src/components/table/RowActions.tsx: `<button onPointerDown={deleteRow}>`; `<button aria-label=\"Remove\">Delete row</button>`; and the onboarding page autoplays a 20-second welcome video with sound.",
+      "expected_output": "Should report the down-event activation as a 2.5.2 Pointer Cancellation failure (F101), since the action completes on press with no way to abort. The accessible name 'Remove' doesn't contain the visible label 'Delete row', a 2.5.3 Label in Name failure (F96). The autoplaying sound longer than three seconds with no way to stop it fails 1.4.2, with the stricter 'nothing plays sound on its own' noted as the house rule rather than WCAG.",
+      "files": [],
+      "expectations": [
+        "Reports onPointerDown activation under 2.5.2",
+        "Reports the name/label mismatch under 2.5.3",
+        "Reports the autoplaying sound under 1.4.2",
+        "Separates the house rule from the WCAG requirement",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Audit phase: development. No skip link on apps/web — one short nav and a <main> landmark meet 2.4.1 (decided 2026-04).\" Run the accessibility audit on apps/web; pages have <main> and one labelled <nav>, no skip link, and the newsletter input uses a placeholder as its only label.",
+      "expected_output": "Should take the phase from AGENTS.md (development) and treat the missing skip link as a recorded deviation, not a finding, after confirming the landmarks it depends on exist. The placeholder-only label has no recorded reason, so it's reported (3.3.2, 1.3.1). The report notes the phase and doesn't change any code.",
+      "files": [],
+      "expectations": [
+        "Uses the development phase from AGENTS.md",
+        "Does not report the missing skip link as a finding",
+        "Confirms the landmarks the deviation relies on",
+        "Reports the placeholder-only label",
+        "Writes the report without editing any code"
+      ]
+    }
+  ]
+}

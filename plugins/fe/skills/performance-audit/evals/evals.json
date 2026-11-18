@@ -1,0 +1,56 @@
+{
+  "skill_name": "performance-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /fe:performance-audit on apps/web. The home hero is `<Image src={hero} priority loading=\"lazy\" />`; fonts load from a Google Fonts <link> in the root layout; components/Calendar.tsx is a client component importing moment and a full chart library at the top level.",
+      "expected_output": "Should report the lazy-loaded LCP hero as CRITICAL. `priority` is deprecated in Next 16 and its use is also a finding; the fix is loading=\"eager\" or fetchPriority=\"high\" on that image only. The render-blocking Google Fonts link should move to next/font. The heavy client libraries should be replaced or loaded with a dynamic import, as a HIGH bundle-weight finding on a key route. Each finding has file:line evidence. Writes _reports/performance-audit.md and doesn't edit code.",
+      "files": [],
+      "expectations": [
+        "Rates the lazy-loaded LCP image CRITICAL",
+        "Reports the deprecated priority prop",
+        "Reports Google Fonts via <link> instead of next/font",
+        "Reports the heavy client libraries with a dynamic-import or replacement fix",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Uploaded avatars: the API stores the full download URL on the user record, the <img> shows the original 4000×3000 upload at 40px, public objects keep the default Cache-Control, and the resize worker is deployed to us-central1. The bucket's location isn't in the repo.",
+      "expected_output": "Should report serving the original instead of a derivative sized for delivery, storing a URL instead of a path plus version, and the default one-hour caching when a ?v= version would make long caching safe. The worker's region against the bucket's location can't be proven from code, so it's marked needs confirmation rather than reported as fact.",
+      "files": [],
+      "expectations": [
+        "Reports serving the original instead of a derivative",
+        "Reports storing a URL instead of a path and version",
+        "Reports default caching where ?v= allows long caching",
+        "Marks the worker/bucket region check as needs confirmation",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Cloudinary: a named transformation t_card contains c_fill,w_400,f_auto,q_auto; the gallery builds `c_fill,w_${searchParams.w}` from the query string; next.config sets images.loaderFile to a Cloudinary loader. Strict transformations can't be seen from the repo.",
+      "expected_output": "Should report f_auto and q_auto sitting inside the named transformation (they belong as their own final components), the width taken from request input (it multiplies the billed derivatives, so widths come from one ladder), and the global images.loaderFile (a finding; the house uses a per-image loader with deviceSizes set to the ladder). Whether strict transformations are on is marked needs confirmation.",
+      "files": [],
+      "expectations": [
+        "Reports f_auto/q_auto inside the named transformation",
+        "Reports the width taken from the query string and its cost",
+        "Reports images.loaderFile as a finding",
+        "Marks strict transformations as needs confirmation",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Audit phase: development.\" next.config has no AVIF in images.formats; app/(dashboard) has no loading.tsx, but every data-waiting component renders its own <Component>Skeleton behind <Suspense>. Run the performance audit.",
+      "expected_output": "Should take the phase from AGENTS.md. It doesn't report the missing AVIF (adding it is optional) or the missing route-level loading.tsx, because each waiting component has its own skeleton behind Suspense. It reports only real issues, without padding the report.",
+      "files": [],
+      "expectations": [
+        "Uses the phase from AGENTS.md",
+        "Does not report missing AVIF",
+        "Does not report the missing loading.tsx when components have skeletons",
+        "Writes the report without editing any code"
+      ]
+    }
+  ]
+}

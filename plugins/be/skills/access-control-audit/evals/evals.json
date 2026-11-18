@@ -1,0 +1,53 @@
+{
+  "skill_name": "access-control-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run the access-control audit on apps/api. In src/app/api/v1/projects/[projectId]/members/route.ts the DELETE handler does `const { actor } = await requireSession(request); const project = await getProject(projectId); if (actor.uid !== project.ownerId && actor.role !== 'admin') throw new ForbiddenError();` before calling removeMember.",
+      "expected_output": "Should report a finding with `file:line` evidence: the route checks a role name (`actor.role !== 'admin'`) instead of a verb, and a session guard plus manual ownership check instead of a resource guard. Should verify it by constructing the case (a member of another tenant probing project ids gets 403, confirming existence, instead of 404). Severity HIGH or CRITICAL depending on whether `admin` is a platform role that crosses tenants. The fix names a `project.member.remove` verb and `loadProjectWithPermission`. Should write `_reports/access-control-audit.md` and edit no code.",
+      "files": [],
+      "expectations": [
+        "Flags the role-name check",
+        "Flags the 403-before-404 existence leak",
+        "Cites file:line evidence",
+        "Constructs the concrete abuse case before reporting",
+        "Recommends a verb and a resource guard",
+        "Writes the report and does not edit code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit access control. Our operators get two-person approval for granting platform roles in the code, but I'm not sure anyone actually does the quarterly access review.",
+      "expected_output": "Should check what the code can show — the second approver, nobody approving their own request, both audited — and mark the quarterly review, offboarding and break-glass review as process the code can't show: 'needs confirmation', not a finding and not a pass.",
+      "files": [],
+      "expectations": [
+        "Checks the two-person approval in code",
+        "Marks the access review as needs confirmation",
+        "Does not invent a finding for process it can't see"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit apps/web. There's a Server Action deleteAlbum in lib/server/actions/album.action.ts that calls the API's DELETE /v1/albums/[id] with the session cookie and has no permission check of its own.",
+      "expected_output": "Should not flag it: the API's guard is the only gate, and a Server Action that calls the API doesn't need its own check. Should instead confirm the API route has its guard. A Server Action in an app with its own backend would need to call the guard itself.",
+      "files": [],
+      "expectations": [
+        "Does not flag the action for lacking its own check",
+        "Checks the API route's guard instead",
+        "Distinguishes an app with its own backend"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Run the access-control audit in production phase. The share-link route generates tokens with `nanoid(8)` and answers 410 Gone for expired links.",
+      "expected_output": "Should flag both: 8 nanoid characters are about 48 bits, under the 120-bit minimum, so links are guessable; an expired link must answer 404, the same as one that doesn't exist, not 410 which confirms it existed. Severity reflects production phase (a guessable link to private content is CRITICAL or HIGH). Report only, no code edits.",
+      "files": [],
+      "expectations": [
+        "Flags the token as under 120 bits",
+        "Flags 410 for expired links, requiring 404",
+        "Sets severity for the production phase",
+        "Does not edit code"
+      ]
+    }
+  ]
+}

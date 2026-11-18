@@ -1,0 +1,53 @@
+{
+  "skill_name": "cloudinary",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Store the Cloudinary secure_url from the upload response on the post record, and build thumbnails as https://res.cloudinary.com/demo/image/upload/c_fill,w_400,f_auto,q_auto/v1712/blog-covers/post-42.jpg.",
+      "expected_output": "Should store the public id and its version, never a URL, and build every URL in one server-side helper when the record is read. `f_auto` and `q_auto` each go in their own final component — `c_fill,g_auto,w_400/f_auto/q_auto` — never merged into the resize step. A fixed-shape slot uses `c_fill,g_auto` so the crop follows the subject.",
+      "files": [],
+      "expectations": [
+        "Stores the public id and version, not the URL",
+        "Builds URLs in one helper",
+        "Puts f_auto and q_auto in their own components at the end",
+        "Uses g_auto for the fixed-shape crop"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a /api/cloudinary/sign route that takes the params from the request body and returns cloudinary.utils.api_sign_request(body, secret), so the browser can upload directly.",
+      "expected_output": "Should refuse signing whatever the request sends. The route sits behind the session guard and a rate limit, and signs only server-chosen parameters — public id, asset_folder, timestamp, allowed formats and size (or a signed preset), so it can't take an SVG. The server verifies the upload response's signature before recording the public id and version. The secret stays server-only.",
+      "files": [],
+      "expectations": [
+        "Refuses to sign request-supplied parameters",
+        "Requires a session guard and a rate limit",
+        "Signs only server-chosen parameters, including allowed formats",
+        "Verifies the upload response's signature"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We need to tweak the card thumbnail crop. I'll edit the t_card_v1 named transformation in the console and add f_auto inside it.",
+      "expected_output": "Should ship the change as `t_card_v2`, created by an idempotent script, because the CDN keeps renders made with the old definition; remove `t_card_v1` once nothing uses it. `f_auto` inside a named transformation is ignored — it follows the name: `t_card_v2/f_auto/q_auto`.",
+      "files": [],
+      "expectations": [
+        "Creates a new versioned name instead of editing",
+        "Uses a script, not the console",
+        "Says f_auto inside a named transformation is ignored",
+        "Places f_auto/q_auto after the name"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Set up next/image for our Cloudinary blog. Put a loader in images.loaderFile so every image goes through Cloudinary automatically.",
+      "expected_output": "Should refuse `images.loaderFile`, which rewrites every image on the site. The components that show Cloudinary images pass a per-image `loader` that only adds the width to the URL the server built, and `images.deviceSizes` is set to the width ladder (e.g. 480, 768, 1024, 1280, 1600) so the widths and their billed derivatives stay bounded.",
+      "files": [],
+      "expectations": [
+        "Rejects images.loaderFile and says why",
+        "Uses a per-image loader",
+        "Sets deviceSizes to the width ladder",
+        "Links bounded widths to transformation cost"
+      ]
+    }
+  ]
+}

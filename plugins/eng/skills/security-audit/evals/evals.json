@@ -1,0 +1,50 @@
+{
+  "skill_name": "security-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/eng:security-audit. PATCH /api/v1/events/[eventId] verifies the session, then calls eventService.update(eventId, body) without checking that the caller owns or manages the event.",
+      "expected_output": "Should report broken object-level authorisation (A01 / API1) as CRITICAL or HIGH, with the exploit (change the id, edit another account's event), file:line, and the fix: an ownership check that answers 404 before 403. Changes no code.",
+      "files": [],
+      "expectations": [
+        "Identifies BOLA",
+        "Gives a concrete exploit",
+        "Recommends an ownership check with 404 before 403",
+        "Changes no code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit security. The avatar upload route accepts the file if file.type starts with image/, and image/svg+xml is in the allowed list.",
+      "expected_output": "Should report trusting the client's content type (the type must come from the bytes via file-type against an allowlist) and accepting user SVG, which can run script, citing OWASP's file upload guidance.",
+      "files": [],
+      "expectations": [
+        "Flags trusting the client content type",
+        "Flags user SVG",
+        "Recommends byte-sniffing against an allowlist"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit security. The cookie banner shows a large 'Accept all' button and a small 'Settings' link; rejecting needs two more clicks inside settings.",
+      "expected_output": "Should report that reject isn't as easy as accept: Accept all, Reject all and Manage choices belong on the first layer with equal weight, per the EDPB and GDPR guidance.",
+      "files": [],
+      "expectations": [
+        "Flags unequal accept and reject",
+        "Requires Reject all on the first layer",
+        "Cites the consent guidance"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit security. lib/server/utils/audit.utils.ts calls auditLog(entry) without await or after(), and the promise isn't handled.",
+      "expected_output": "Should report the dangling promise: an audit entry can be lost silently. The write goes through after() with retries, or in the change's transaction, and a final failure is logged and alerted.",
+      "files": [],
+      "expectations": [
+        "Flags the unhandled audit write",
+        "Explains the entry can be lost",
+        "Recommends after() with retries or the transaction"
+      ]
+    }
+  ]
+}

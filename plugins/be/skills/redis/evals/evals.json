@@ -1,0 +1,54 @@
+{
+  "skill_name": "redis",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Set a 300ms timeout on our Upstash client: `const controller = new AbortController(); setTimeout(() => controller.abort(), 300); new Redis({ url, token, signal: controller.signal })`.",
+      "expected_output": "Should use the function form, `signal: () => AbortSignal.timeout(300)`, so each command gets a fresh signal. Given a plain AbortSignal, the SDK treats an aborted request as a null result rather than an error, and once that one signal has fired every later command returns null silently. Also lower retries to one or two (the default is five with exponential backoff).",
+      "files": [],
+      "expectations": [
+        "Uses the function form for signal",
+        "Explains the silent-null behaviour of a static signal",
+        "Notes every later command returns null",
+        "Lowers retries from the default five"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Write a lock helper for checkout: `if (await redis.get(key)) throw Busy; await redis.set(key, '1'); await redis.expire(key, 10); ... finally await redis.del(key)`. If Redis is down, just run the checkout anyway.",
+      "expected_output": "Should acquire atomically with `set(key, token, { nx: true, ex })` and a random token; release only its own with a compare-and-delete script; put the TTL on the write, never a separate expire a crash can skip; size it at 2–3× the work's p99. A lock fails closed — if Redis is down or times out, the checkout doesn't start, because the alternative is a double charge. Contention throws a typed error mapped to 409.",
+      "files": [],
+      "expectations": [
+        "Uses set with nx and ex atomically",
+        "Releases with an owner-checked script",
+        "Puts the TTL on the write",
+        "Fails closed when Redis is down",
+        "Maps contention to 409, no spin-wait"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Memory is near the Upstash limit. Turn on eviction in the console so old keys get dropped automatically.",
+      "expected_output": "Should keep eviction off: it's a correctness setting. On Upstash the algorithm is optimistic-volatile, which evicts keys with a TTL first — exactly the locks, claims and rate-limit counters. Bound the cache with TTLs and give it its own database once it dominates memory; with eviction off, memory pressure fails writes loudly instead.",
+      "files": [],
+      "expectations": [
+        "Recommends keeping eviction off",
+        "Names Upstash's optimistic-volatile algorithm",
+        "Explains it evicts TTL'd keys like locks and claims first",
+        "Suggests a separate cache database"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Cache the user's permissions in Redis for 10 minutes so the guard doesn't hit Firestore, and clear the events cache with SCAN 'cache:events:*' + DEL on each update.",
+      "expected_output": "Should refuse caching an auth decision — a stale permission is a security bug. For group invalidation, include a generation number in the keys and bump it with INCR, never SCAN and delete on a request path; old keys expire on their own, and the generation key carries a comment explaining why it has no TTL.",
+      "files": [],
+      "expectations": [
+        "Refuses to cache permissions",
+        "Rejects SCAN on a request path",
+        "Uses a generation number with INCR",
+        "Comments the generation key's missing TTL"
+      ]
+    }
+  ]
+}

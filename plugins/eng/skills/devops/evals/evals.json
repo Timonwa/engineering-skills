@@ -1,0 +1,51 @@
+{
+  "skill_name": "devops",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a workflow step that runs: echo \"Checking ${{ github.event.pull_request.title }}\".",
+      "expected_output": "Should flag script injection: a PR title is attacker-written, and ${{ }} inside run: pastes it into the shell. Pass it through env: (PR_TITLE: ${{ github.event.pull_request.title }}) and use \"$PR_TITLE\" in the script.",
+      "files": [],
+      "expectations": [
+        "Identifies the injection risk",
+        "Moves the value into env:",
+        "References it as a quoted shell variable"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use actions/checkout@v4 and set permissions: write-all on the CI workflow so nothing gets blocked.",
+      "expected_output": "Should pin every action, first-party ones included, to a full commit SHA with a version comment, and start the workflow from permissions: {} with each job granting only what it uses (contents: read). Checkout sets persist-credentials: false when the job doesn't push.",
+      "files": [],
+      "expectations": [
+        "Pins to a full commit SHA",
+        "Refuses write-all",
+        "Starts from empty permissions with per-job grants",
+        "Sets persist-credentials: false"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add a pre-commit hook that runs lint, type check and the full test suite so nothing broken gets committed.",
+      "expected_output": "Should keep pre-commit fast: lint-staged running Prettier over staged files only. Lint, types and tests run in CI, and before committing the developer runs the documented check commands and the suites the change reaches.",
+      "files": [],
+      "expectations": [
+        "Keeps pre-commit to Prettier on staged files",
+        "Leaves lint, types and tests to CI",
+        "Names the checks to run before committing"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Merge the dev → staging promotion PR with squash and merge to keep staging's history tidy.",
+      "expected_output": "Should merge a promotion PR with a merge commit, never a squash, or the pull requests it carries never reach staging's history and later promotions conflict. Should follow a project rule only if AGENTS.md records a different one with its reason.",
+      "files": [],
+      "expectations": [
+        "Refuses to squash the promotion",
+        "Uses a merge commit",
+        "Explains the lost history",
+        "Checks AGENTS.md for a recorded exception"
+      ]
+    }
+  ]
+}

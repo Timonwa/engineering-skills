@@ -1,0 +1,50 @@
+{
+  "skill_name": "testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "After my discount change, the test expecting totalMinor 15000 now gets 13500. Change the assertion to 13500 so CI goes green.",
+      "expected_output": "Should not change the assertion to match the output. A red test means the code is wrong until shown otherwise: should check what the discount rule requires. Only if the specification changed is the expected value updated, with that reason stated; otherwise the code gets fixed.",
+      "files": [],
+      "expectations": [
+        "Refuses to change the assertion to go green",
+        "Checks the expected behaviour against the requirement",
+        "Fixes the code if the requirement still says 15000",
+        "Updates the test only with a stated spec change"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Mock @acme/contracts in the ticket service test so the test is isolated from schema changes.",
+      "expected_output": "Should refuse to mock workspace code: a spec that stubs the schemas keeps passing when a schema change breaks the service. Only I/O boundaries are mocked (the Firestore client via an in-memory fake), and the real schemas run.",
+      "files": [],
+      "expectations": [
+        "Refuses to mock the contracts package",
+        "Explains the hidden-breakage risk",
+        "Mocks only the I/O boundary with a fake"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "This test fails about one run in ten in CI. Add retry: 2 to it, or it.skip it until we have time.",
+      "expected_output": "Should treat the flaky test as a bug to fix now, never retried or skipped. Reproduce with shuffled order and repeats (vitest --sequence.shuffle --repeats 20), then fix the leaked state, real clock or shared mock that causes it.",
+      "files": [],
+      "expectations": [
+        "Refuses retry and skip",
+        "Reproduces with shuffle and repeats",
+        "Looks for leaked state, real time or shared mocks"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Write a Vitest unit test that renders the async Server Component EventPage and checks it shows the event title.",
+      "expected_output": "Should explain that Vitest can't render async Server Components. The decisions move into a data function or a synchronous component, which get unit tests; the page itself is covered by an end-to-end test.",
+      "files": [],
+      "expectations": [
+        "States that async Server Components can't be unit-rendered",
+        "Tests the data function or a synchronous child",
+        "Leaves the page to an end-to-end test"
+      ]
+    }
+  ]
+}

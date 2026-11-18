@@ -1,0 +1,52 @@
+{
+  "skill_name": "reusables",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Build a ConfirmDialog in packages/ui. Default the title to 'Are you sure?' and the button to 'Delete'. It should call useProject(id) to show the project's name.",
+      "expected_output": "Should make the shared component agnostic and pure: no built-in copy, so every string arrives through a typed labels prop; no data fetching or app hooks, so it takes a display string such as itemName and callbacks. It builds on the native <dialog> with showModal() and owns its open and close behaviour, focus moving in and back, and Escape, exposed through open and onOpenChange.",
+      "files": [],
+      "expectations": [
+        "Removes the default copy and takes strings through a labels prop",
+        "Removes useProject; takes display values and callbacks",
+        "Builds on native <dialog> with showModal()",
+        "Owns focus moving in and back and Escape, exposed through open/onOpenChange"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I need a primary button that navigates to /settings. I'll do <Button><Link href=\"/settings\">Settings</Link></Button>.",
+      "expected_output": "Should use asChild (or a render prop), so the button's styling and behaviour land on the Link and only one interactive element renders. A button wrapping a link nests interactive content and gives two tab stops.",
+      "files": [],
+      "expectations": [
+        "Uses asChild or a render prop instead of nesting",
+        "Explains why a button wrapping a link is wrong",
+        "Ensures only one interactive element renders"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Make an Accordion in packages/ui used as <Accordion><Accordion.Item><Accordion.Trigger/></Accordion.Item></Accordion>.",
+      "expected_output": "Should export the parts as separate named exports (Accordion, AccordionItem, AccordionTrigger) rather than static properties, because a Server Component can't reach a property of a client module and statics defeat tree-shaking through barrels. Should also offer a data-driven wrapper (items prop) for the common case and expose data-state attributes for styling.",
+      "files": [],
+      "expectations": [
+        "Uses named exports for each part, not static properties",
+        "Explains the Server Component and tree-shaking reasons",
+        "Offers a data-driven wrapper alongside the parts",
+        "Exposes data-state / data-slot styling hooks"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Each app defines its common UI labels once in lib/constants/labels.constant.ts and passes them to shared components.\" Both apps/app and apps/admin need pagination. Build it.",
+      "expected_output": "Should place Pagination in the shared package because two apps consume it, with a typed labels prop (for example previous, next and a page-of formatter) and no copy of its own. Each app passes its labels from its own constants file, as AGENTS.md records. Pages and the current page come in as props with an onPageChange callback, or as links built by the caller.",
+      "files": [],
+      "expectations": [
+        "Places it in the shared package because there are two consumers",
+        "Takes all copy through a typed labels prop",
+        "Has each app pass labels from its constants file as AGENTS.md says",
+        "Keeps routing out of the shared component"
+      ]
+    }
+  ]
+}

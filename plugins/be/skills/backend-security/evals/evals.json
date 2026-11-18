@@ -1,0 +1,55 @@
+{
+  "skill_name": "backend-security",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our cron route checks `if (request.headers.get('x-cron-secret') === env.CRON_SECRET)`. Looks fine to me — anything to change?",
+      "expected_output": "Should flag `===` on a secret as a timing leak and use `timingSafeEqual`, hashing both sides first because it throws on inputs of different lengths. Should also point out that scheduled calls are better authenticated by the scheduler's verified OIDC token than a shared header, and that the check fails closed.",
+      "files": [],
+      "expectations": [
+        "Flags === on a secret",
+        "Uses timingSafeEqual",
+        "Hashes both sides first, explaining the length throw",
+        "Mentions the scheduler's OIDC token as the stronger option"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a link-preview endpoint: POST { url } and the server fetches the page and returns its title. Use fetch(url) with default options.",
+      "expected_output": "Should treat it as SSRF: refuse private, loopback, link-local and metadata addresses (169.254.169.254, metadata.google.internal, fd20:ce::254) after resolving every A and AAAA record; no redirects, or re-check each hop; a tight timeout and a response size cap; pin the checked IP for the connection so DNS rebinding can't swap it. Parse the response as untrusted input and put the route behind a rate limit.",
+      "files": [],
+      "expectations": [
+        "Names SSRF",
+        "Blocks private, loopback, link-local and metadata addresses",
+        "Resolves every A and AAAA record before checking",
+        "Disables or re-checks redirects",
+        "Sets a timeout and a size cap",
+        "Pins the resolved IP against DNS rebinding"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The coupon redeem service does: read coupon, if coupon.used is false then mark it used and apply the discount. Two clicks sometimes apply it twice. Add a client-side debounce?",
+      "expected_output": "Should say a debounce doesn't fix a race; the check and the action must commit together, in a transaction or an atomic conditional update, or a parallel request double-spends. For a public API, accept an Idempotency-Key and replay the stored response.",
+      "files": [],
+      "expectations": [
+        "Rejects the client-side debounce as the fix",
+        "Commits the check and the update in one transaction or atomic update",
+        "Names the race condition",
+        "Mentions idempotency keys for repeats"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our Next.js app has its own backend — no separate API. A Server Action calls teamsService.updateBillingEmail(teamId, email). It's only called from the settings page, which already checks the user is the team owner, so the action itself doesn't need a check.",
+      "expected_output": "Should say a Server Action is a public POST endpoint: it authorises and validates on its own every time, like a route, because anyone can call it directly. The page check is UX, not protection. The action re-authorises the team id from the verified actor, validates with a `.pick()` schema, and never trusts a body field for the owner.",
+      "files": [],
+      "expectations": [
+        "States a Server Action is a public endpoint",
+        "Requires authorisation inside the action",
+        "Requires validation inside the action",
+        "Does not trust the page's check"
+      ]
+    }
+  ]
+}

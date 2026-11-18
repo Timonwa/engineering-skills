@@ -1,0 +1,54 @@
+{
+  "skill_name": "semantic-html",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Build a stat card: <div className=\"card\"><span><span className=\"label\">Total sales</span><span className=\"value\">₦120,000</span></span></div>. Design wants the value above the label.",
+      "expected_output": "Should mark the label–value pair up as a <dl> with <dt> and <dd> (inside a wrapping <div> per pair), never a span inside a span. <dt> stays first in the DOM, and the value is shown on top with CSS (flex-col-reverse), which is safe because nothing in a <dl> takes focus. The card itself can be an <article> or <section> with a heading if it stands alone.",
+      "files": [],
+      "expectations": [
+        "Uses <dl>, <dt> and <dd> for the label and value",
+        "Removes the nested <span>",
+        "Keeps <dt> before <dd> in the DOM and reorders with CSS",
+        "Explains why the CSS reorder is safe here"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Our status filter pills change ?status=active and ?status=archived. Make them <button onClick={() => router.push(...)}> elements.",
+      "expected_output": "Should make the pills links, because they change the URL: a <nav> (labelled) of <a href> links, with the current one marked aria-current. A button is for changing something on the page, not for going somewhere.",
+      "files": [],
+      "expectations": [
+        "Uses links, not buttons, for URL-changing pills",
+        "Wraps them in a labelled <nav>",
+        "Marks the current filter with aria-current",
+        "States the link-versus-button rule"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Checkout form: card number is <input type=\"number\">, phone is <input type=\"number\">, the shipping options are three loose radio inputs, and there's a Cancel <button> next to Pay inside the <form>.",
+      "expected_output": "Should make the card number type=\"text\" with inputmode=\"numeric\" and autocomplete=\"cc-number\", and the phone type=\"tel\" with autocomplete=\"tel\". The radios go in a <fieldset> with a <legend>, Cancel gets type=\"button\" so it doesn't submit, and every control has a visible <label>.",
+      "files": [],
+      "expectations": [
+        "Card number is type=\"text\" with inputmode=\"numeric\" and autocomplete",
+        "Phone is type=\"tel\" with autocomplete=\"tel\"",
+        "Groups the radios in a <fieldset> with a <legend>",
+        "Gives Cancel type=\"button\"",
+        "Labels every control"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Forms build on the design system's FieldGroup; label–value lists use its DescriptionList component.\" Add an account summary showing name, email and plan, plus a form to change the email.",
+      "expected_output": "Should read AGENTS.md and use the project's DescriptionList for the summary and FieldGroup for the form rather than hand-writing the markup, while checking that those components render the right elements (a <dl>, a labelled control). It shouldn't fall back to raw <div>s or a parallel markup pattern.",
+      "files": [],
+      "expectations": [
+        "Uses the project's DescriptionList component for the summary",
+        "Builds the form on FieldGroup",
+        "Confirms the components render the semantic elements (dl, label)",
+        "Does not hand-roll a parallel markup pattern"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "skill_name": "monorepo",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add \"zod\": \"^4.1.0\" to apps/web/package.json and install it.",
+      "expected_output": "Should write \"zod\": \"catalog:\" in the app's manifest with the version once in pnpm-workspace.yaml's catalog (or reuse the existing catalog entry), never a literal range. Should propose the install command and wait for approval rather than installing.",
+      "files": [],
+      "expectations": [
+        "Uses catalog: in the app manifest",
+        "Keeps the version in pnpm-workspace.yaml",
+        "Asks before running the install"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "pnpm install fails because sharp's build script is blocked. Add sharp to onlyBuiltDependencies, or just turn strictDepBuilds off.",
+      "expected_output": "Should allow sharp in pnpm 11's allowBuilds map in pnpm-workspace.yaml (sharp: true). onlyBuiltDependencies is the old pnpm 10 form, and strictDepBuilds stays on so an unallowed build script keeps failing the install.",
+      "files": [],
+      "expectations": [
+        "Uses allowBuilds with sharp: true",
+        "Identifies onlyBuiltDependencies as the pnpm 10 form",
+        "Keeps strictDepBuilds on"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "pnpm audit reports a high advisory in a package deep inside next's dependency tree. Add an overrides entry to force the patched version.",
+      "expected_output": "Should not force a version inside a third-party dependency's tree. The fix is the dependency releasing it; meanwhile the advisory is reported and recorded, with CI failing only at the level the project records.",
+      "files": [],
+      "expectations": [
+        "Refuses the override",
+        "Says the fix comes from the dependency's release",
+        "Records the advisory rather than silencing it"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md records that each deployed app pins next to an exact version because the host's adapter refuses catalog:, with a labelled syncpack group. Bump next from 16.2.1 to 16.2.4.",
+      "expected_output": "Should treat the exact pins as a recorded exception, not a violation. Should bump the catalog entry and every app's exact pin in the same change, keep the syncpack group passing, and propose the install rather than running it unasked.",
+      "files": [],
+      "expectations": [
+        "Respects the recorded exact-pin exception",
+        "Bumps the catalog and every app's pin together",
+        "Keeps syncpack lint passing",
+        "Asks before installing"
+      ]
+    }
+  ]
+}

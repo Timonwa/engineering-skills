@@ -1,0 +1,56 @@
+{
+  "skill_name": "auth",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Wire up email and password sign-in. Call signInWithEmailAndPassword in the browser, then post the ID token to /v1/auth/session to get the cookie.",
+      "expected_output": "Should make password sign-in server-first: the browser posts email and password to the API, which runs the lockout, checks the password through Identity Toolkit, writes the audit entry and answers a custom token the client signs in with. Signing in with the password in the browser skips the lockout and alerts. The session route accepts only a token whose auth_time is within five minutes, sets the httpOnly cookie, and the client SDK then signs out with in-memory persistence. Every credential failure answers the same.",
+      "files": [],
+      "expectations": [
+        "Moves the password check to the API",
+        "Applies a lockout before checking the password",
+        "Returns a custom token for the client",
+        "Session minting requires a sign-in within five minutes",
+        "Client SDK holds no session after the exchange",
+        "Gives the same answer for wrong password and unknown address"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Implement sign-out. Just delete the session cookie in the response.",
+      "expected_output": "Should explain that clearing the cookie isn't signing out: a Firebase session cookie stays valid until it expires. Should end the session on the server — delete the session's record (each session has its own id and record) or, without session records, revoke the account's refresh tokens. The response sends `Clear-Site-Data: \"cache\", \"storage\"` but not `\"cookies\"`, which would also drop the device cookie.",
+      "files": [],
+      "expectations": [
+        "States that clearing the cookie alone leaves it valid",
+        "Ends the session on the server",
+        "Sends Clear-Site-Data with cache and storage",
+        "Does not include cookies in Clear-Site-Data, and says why"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Product wants passwords to need an uppercase letter, a number and a symbol, minimum 8 characters, and to expire every 90 days. Add that to the signup schema.",
+      "expected_output": "Should push back with NIST SP 800-63B: no composition rules and no scheduled changes; at least 15 characters when the password is the only factor (8 only with a second factor), at least 64 allowed, every character including spaces and Unicode, never truncated. Should add a breached-password check (Have I Been Pwned's range API) at creation and again at sign-in. Should ask the person to confirm before deviating, and if the product insists, record the deviation in AGENTS.md with its reason rather than silently applying it.",
+      "files": [],
+      "expectations": [
+        "Refuses composition rules and expiry, citing NIST",
+        "Sets 15 characters for password-only accounts",
+        "Allows at least 64 characters and doesn't truncate",
+        "Adds a breached-password check at creation and sign-in",
+        "Asks before deviating, or records the deviation with a reason"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Users can sign in with Google or with a password. A user who registered with a password tries Google with the same email and gets auth/account-exists-with-different-credential. Just create a new account for the Google sign-in.",
+      "expected_output": "Should refuse a second account: one account per email. Should ask the person to sign in the way they did before, then link Google to that account with linkWithCredential. Should guard against pre-hijacking — an unverified account never gains a linked provider; the email is verified first (Firebase drops an unverified password when Google signs in to its own addresses).",
+      "files": [],
+      "expectations": [
+        "Refuses to create a second account",
+        "Links the provider after signing in the existing way",
+        "Requires a verified email before linking",
+        "Mentions pre-hijacking"
+      ]
+    }
+  ]
+}

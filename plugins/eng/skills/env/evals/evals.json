@@ -1,0 +1,52 @@
+{
+  "skill_name": "env",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add NEXT_PUBLIC_API_BASE_URL for staging and production, and NEXT_PUBLIC_PAYSTACK_SECRET_KEY for the checkout.",
+      "expected_output": "Should ask whether leaking each value would hurt. The API base URL is a public per-tier fact, so it's a committed constant keyed by APP_ENV in site.ts, not env. The secret key must never take NEXT_PUBLIC_, which inlines it into the browser bundle; it's a server-only env value from the secret manager.",
+      "files": [],
+      "expectations": [
+        "Puts the base URL in a committed constant keyed by APP_ENV",
+        "Refuses NEXT_PUBLIC_ on the secret",
+        "Keeps the secret server-only in env and the secret manager"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Use the live Paystack key when process.env.NODE_ENV === 'production', and the test key otherwise.",
+      "expected_output": "Should branch on APP_ENV, never NODE_ENV: the framework owns NODE_ENV and it describes the build mode, so a staging build is a production build and would get the live key. Should read the key through the app's env module, not process.env.",
+      "files": [],
+      "expectations": [
+        "Rejects NODE_ENV for the switch",
+        "Explains staging builds are production builds",
+        "Uses APP_ENV",
+        "Reads the key through env, not process.env"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I committed .env with our email provider's API key and pushed it an hour ago. I'll rewrite history and force-push to remove it.",
+      "expected_output": "Should put revoking the key at its issuer first: removing the commit doesn't help because clones, forks, caches and scanners already have it. Then replace it in the secret manager, roll out, and check the provider's logs for use while it was exposed. Should not force-push unasked.",
+      "files": [],
+      "expectations": [
+        "Revokes the key at the issuer first",
+        "Explains why rewriting history doesn't help",
+        "Replaces and rolls out the new key",
+        "Checks the provider's logs for misuse"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Add RESEND_API_KEY to .env.example with a sample value and a comment saying where to get it.",
+      "expected_output": "Should add only the key name, with no value and no comment. Should also add the key to the env schema, and point out that a parity check in CI compares .env.example with the schema's keys, so the two must match.",
+      "files": [],
+      "expectations": [
+        "Adds the name only",
+        "Adds no value or comment",
+        "Adds the key to the env schema",
+        "Mentions the parity check against the schema"
+      ]
+    }
+  ]
+}
