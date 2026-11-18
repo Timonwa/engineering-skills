@@ -66,12 +66,12 @@ Voice and UI copy are `copywriting`'s, from the project's brand voice and word l
 
 ## What earns a place
 
-| The need                                                     | Becomes                                                 |
-| ------------------------------------------------------------ | ------------------------------------------------------- |
-| A value that expresses a decision (a role, a step, a timing) | A token                                                 |
-| A recurring element with structure or behaviour              | A component, in the tier its composition puts it        |
-| A difference in look within one component                    | A value on an existing vocabulary, or a new prop        |
-| A genuine single use                                         | A one-off, built from tokens, with a comment saying why |
+| The need                                                     | Becomes                                                                                               |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| A value that expresses a decision (a role, a step, a timing) | A token                                                                                               |
+| A recurring element with structure or behaviour              | A component, in the tier its composition puts it                                                      |
+| A difference in look within one component                    | A value on an existing vocabulary, or a new prop                                                      |
+| A genuine single use                                         | A one-off from existing tokens; an arbitrary value only when no token fits, with a comment saying why |
 
 Recurrence is the test: the second use promotes a one-off, never the first guess that something might be reused.
 

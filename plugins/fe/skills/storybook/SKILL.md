@@ -118,7 +118,7 @@ export const ClosesOnEscape: Story = {
 
 ## Accessibility
 
-Axe runs on every story and fails the run ([references/setup.md](references/setup.md)). Fix the component; never switch a rule off in a story's `parameters.a11y` to make it pass. A violation in a third-party component is fixed in the copy the project owns, or tracked against that story with a reason.
+Axe runs on every story and fails the run ([references/setup.md](references/setup.md)). Fix the component; never switch a rule off or mark the story `"todo"` to make it pass. A violation in a third-party component is fixed in the copy the project owns, or the component is wrapped so the wrapper passes (`accessibility`).
 
 ## Data and dependencies
 

@@ -23,28 +23,30 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Perceivable
 
 - **Text alternatives (1.1.1).** An informative image's `alt` says what it conveys, not what it is; a decorative one is `alt=""`; an icon-only control gets its name from `aria-label` or visually hidden text; a chart or diagram gets its data in text nearby.
-- **Contrast (1.4.3, 1.4.11):** text at least **4.5:1**, large text (24px, or 18.66px bold) **3:1**, and UI parts that convey state — borders of inputs, focus rings, icons that carry meaning — **3:1**. Checked by a script over the **colour tokens, in light and dark mode**, so a palette change fails before it ships (`design-system`, `tailwind`); a measured pair, never an eyeballed one.
-- **Never colour alone (1.4.1)** — an error, a status, a selected item also carries text, an icon or a pattern.
-- **Reflow and zoom (1.4.4, 1.4.10, 1.4.12):** at 200% zoom and at a 320px-wide viewport nothing is clipped or overlapped and nothing needs horizontal scrolling, except data tables and maps; text survives larger letter, word and line spacing. The viewport meta never blocks zoom (`maximum-scale`, `user-scalable=no`).
+- **Contrast (1.4.3, 1.4.11):** text at least **4.5:1**, large text (24px, or 18.66px bold) **3:1**, and UI parts that convey state — borders of inputs, focus rings, icons that carry meaning — **3:1**. Text in a logo or brand name, purely decorative text and disabled controls are exempt. Checked by a script over the **colour tokens, in light and dark mode**, so a palette change fails before it ships (`design-system`, `tailwind`); a measured pair, never an eyeballed one.
+- **Never colour alone (1.4.1)** — an error, a status, a selected item also carries text, an icon or a pattern. **Instructions never rely on shape, colour, size or position alone (1.3.3)** — "the button on the right" also names it.
+- **Reflow and zoom (1.4.4, 1.4.10, 1.4.12):** at 200% zoom and at a 320px-wide viewport nothing is clipped or overlapped and nothing needs horizontal scrolling, except data tables and maps; text survives larger letter, word and line spacing. The viewport meta never blocks zoom: no `user-scalable=no` and no `maximum-scale` below 2.
 - **Content on hover or focus (1.4.13)** — a tooltip or popover can be dismissed with Escape, stays while the pointer moves onto it, and doesn't vanish on its own.
 - **Media:** captions on recorded and live video (1.2.2, 1.2.4), audio description of what's only shown (1.2.5), a transcript for audio, nothing playing sound on its own.
 - **Orientation (1.3.4):** never lock a page to portrait or landscape. **No images of text (1.4.5)** where real text would do.
-- **Links and headings say where they go and what follows (2.4.4, 2.4.6)** — no bare "Read more"; a link in prose is told apart without colour (underlined), and the same function keeps the same name everywhere (3.2.4).
+- **Links and headings say where they go and what follows (2.4.4, 2.4.6)** — no bare "Read more"; a link in prose is told apart without colour — underlined (the house default), or 3:1 against the surrounding text plus a cue on hover and focus (WCAG technique G183) — and the same function keeps the same name everywhere (3.2.4).
 
 ## Operable
 
 - **Everything works from the keyboard (2.1.1), and nothing traps it (2.1.2).** Enter and Space on buttons, Escape to dismiss, arrow keys inside composites (one tab stop per widget, a roving `tabindex`). `tabindex="0"` joins the natural order, `-1` takes focus only from code, a positive value never.
 - **Focus is always visible (2.4.7)** — a `:focus-visible` ring with 3:1 contrast against what's behind it, in both themes; removing the outline only with a replacement — Tailwind's `outline-hidden`, never `outline-none`, so forced-colours mode still draws one.
 - **Focus order follows the reading order (2.4.3)**, so the DOM order is the visual order; CSS `order` and absolute positioning never reorder meaning.
-- **Focus isn't hidden (2.4.11)** under a sticky header or footer: `scroll-padding` on the scrolling container matches their height.
+- **Focus isn't entirely hidden (2.4.11)** under a sticky header, footer or cookie banner (fully unobscured is 2.4.12, AAA): `scroll-padding` on the scrolling container matches their height.
 - **Dialogs and drawers:** focus moves in when they open, stays inside while modal (the page behind is `inert`), Escape closes, and focus returns to the control that opened them. Native `<dialog>` with `showModal()` does most of this; the Popover API is always non-modal, so it suits menus and tooltips, never a modal drawer. Every dialog is named by its heading (`aria-labelledby`).
 - **After an in-app navigation**, focus and the announcement land on the new page's heading or main region, so a screen-reader user knows the page changed (Next.js's route announcer reads the page title; it doesn't move focus, so the project decides where focus goes and keeps it consistent).
-- **A skip link (2.4.1)** is the first focusable element on pages with repeated navigation, visible when focused, leading to `<main>`.
+- **A skip link (2.4.1)** is the first focusable element on pages with repeated navigation, visible when focused, leading to `<main>`. Landmarks and headings also meet 2.4.1; the skip link is the house's way.
+- **More than one way to reach a page (2.4.5)** — navigation plus search, a sitemap page or links between related pages — except a step in a process.
 - **In-page navigation** marks the current section with `aria-current="location"`; site navigation marks the current page with `aria-current="page"`.
 - **Targets are at least 24×24 CSS px (2.5.8)**, or spaced so a 24px circle around each touches no other; aim for 44×44 on touch.
 - **Pointer:** anything done with a drag has a single-pointer alternative (2.5.7); a path or multi-finger gesture has a simple one (2.5.1); actions fire on release, not press (2.5.2).
 - **A control's visible label is in its accessible name (2.5.3)**, so voice users can say what they see.
 - **Single-key shortcuts (2.1.4)** can be turned off or remapped, or only work when their component has focus.
+- **Anything triggered by shaking or tilting the device (2.5.4)** also has an on-screen control, and the motion response can be turned off.
 - **Motion and time:** nothing flashes more than three times a second (2.3.1); anything that moves, scrolls or updates on its own for over five seconds can be paused (2.2.2); animation respects `prefers-reduced-motion`; a time limit — a session about to end — warns and lets the person extend it (2.2.1).
 
 ## Understandable

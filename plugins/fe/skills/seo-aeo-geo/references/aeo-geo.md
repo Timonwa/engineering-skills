@@ -44,7 +44,7 @@ Allow: /
 - Blocking `Google-Extended` does **not** remove you from Google Search or its AI features (those use `Googlebot`).
 - `CCBot` (Common Crawl) is training-oriented and can be blocked without losing search citations.
 - Allowing search bots while blocking training ones is a coherent choice; which to allow is a **business decision → record it in `AGENTS.md`**.
-- **Next.js streams metadata** to clients it doesn't list as HTML-limited bots, appending it to `<body>`; AI crawlers aren't on its default list, so either add them to `htmlLimitedBots` in `next.config` or keep `generateMetadata` fast and cacheable (`nextjs`).
+- **Next.js streams metadata** to clients it doesn't list as HTML-limited bots, appending it to `<body>`; AI crawlers aren't on its default list, so either add them to `htmlLimitedBots` in `next.config` — keeping Next's default bots in the pattern, since setting it replaces the default list — or keep `generateMetadata` fast and cacheable (`nextjs`).
 
 ## Bing, Copilot and IndexNow
 
@@ -74,4 +74,4 @@ Pick the top 10–20 queries, run them through the engines monthly, and log who 
 
 ## Boundary
 
-"Traffic dropped" or "why am I not ranking" → the `seo-audit` skill.
+"Traffic dropped" or "why am I not ranking" → the `seo-aeo-geo-audit` skill.

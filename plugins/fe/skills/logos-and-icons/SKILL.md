@@ -91,7 +91,7 @@ The modern set is a handful of files, every raster rendered **from the SVG**:
 | `logo.svg`, `logo-dark.svg`      | vector     | the primary logo, per background                                                                                         |
 | `icon.svg`                       | vector     | the brand icon — the source of every raster, and the browser tab's favicon                                               |
 | `favicon.ico`                    | 16, 32, 48 | browsers and Google Search, which reads only raster favicons (ICO, PNG…)                                                 |
-| `icon.png`                       | 96 or 192  | a linked raster above 48px, which Google prefers — a multiple of 48                                                      |
+| `icon.png`                       | 96 or 192  | a linked raster larger than 48px, which Google recommends (8px is its minimum)                                           |
 | `icon-512.png`                   | 512        | avatars, social profiles, the Organization `logo` in structured data (112px or more; a raster is safest — `seo-aeo-geo`) |
 | `apple-icon.png`                 | 180        | iOS home-screen bookmarks                                                                                                |
 | PNG copies of each mark          | as used    | email, which drops SVG — Gmail strips it and Outlook never rendered it (`transactional-email`)                           |

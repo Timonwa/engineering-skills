@@ -46,7 +46,7 @@ A page's indexability comes from its record's state, decided in one place:
 | Deleted for good                   | 410, from the proxy or a route handler — `notFound()` gives 404 | No             |
 | Moved to a new address             | a permanent redirect (308) to it                                | The new one    |
 
-**A status only counts if it's sent before streaming starts.** Once a `<Suspense>` fallback or `loading.tsx` renders, the response is already 200: a later `notFound()` only injects `noindex`, and a later `redirect()` becomes a client-side redirect. So the record is loaded and `notFound()` or `permanentRedirect()` called before any `await` behind a boundary — or the proxy and `next.config` redirects decide it first (`nextjs`).
+**A status only counts if it's sent before streaming starts.** Once a `<Suspense>` fallback or `loading.tsx` renders, the response is already 200: a later `notFound()` only injects `noindex`, and a later `redirect()` becomes a client-side redirect. Under Cache Components every dynamic route streams a static shell first, so a page can't send a real 404, 410 or redirect itself: the proxy checks the record and answers the status, and `next.config` holds fixed redirects (`nextjs`). Without Cache Components, `notFound()` or `permanentRedirect()` before any `await` behind a boundary still works.
 
 Pages that must work for people but not appear in results — sign-in, account pages, search results, filters — are `noindex` from the catalog's non-indexable half.
 
@@ -110,7 +110,7 @@ Answer engines quote one page as the answer: a featured snippet, Google's AI Ove
   Training crawlers (`GPTBot`, `ClaudeBot`, `Google-Extended`) are a separate business decision, recorded in `AGENTS.md`. User-triggered fetchers (`ChatGPT-User`, `Claude-User`, `Perplexity-User`) act for a person who asked; OpenAI and Perplexity say robots.txt may not apply to them.
 
 - **Be in Bing's index:** verify the site in Bing Webmaster Tools, submit the sitemap with a true `lastmod`, and send changed URLs through **IndexNow** when content is added, updated or deleted — Bing says these freshness signals reach its AI answers. IndexNow shares submissions with Bing, Naver, Seznam.cz, Yandex and Yep; Google doesn't take part.
-- **Text a crawler reads without JavaScript** — server-rendered pages, and AI crawlers named in `htmlLimitedBots`, because Next streams metadata to bots it doesn't list.
+- **Text a crawler reads without JavaScript** — server-rendered pages, and AI crawlers added to `htmlLimitedBots` alongside Next's default list (setting it replaces that list), because Next streams metadata to bots it doesn't list.
 - **Claims an engine can quote:** stated plainly, backed by data and named sources, with a visible updated date, and kept current.
 - **One entity everywhere:** the same name and description on every page, the Organization node with `sameAs` links to official profiles, and one canonical version of each page — Bing says duplicates blur which version to trust.
 - **What isn't documented:** none of these engines publishes how it picks sources inside an answer, and Bing says no tool can guarantee inclusion. Skip vendor "AI visibility" scores and inauthentic mentions; Google says chasing mentions "isn't as helpful as it might seem".
@@ -126,4 +126,4 @@ Crawlers, writing and monitoring in detail: [references/aeo-geo.md](references/a
 
 ## Related skills
 
-The Metadata API, `ImageResponse` and caching `nextjs` · metadata file names `code-structure` · share links `access-control` · the 503 during maintenance `maintenance-mode` · the logo `logos-and-icons` · markup `semantic-html` · names `naming` · per-tier constants `env` · clear writing `copywriting` · auditing a site `seo-audit`.
+The Metadata API, `ImageResponse` and caching `nextjs` · metadata file names `code-structure` · share links `access-control` · the 503 during maintenance `maintenance-mode` · the logo `logos-and-icons` · markup `semantic-html` · names `naming` · per-tier constants `env` · clear writing `copywriting` · auditing a site `seo-aeo-geo-audit`.
