@@ -92,7 +92,7 @@ In chat:
 ```
 
 - **Must fix** — a bug, a security issue, a failing check, a broken contract, or a rule the project states as never or always. Blocks merge.
-- **Should fix** — a convention the next feature would copy, missing tests or stories, duplication, stale docs.
+- **Should fix** — a convention the next feature would copy, missing tests or stories, duplication, stale docs. A test weakened, skipped or deleted to go green is always **Must fix**: it hides the bug it was written to catch.
 - **Nit** — naming, wording, small simplifications. Never blocks.
 
 Likely findings say so in the Finding cell. Nothing found → say so plainly, with what was checked. Praise only what is worth repeating, in one line.
