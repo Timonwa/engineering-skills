@@ -1,0 +1,49 @@
+{
+  "skill_name": "env-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/eng:env-audit. apps/web/.env.example lists NEXT_PUBLIC_PAYSTACK_SECRET_KEY, and src/lib/payments.ts reads it in a Client Component.",
+      "expected_output": "Should report a secret behind NEXT_PUBLIC_ as CRITICAL: it's inlined into the bundle at build time, so the fix is rotating the key as well as moving it server-side.",
+      "files": [],
+      "expectations": [
+        "Rates it CRITICAL",
+        "Explains build-time inlining",
+        "Requires rotation, not just moving it"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit env. .env.example has STRIPE_KEY=sk_test_123 # get from dashboard, and the env.ts schema reads SENTRY_DSN, which .env.example doesn't list.",
+      "expected_output": "Should report the value and comment in .env.example and the parity gap (SENTRY_DSN missing), recommending names-only and a CI parity check against the schema.",
+      "files": [],
+      "expectations": [
+        "Flags the value and the comment",
+        "Flags SENTRY_DSN missing from .env.example",
+        "Recommends a parity check against the schema"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit env. Several modules do if (process.env.NODE_ENV === \"production\") to choose the API origin.",
+      "expected_output": "Should report branching on NODE_ENV and direct process.env reads outside the carve-outs, recommending APP_ENV and per-tier constants read through the app's env module.",
+      "files": [],
+      "expectations": [
+        "Flags the NODE_ENV branch",
+        "Flags the direct process.env reads",
+        "Recommends APP_ENV and per-tier constants"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit env for the deployed tiers. The repo has apphosting.yaml and apphosting.production.yaml, but you can't see Secret Manager.",
+      "expected_output": "Should check the config files it can read and mark whether each secret exists and is granted as 'needs confirmation', never asserting it either way.",
+      "files": [],
+      "expectations": [
+        "Checks the committed host config",
+        "Marks Secret Manager state as needs confirmation",
+        "Doesn't assert what it can't see"
+      ]
+    }
+  ]
+}

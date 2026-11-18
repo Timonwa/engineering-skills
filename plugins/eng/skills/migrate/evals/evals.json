@@ -1,0 +1,52 @@
+{
+  "skill_name": "migrate",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Upgrade us from Next.js 15.2 to 17. Go.",
+      "expected_output": "Should treat 'go' as approval to analyse and plan only. Check the branch, the runtime minimums (Node, TypeScript, CI image, host adapter) and peer dependencies; read the target versions' own docs and codemods; plan one major at a time in checkpoints: the latest 15.x and its deprecations first, then 16, then 17. Present the plan and wait for explicit approval; no installs without it.",
+      "files": [],
+      "expectations": [
+        "Plans before changing anything",
+        "Goes to the latest 15.x minor first",
+        "Moves one major at a time",
+        "Checks runtime minimums, host support and peers",
+        "Waits for approval before installing"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Step 2 of the migration plan failed: next build errors with 'cookies() should be awaited'. Carry on with steps 3 to 5 and we'll fix everything at the end.",
+      "expected_output": "Should stop at the first breakage: report the error and a suggested fix (await the async request API, or the official codemod), and wait. Never continue past a failing step.",
+      "files": [],
+      "expectations": [
+        "Stops instead of continuing",
+        "Reports the error",
+        "Suggests a fix",
+        "Waits for the owner"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "After the bump, restart the dev server and kill whatever's on port 3000 so we can check the app.",
+      "expected_output": "Should not start, stop or restart a dev server or kill a process. Should ask the owner to run it and report what they see.",
+      "files": [],
+      "expectations": [
+        "Does not restart the dev server",
+        "Does not kill the process",
+        "Asks the owner to run it and report back"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "We pin next exactly in each app because our host refuses catalog:, and the catalog has next too. Bump Next to 16.3.0.",
+      "expected_output": "Should bump the catalog and every recorded exact pin in the same change so the apps don't drift, then check that pnpm why next and pnpm why react show one copy, and rebuild any dist package that depends on it.",
+      "files": [],
+      "expectations": [
+        "Bumps the catalog and every exact pin together",
+        "Checks for a single copy of the framework and React",
+        "Rebuilds dist packages"
+      ]
+    }
+  ]
+}

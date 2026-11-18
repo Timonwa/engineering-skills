@@ -1,0 +1,51 @@
+{
+  "skill_name": "scaffold-app",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Scaffold a new Next.js app in this empty folder with our house structure.",
+      "expected_output": "Should not generate an app from nothing. Should print the scaffolder command (pnpm create next-app@latest with the house flags) and stop until the owner runs it, then adapt the starter.",
+      "files": [],
+      "expectations": [
+        "Refuses to generate from an empty folder",
+        "Prints the scaffolder command",
+        "Stops until the starter exists"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Here's a fresh create-next-app output. Restructure it to the house shape and install firebase, zustand and our UI package.",
+      "expected_output": "Should interview for the gaps, then show one CREATE / EDIT / MOVE / DELETE manifest with every package as a line the owner can drop, and wait for one approval. Nothing is installed, moved with git or committed before that approval, and it never commits.",
+      "files": [],
+      "expectations": [
+        "Interviews first",
+        "Shows one manifest",
+        "Lists each package as its own line",
+        "Waits for approval before installing or moving",
+        "Does not commit"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Replace src/app/globals.css with the house stylesheet.",
+      "expected_output": "Should split the CSS entry rather than overwrite it: keep the scaffolder's @import \"tailwindcss\" and the next/font mappings, and add the layer files tailwind defines. A wholesale replacement would be a DELETE plus a CREATE approved by name.",
+      "files": [],
+      "expectations": [
+        "Edits rather than overwrites",
+        "Keeps @import tailwindcss and the font mappings",
+        "Adds the layer files"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "While you restructure, pin every dependency the scaffolder added to an exact version.",
+      "expected_output": "Should keep the scaffolder's versions as resolved: they're a coherent set, and the catalog records them. Only a dependency this skill adds gets a resolved version.",
+      "files": [],
+      "expectations": [
+        "Declines to re-pin the scaffolder's versions",
+        "Records them through the catalog",
+        "Resolves versions only for added dependencies"
+      ]
+    }
+  ]
+}

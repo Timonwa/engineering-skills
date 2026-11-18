@@ -1,0 +1,49 @@
+{
+  "skill_name": "naming",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Name this function and its file: it calls GET /api/v1/users/me and returns the signed-in user. It lives in the frontend's server data layer.",
+      "expected_output": "Should name it fetchCurrentUser, because it crosses the network (get is for a local or synchronous read), in lib/server/data/user.data.ts following <domain>.<kind>.ts.",
+      "files": [],
+      "expectations": [
+        "Uses fetch, not get",
+        "Names it for what it returns (current user)",
+        "Places it in user.data.ts"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm adding the Zod schema for creating an event and its inferred type. I was going to call them CreateEventSchemaType and EventProps.",
+      "expected_output": "Should name the schema value CreateEventSchema and the inferred type CreateEvent (no Type suffix), in the same <domain>.schema.ts file. Props is reserved for component props, so EventProps is wrong for a data type.",
+      "files": [],
+      "expectations": [
+        "Names the value CreateEventSchema",
+        "Names the type without a Type suffix",
+        "Reserves Props for component props"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Store the order status as 'Pending Payment' so the UI can show it directly.",
+      "expected_output": "Should store lowercase snake_case values (pending_payment) that never change once stored, and keep the display label in a separate map the UI reads.",
+      "files": [],
+      "expectations": [
+        "Uses pending_payment as the stored value",
+        "Keeps labels in a separate map",
+        "Notes stored values never get renamed"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our AGENTS.md says the product uses American English. Name the route segment and the component for the organiser's settings page.",
+      "expected_output": "Should follow the spelling the project records: /organizer/settings and OrganizerSettingsPageContent, kebab-case for the segment, rather than imposing British spelling.",
+      "files": [],
+      "expectations": [
+        "Reads the spelling policy from AGENTS.md",
+        "Uses organizer, as the project records",
+        "Uses a kebab-case segment and a …PageContent name"
+      ]
+    }
+  ]
+}

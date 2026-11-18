@@ -1,0 +1,51 @@
+{
+  "skill_name": "conventions-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/eng:conventions-audit. lib/server/data/user.data.ts exports getUser(), which calls fetch(); lib/types/user.type.ts declares type UserType; a component has const data = await fetchEvents().",
+      "expected_output": "Should report getUser as a network read that must be named fetch, UserType as a Type suffix (and a likely re-declaration if a schema infers User), and the bare data name, each with file:line evidence and a severity. Changes no code.",
+      "files": [],
+      "expectations": [
+        "Flags getUser for a network read",
+        "Flags the Type suffix",
+        "Flags the bare data name",
+        "Gives file:line evidence",
+        "Changes no code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit conventions. apps/web/src/components/marketing/Header.tsx has \"use client\" and import { ROUTES } from \"@/lib/config\".",
+      "expected_output": "Should report the client import of the server-only config barrel, with the by-path import (@/lib/config/routes) as the fix.",
+      "files": [],
+      "expectations": [
+        "Flags the barrel import from client code",
+        "Explains the barrel is server-only",
+        "Recommends the by-path import"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit the monorepo. packages/date-utils has one consumer, apps/web. AGENTS.md has a Deviations line: 'date-utils is a package from day one because the functions workers will import it next quarter'.",
+      "expected_output": "Should not report early hoisting here: the project records the deviation with its reason, so the project's version wins. Without that line it would be a finding.",
+      "files": [],
+      "expectations": [
+        "Reads the Deviations section",
+        "Raises no early-hoisting finding",
+        "Notes it would be a finding without the recorded reason"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit conventions. components/events/EventCard.tsx links to \"/dashboard/events\" as a string, while lib/config/routes.ts defines ROUTES.dashboard.events.",
+      "expected_output": "Should report the hardcoded path with the route constant as the fix, and not flag routes.ts itself for containing the literal.",
+      "files": [],
+      "expectations": [
+        "Flags the hardcoded path",
+        "Recommends the route constant",
+        "Doesn't flag the routes file"
+      ]
+    }
+  ]
+}

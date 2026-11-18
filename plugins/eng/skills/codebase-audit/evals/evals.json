@@ -1,0 +1,47 @@
+{
+  "skill_name": "codebase-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/eng:codebase-audit. tsconfig.base.json sets \"baseUrl\": \".\" and \"moduleResolution\": \"node\"; src/lib/utils/price.utils.test.ts has it.skip on two tests and a retry: 3.",
+      "expected_output": "Should report the deprecated tsconfig options (removed in TypeScript 7) and the skipped and retried tests as findings with file:line evidence and severities, verifying each. Recommends fixes in _reports/codebase-audit.md and changes no code.",
+      "files": [],
+      "expectations": [
+        "Flags baseUrl and moduleResolution node",
+        "Flags the skipped tests and the retry",
+        "Gives file:line evidence with severities",
+        "Changes no code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit the repo. gh api shows no ruleset or branch protection on dev, staging or main.",
+      "expected_output": "Should report missing tier-branch protection as HIGH, with the gh api output as evidence. If gh can't read the settings, the item is marked 'needs confirmation' rather than asserted.",
+      "files": [],
+      "expectations": [
+        "Reports unprotected tier branches as HIGH",
+        "Cites the gh api evidence",
+        "Marks unreadable settings as needs confirmation"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit the repo. There are no end-to-end tests or preview deploys, and AGENTS.md doesn't mention either.",
+      "expected_output": "Should not raise a finding: end-to-end tests and preview deploys are opt-in gates, and their absence is only a finding when the project's docs record the gate and it isn't wired up.",
+      "files": [],
+      "expectations": ["Raises no finding for the absent opt-in gates", "Explains the opt-in rule"]
+    },
+    {
+      "id": 4,
+      "prompt": "Run the codebase audit again. _reports/codebase-audit.md from last week has F3 (a dangling promise in auditLog) still in the code, and F5 fixed since.",
+      "expected_output": "Should load the previous report, carry F3 forward with the same ID and status UNRESOLVED, move F5 to 'Resolved since last audit', continue ID numbering, and show the score change.",
+      "files": [],
+      "expectations": [
+        "Keeps F3's ID and marks it UNRESOLVED",
+        "Moves F5 to resolved",
+        "Continues the ID numbering",
+        "Shows the score change"
+      ]
+    }
+  ]
+}

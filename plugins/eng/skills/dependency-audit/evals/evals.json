@@ -1,0 +1,50 @@
+{
+  "skill_name": "dependency-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/eng:dependency-audit. apps/web/package.json has \"zod\": \"^4.0.0\" while pnpm-workspace.yaml's catalog has zod 4.1.12; apps/admin has \"next\": \"16.2.4\" in a syncpack group labelled 'host refuses catalog:'.",
+      "expected_output": "Should flag zod's literal range as a finding (it should be catalog:), and leave next alone because its exact pin is a labelled, recorded exception.",
+      "files": [],
+      "expectations": [
+        "Flags the zod range",
+        "Recommends catalog:",
+        "Accepts the labelled next pin"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit dependencies. pnpm-workspace.yaml has onlyBuiltDependencies: [sharp, esbuild] and pnpm 11 in packageManager.",
+      "expected_output": "Should report onlyBuiltDependencies as the removed pnpm 10 form and recommend pnpm 11's allowBuilds map (sharp: true, esbuild: true).",
+      "files": [],
+      "expectations": [
+        "Identifies the pnpm 10 setting",
+        "Recommends allowBuilds",
+        "Ties it to the pnpm version in packageManager"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit the repo. .github/workflows/ci.yml uses actions/checkout@v4 and pnpm/action-setup@v4.",
+      "expected_output": "Should report each tag-pinned action as HIGH and recommend a full commit SHA with a version comment.",
+      "files": [],
+      "expectations": [
+        "Flags the tag pins",
+        "Rates them HIGH",
+        "Recommends SHA pins with version comments"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit dependencies. pnpm why react shows react 19.2.0 under apps/web and react 19.1.1 under packages/ui.",
+      "expected_output": "Should report two copies of a singleton (hooks and context break with no type error), recommend declaring react as a peer dependency in packages/ui and deduping, and verify by reading the lockfile and pnpm why rather than installing. Changes no files.",
+      "files": [],
+      "expectations": [
+        "Flags the duplicate React",
+        "Recommends a peer dependency and dedupe",
+        "Doesn't install anything",
+        "Changes no code"
+      ]
+    }
+  ]
+}
