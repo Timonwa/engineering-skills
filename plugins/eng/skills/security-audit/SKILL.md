@@ -1,7 +1,7 @@
 ---
 name: security-audit
 description: >-
-  Manually invoked. Red-team application-security review of a web or full-stack app, scoped to whatever it has — broken access control (BOLA, BFLA, BOPLA), XSS and unsafe rendering, weak CSP, clickjacking, insecure postMessage and iframes, secrets in the bundle, unsafe token storage, injection, SSRF, unrestricted resource consumption, misconfiguration, supply-chain exposure, and fail-open error handling, against OWASP Top 10 2025.
+  Manually invoked. Red-team application-security review across frontend and backend, mapped to the OWASP Top 10 2025 and API Top 10 — access control, SSRF, CSRF, headers and CSP, sessions with operator step-up, the trusted client IP, field encryption and keys, uploads and user files, injection and XSS, abuse cases, the audit trail, cookie consent, supply chain and fail-open handling — naming the domain audits for depth rather than repeating them.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team security audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/security-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`frontend-security`** and **`backend-security`** (Firestore/Storage rules → **`firebase-security-rules-auditor`**) ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`backend-security`**, **`frontend-security`**, **`field-encryption`**, **`image-handling`**, **`audit-log`** and **`cookie-consent`** are installed, they are the fix target for what this finds; rules files themselves → **`firebase-security-rules-auditor`**.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase arg if given; else the audit phase in `AGENTS.md`; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount.
 2. **Load the previous report** — if `_reports/security-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -50,50 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/security-audit.md`:
-
-```
-# Security audit — <app/scope>
-
-**Date:** <YYYY-MM-DD> · **Phase:** <phase> · **Mode:** Report-only · **Branch:** `<branch>` · **Scope:** <what was audited> · **Overall:** <X>/10
-
-## Score change (previous → current)
-| Metric | Previous | Current | Δ | Trend |
-| --- | --- | --- | --- | --- |
-| Overall | <prev/10 or N/A> | <cur/10> | <+N / -N / 0> | <▲ / ▼ / ■ / N/A> |
-
-## Findings
-| ID | Severity | Category | Status | Issue | Location |
-| --- | --- | --- | --- | --- | --- |
-| 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
-
-### F1 — <title>
-- **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
-- **Fix:** <the specific remediation>
-
-## Scorecard
-| Category | Score | Notes |
-| --- | --- | --- |
-| Authorization (authz) | <X>/10 | <one-line justification> |
-| Auth & sessions | <X>/10 | <one-line justification> |
-| Injection | <X>/10 | <one-line justification> |
-| Server-Side Request Forgery (SSRF) | <X>/10 | <one-line justification> |
-| Resource limits | <X>/10 | <one-line justification> |
-| Secrets & config | <X>/10 | <one-line justification> |
-| Frontend | <X>/10 | <one-line justification> |
-
-## Action items
-Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
-
-### <Tier>
-| # | Priority | Task (finding ID) | Effort |
-| --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
-```
+Write to `_reports/security-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change, the findings table with one section per finding, the scorecard, phase-tiered action items and "Resolved since last audit".
 
 ### Output
 
@@ -106,51 +63,99 @@ Every run produces two things:
 
 ## Checklist
 
-Run the **BACKEND** blocks for any server/API code, the **FRONTEND** blocks for any browser code. Each block is self-sufficient. If installed, `backend-security` / `frontend-security` add extra house-specific depth — optional, not required.
+Run the **backend** blocks for server and API code and the **frontend** blocks for browser code, each mapped to the OWASP Top 10 2025 and the API Security Top 10 2023. This audit is the umbrella: it checks each risk at the level of "is the control there and does it hold", and where a domain audit is installed, it names that audit for the depth instead of repeating it — `access-control-audit` (every guard and verb), `api-audit` (route discipline), `env-audit` (env and secrets), `dependency-audit` (packages and advisories), `firestore-audit` and `redis-audit` (data-layer rules and failure directions). A domain that isn't installed gets its row checked here in full.
 
-### BACKEND (server / API)
+### Backend
 
-**Authorization — the #1 risk (A01 / API1 Broken Object-Level Authorization (BOLA), API5 Broken Function-Level Authorization (BFLA), API3 Broken Object-Property-Level Authorization (BOPLA))**
+**A01 Broken Access Control · API1 · API3 · API5**
 
-- **Object level (BOLA/IDOR)** — can you read/mutate another user's resource by changing an id? Is ownership checked on the **resolved doc**, and is there **tenant/row isolation**? (→ `backend-security`, `firestore`)
-- **Function level (BFLA)** — every route/action (esp. admin) asserts the required permission, not just "is logged in"? Enforced server-side, not from a client flag?
-- **Property level (BOPLA)** — writes **allowlist** fields (no mass assignment of role/owner/status via `.omit()`/`.partial()`)? Reads map to a **Data Transfer Object (DTO)**, not raw `{ id, ...doc }` (excessive data exposure)?
-- **The update bypass** — can create-valid-then-update reach a forbidden state? (rules → `firebase-security-rules-auditor`)
+- **Object, function and field level** — changing an id never reaches another account's record (404 before 403); every route and Server Action asserts its permission server-side, not just a session; writes take an allowlist and reads a projection, never a whole document.
+- **Tenant scoping** on every list and lookup; ownership from the record, the actor from the verified token.
+- **A second id in the body** (a target, a parent) is authorised too, not only the one in the path.
+- **SSRF (A01 · API7)** — user-supplied URLs allowlisted, every resolved address checked (no private, loopback, link-local or metadata addresses), no redirects followed.
+- **CSRF (A01)** — cookie-authenticated mutations checked in the proxy: `Origin` on the allowlist (falling back to `Referer`), and `Sec-Fetch-Site: cross-site` refused; responses that vary on them send `Vary`. A `GET` never changes state. A Server Action authorises and validates on its own, like any `POST`, and `experimental.serverActions.allowedOrigins` names only a known proxy.
 
-**Auth & sessions (API2)**
+**A02 · API8 Security Misconfiguration**
 
-- Token signature/`iss`/`aud`/`exp` verified; `alg:none` rejected? Short-lived + rotation + revocation/blocklist? Passwords hashed with argon2/bcrypt? Login lockout + no account enumeration? Session in an httpOnly cookie?
+- CORS pinned to the tier's origins, never `*`; debug and local-only routes absent on deployed tiers. Absolute URLs (an email's link, a redirect) come from configured origins, never `Host` or `X-Forwarded-Host`.
+- App Check enforced on the Firebase products clients call, and an API route that wants it verifies `X-Firebase-AppCheck`. The web API key restricted to its APIs and domains and per tier — needs confirmation, a console setting.
 
-**Injection & SSRF (A03 / API7)**
+**A04 Cryptographic Failures**
 
-- Zod at **every** boundary (body, query, params)? String-built SQL/NoSQL/commands, unsafe deserialization, path traversal, server prototype pollution?
-- **SSRF** — user-supplied outbound URL without an allowlist / without blocking metadata IP `169.254.169.254`? Redirects followed? Any LLM tool that can fetch a URL?
+- TLS everywhere; secrets compared in constant time (`timingSafeEqual`, both sides hashed first), never `===`; every token from a secure random source.
+- **Field encryption** (OWASP Cryptographic Storage Cheat Sheet; NIST SP 800-38D) — a field that must be read back is encrypted in the service with AES-256-GCM through the runtime's crypto: a fresh random 12-byte nonce made inside the encrypt function, never passed in; `authTagLength: 16` on decipher; a versioned format naming the key (`v1:…`); the record's collection, id and field bound as associated data, so a ciphertext copied elsewhere fails. Decrypt fails closed with a generic error and never returns the stored bytes.
+- **Keys** — one per store and one per purpose: the field key never signs tokens or cookies or keys a blind index. 32 random bytes, shape-checked at boot, kept in the secret manager, away from the data. Rotation works before it's needed — decrypt picks the key by version, the backfill checks the value is unchanged — and a retired key stays archived while any backup holds its ciphertext; whether the runbook exists needs confirmation.
+- **What's encrypted, hashed or plain** — a value only ever verified is hashed, a low-entropy one HMACed with its own key; neither ciphertext nor a blind index reaches a list or public projection; an update returns the plaintext the caller sent, not the ciphertext it wrote.
 
-**Resource consumption & misconfig (API4/API6 / A02 / API8)**
+**A05 Injection**
 
-- Rate limit + `Retry-After` on every endpoint (esp. auth/expensive/sensitive flows)? Payload-size / pagination / query-complexity caps? CORS pinned (not `*`)? Debug endpoints, default creds, or deprecated `/v1` in prod (API9)?
+- A schema at every boundary — body, query, params, form data; no string-built queries, no user input in shell commands or file paths (path traversal), no operator objects from input reaching a NoSQL query; no user-controlled regex, and no regex open to catastrophic backtracking (ReDoS); stored rich HTML sanitised on the server against one policy.
 
-**Error handling, data & logging (A10)**
+**A06 Insecure Design · API6 · API4**
 
-- **Fail-open** logic (a catch that grants)? Verbose stack traces / SQL / internal paths to the client? Secrets/PII in logs or URLs? TLS/HTTP Strict Transport Security (HSTS) + encryption at rest? Privileged actions audited? Webhook signatures / cron OpenID Connect (OIDC) verified + idempotent? Upstream API data validated (API10)?
+- Each sensitive flow has its abuse case designed in — budgets per tier (per IP and per account, the IP read from your own proxy's hops, IPv6 by /64), lockouts on credentials and secrets that fail closed; body and decompressed-size caps, page caps and timeouts; every check-then-act that matters atomic — money, stock, coupons, seats — and a public API's `Idempotency-Key` replaying the stored response.
 
-### FRONTEND (browser)
+**A07 Authentication Failures · API2**
 
-**XSS & safe rendering (A03)**
+- Sessions only the API mints, in an `httpOnly`, `Secure`, `SameSite` cookie named `__Host-` or `__Secure-`; an absolute session cap; sign-out ending the session on the server; passwords to NIST length with a breach check and no composition rules; generic answers that don't reveal which addresses have accounts. Tokens verified with their algorithm, issuer and audience pinned.
+- **Operators** — a second factor, a separate cookie, an absolute cap of a day and an idle timeout of an hour or less, and step-up for granting roles, moving money or exporting data.
 
-- `dangerouslySetInnerHTML` / `innerHTML` / DOM sinks on unsanitized content? One DOMPurify wrapper or scattered raw usage? Untrusted values into `href`/`src` (`javascript:`), inline handlers, `style`, or hand-built SSR HTML? `useSearchParams`/`params`/`location`/`referrer`/`postMessage` rendered without validation? Any `eval`/`new Function`?
+**A08 Software or Data Integrity Failures**
 
-**Content Security Policy (CSP), clickjacking & cross-window (A02)**
+- Webhooks verified on the raw body with a timestamp window, recorded once; scheduled routes behind the scheduler's verified identity; no unsafe deserialisation.
 
-- CSP present, **nonce-based, no `unsafe-inline`/`unsafe-eval`** (or theatre)? `frame-ancestors`/`object-src 'none'`/`base-uri` set? `postMessage` origin-checked + payload-validated (no `"*"`)? Third-party embeds sandboxed (not `allow-scripts` + `allow-same-origin`)?
+**Uploads and user files (A01 · A05 · A06)** — OWASP File Upload Cheat Sheet
 
-**Secrets, tokens & navigation**
+- **The type comes from the bytes** (`file-type`) checked against an allowlist, never the client's `contentType` or the extension, and the real type is stored as the object's `contentType`. The caps live in one module that the browser check, the server check and the storage rules all read; the server assumes the browser check never ran.
+- **Images are decoded within a pixel limit** (`sharp`'s `limitInputPixels`) and re-encoded before they're served; orientation is applied, then EXIF stripped, GPS never kept. A user's SVG is never served as an image — rasterised or refused.
+- **Objects are named by record id**, never the user's filename; a direct-to-storage upload writes only to a path the API reserved, with the storage rules matching the record and its declared size.
+- **The bucket is chosen by who may read**: public display images and private files never share a bucket under uniform access. A private file is read only through a signed link minted right after the access check, in the same request — minutes long, never stored, `Content-Disposition: attachment` on a download.
+- **User files are served from the storage domain**, never the app's origin; a delete removes the file before the record, so no bytes outlive it. Derivatives and caching are `performance-audit`'s.
 
-- Real secrets in `NEXT_PUBLIC_*` / the bundle? Auth tokens in `localStorage` instead of an httpOnly cookie? PII/tokens in URLs/logs/analytics? Source maps in prod? Open redirect from `?next=`? `target="_blank"` without `rel="noopener"`? Deep-merge of untrusted JSON (prototype pollution)?
+**A09 Security Logging and Alerting Failures**
 
-**Supply chain (expanded)**
+- Privileged acts in an append-only audit log; other refusals in the security log with actor, method, path and IP; personal data only in those access-controlled logs, with a retention period. That spikes in 429s, lockouts and refusals alert someone needs confirmation — it lives in monitoring config. Secrets in logs and URLs are `env-audit`'s.
+- **The audit trail holds as evidence** (OWASP Logging Cheat Sheet) — which mutations write an entry is `api-audit`'s; here, what the entry is worth. Each holds an action from one typed list, the result (refusals and failed step-ups included), the scope, the actor's kind and id with their email copied in (and both people when an operator acts as a customer), the target with before and after for the fields that matter, and the IP, user agent, request id and server time in UTC — never a secret, token or password.
+- **Written so it's never lost and never fails the request** — one helper, after the response with `after()` and retries, a final failure logged and alerted; inside the change's transaction where both must exist. A dangling promise or an audit write that can fail the request is a finding.
+- **Append-only and tamper-evident** — no update or delete path, clients denied by the rules, entries copied to write-once storage or hash-chained. Retention runs on a policy and a TTL; deleting a user leaves their entries; each scope is read only by its own readers, and reading or exporting the log is itself audited.
 
-- CDN scripts without Subresource Integrity (SRI)? Risky/abandoned deps, `npm audit` criticals, lifecycle-script exposure, unpinned CI actions? (→ `devops`)
+**A10 Mishandling of Exceptional Conditions**
+
+- No catch that grants access; generic error bodies with stable codes and a correlation id, no stack traces, queries or paths outside local.
+
+**API9 · API10**
+
+- Versioned routes with the API reference as the inventory; every upstream response validated, time-boxed and rate-limited.
+
+### Frontend
+
+**XSS (A05)**
+
+- `dangerouslySetInnerHTML` only through one sanitising component sharing the server's policy, with named props sanitised against DOM clobbering; user links checked against the shared URL schema (`http`/`https`); no `eval`, `new Function` or string `setTimeout`; untrusted values kept out of `style`, spread props and non-React sinks (`location`, `router.push`, `window.open`, `innerHTML`, `insertAdjacentHTML`, `document.write`); JSON-LD escapes `<`; an uploaded SVG is never inlined.
+
+**Headers and CSP (A02)**
+
+- Every app sends the baseline: `Strict-Transport-Security` (`max-age=63072000; includeSubDomains`), `nosniff`, `Referrer-Policy`, `X-Frame-Options: DENY` unless the app is built to be embedded and names its ancestors, `Permissions-Policy`, `Cross-Origin-Opener-Policy` (allowing popups where sign-in needs them), `Cross-Origin-Resource-Policy`, `Cache-Control: no-store` on signed-in responses, no `X-Powered-By`, and `X-XSS-Protection` absent or `0`. (Owned here; other audits point to it.)
+- A CSP with `default-src`, `object-src 'none'`, `base-uri 'none'`, `frame-ancestors` (`'none'`, or the named ancestors of an embeddable app), `form-action`, `upgrade-insecure-requests`, and explicit `connect-src`, `img-src` and `frame-src` lists; a reporting endpoint (`Reporting-Endpoints` with a `report-uri` fallback). `'unsafe-eval'` only on the local tier, branched on `APP_ENV`, never `NODE_ENV`. Under Cache Components, `script-src 'unsafe-inline'` recorded as a known gap is not a finding; a per-request app uses the nonce route, with the proxy skipping prefetches. Trusted Types stays report-only until its prerequisites are in place. Whether the policy went report-only before enforcement needs confirmation.
+
+**Cross-window and embeds**
+
+- `postMessage` sends to a named target origin, never `"*"`, and receiving checks the origin and validates the payload; `target="_blank"` links carry `rel="noopener noreferrer"`; embeds sandboxed, with `allow-scripts` and `allow-same-origin` together only for cross-origin documents.
+
+**Secrets, tokens and navigation (A04)**
+
+- No secret in the bundle (`NEXT_PUBLIC_*` secrets are `env-audit`'s); no auth token in `localStorage` or `sessionStorage`; no service worker caching signed-in responses; `credentials: "include"` only to your own origins, never `mode: "no-cors"` to dodge CORS; no PII in URLs or analytics; no production source maps; `?redirect=` followed only for a path on this site; sign-out sends `Clear-Site-Data`.
+
+**Cookie consent** — privacy, not an OWASP category: ePrivacy Article 5(3), GDPR, the EDPB cookie banner taskforce and Nigeria's NDPA
+
+- **Accept all, Reject all and Manage choices on the first layer, with equal weight** — the same size, style and number of clicks; no category pre-ticked; no consent inferred from scrolling; no legitimate interest claimed for anything stored on the device.
+- **Nothing non-essential stored or read before consent** — cookies, `localStorage`, pixels, embeds (a click-to-load placeholder until then); a non-essential cookie the server sets reads the choice first. Analytics and tag-manager gating is `seo-aeo-geo-audit`'s; whether a first visit with a cleared profile makes no non-essential request needs confirmation in a browser.
+- **Withdrawing is as easy as giving** — a preferences link in every footer reopens the choices; withdrawing deletes the provider's cookies and calls its own opt-out. Consent is never routed through feature flags.
+- **Each choice is recorded through the API** — a random consent id, the categories, the policy revision and the time, with no IP or account needed; a revision bump asks again, and a choice expires within a year. Global Privacy Control is honoured; Google tags run Consent Mode in basic mode unless advanced is a recorded decision. The banner's dialog semantics are `accessibility-audit`'s.
+
+**Supply chain (A03)**
+
+- SRI on fixed-content CDN files. Action pins, scanners, advisories and build-script allowlists are `dependency-audit`'s — run it.
 
 ## Boundaries
 

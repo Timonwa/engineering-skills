@@ -1,7 +1,7 @@
 ---
 name: codebase-audit
 description: >-
-  Manually invoked. Broad repo-health triage that routes to the deep audits and covers the hygiene no other audit owns — tech debt (TODO/FIXME), dead and unused code, TypeScript strictness, error-handling consistency, test coverage of shared and critical paths, and git hygiene. Verifies each finding and writes a prioritized report with an overall health score.
+  Manually invoked. Broad repo-health triage that routes to the deep audits and covers the hygiene no other audit owns — tech debt, dead code, TypeScript strictness and the options TypeScript 6 deprecates, error handling, tests (boundary-only mocks, determinism, no skipped or flaky tests), CI hygiene, branch protection, releases and deploys, and git hygiene. Verifies each finding and writes a prioritized report with an overall health score.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team codebase audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/codebase-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`typescript`**, **`code-structure`**, and **`devops`** ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`typescript`**, **`testing`**, **`naming`** and **`devops`** are installed, they are the fix target for what this finds.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase arg if given; else the audit phase in `AGENTS.md`; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount.
 2. **Load the previous report** — if `_reports/codebase-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -50,56 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/codebase-audit.md`:
-
-```
-# Codebase audit — <app/scope>
-
-**Date:** <YYYY-MM-DD> · **Phase:** <phase> · **Mode:** Report-only · **Branch:** `<branch>` · **Scope:** <what was audited> · **Overall:** <X>/10
-
-## Score change (previous → current)
-| Metric | Previous | Current | Δ | Trend |
-| --- | --- | --- | --- | --- |
-| Overall | <prev/10 or N/A> | <cur/10> | <+N / -N / 0> | <▲ / ▼ / ■ / N/A> |
-
-## Findings
-| ID | Severity | Category | Status | Issue | Location |
-| --- | --- | --- | --- | --- | --- |
-| 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
-
-### F1 — <title>
-- **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
-- **Fix:** <the specific remediation>
-
-## Scorecard
-| Category | Score | Notes |
-| --- | --- | --- |
-| Tech debt | <X>/10 | <one-line justification> |
-| Dead code | <X>/10 | <one-line justification> |
-| TypeScript strictness | <X>/10 | <one-line justification> |
-| Error handling | <X>/10 | <one-line justification> |
-| Tests | <X>/10 | <one-line justification> |
-| Git hygiene | <X>/10 | <one-line justification> |
-
-## Deep audits to run next
-<Triage pointer — for each domain that showed smells, name the audit to run and why. Keep this shallow; the depth lives there. If the owner audit isn't installed, flag the domain for a focused manual review instead.>
-
-| Domain | Signal spotted | Run |
-| --- | --- | --- |
-| <e.g. authorization> | <e.g. route with no role guard> | `access-control-audit` |
-
-## Action items
-Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
-
-### <Tier>
-| # | Priority | Task (finding ID) | Effort |
-| --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
-```
+Write to `_reports/codebase-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change, the findings table with one section per finding, the scorecard, "Deep audits to run next", phase-tiered action items and "Resolved since last audit".
 
 ### Output
 
@@ -122,13 +73,16 @@ This map keeps codebase-audit shallow: when the sweep surfaces a smell in a doma
 | XSS sink, weak/missing Content Security Policy (CSP), secret in bundle, injection, Server-Side Request Forgery (SSRF), fail-open catch | `security-audit`          | Focused security review          |
 | Route/action with no role check, "logged-in ≠ authorized", IDOR, tenant leak                                                           | `access-control-audit`    | Focused authorization review     |
 | Route handler missing Zod validation, rate limit, pagination, typed errors, response builder                                           | `api-audit`               | Focused API-layer review         |
-| Dependency version drift, unused/duplicate deps, stale lockfile, known vulnerability                                                   | `dependency-audit`        | Focused dependency review        |
-| Missing `.env.example`, unvalidated env at boot, `NEXT_PUBLIC_` misuse, committed env file                                             | `env-audit`               | Focused env/secrets review       |
+| Dependency drift, unused/duplicate deps, stale lockfile, known vulnerability, unpinned actions, no scanners                            | `dependency-audit`        | Focused dependency review        |
+| Missing `.env.example`, unvalidated env at boot, `NEXT_PUBLIC_` misuse, a committed env file or secret                                 | `env-audit`               | Focused env/secrets review       |
 | Missing labels/alt/focus, poor contrast, keyboard traps, ARIA misuse                                                                   | `accessibility-audit`     | Focused accessibility review     |
-| Waterfalls, missing memo/code-split, oversized bundle, unoptimized images, N+1                                                         | `performance-audit`       | Focused performance review       |
-| Generic/library-default UI, inconsistent tokens, unstructured components/sections                                                      | `frontend-audit`          | Focused frontend/UI review       |
-| Naming/structure/routing drift from the project's own documented conventions                                                           | `conventions-audit`       | Focused conventions review       |
-| Missing page metadata, no sitemap/robots, absent structured data                                                                       | `seo-audit`               | Focused SEO review               |
+| Waterfalls, missing code-split, oversized bundle, unoptimised images                                                                   | `performance-audit`       | Focused performance review       |
+| N+1 reads, unbounded queries, missing indexes, counter drift                                                                           | `firestore-audit`         | Focused data-access review       |
+| Redis keys without TTL or builder, unstated failure direction                                                                          | `redis-audit`             | Focused Redis review             |
+| Generic/library-default UI, inconsistent tokens                                                                                        | `frontend-audit`          | Focused frontend/UI review       |
+| Naming, structure or routing drift; duplicated helpers; oversized files; magic values                                                  | `conventions-audit`       | Focused conventions review       |
+| Missing page metadata, no sitemap or robots, absent structured data, AI crawlers blocked                                               | `seo-aeo-geo-audit`       | Focused search-visibility review |
+| Components without stories, stories without keyboard or axe checks                                                                     | `storybook-audit`         | Focused Storybook review         |
 
 ## Checklist — code-quality hygiene (owned here)
 
@@ -138,37 +92,69 @@ This is what codebase-audit investigates itself, and it stands alone: every chec
 
 - Count `TODO` / `FIXME` / `HACK` / `XXX` / `@deprecated` markers; flag old or business-critical ones — a `FIXME` on an auth or payment path is `HIGH`, a stray `TODO` is `LOW`.
 - Commented-out code blocks left in source — dead weight; git history is the archive, so it should be deleted.
-- Duplicated logic (copy-pasted blocks/near-identical functions) that should be extracted; magic numbers/strings that should be named constants.
-- Oversized units — files or functions well past the house norm (e.g. a multi-hundred-line file, a function doing many jobs) that signal debt.
+- Magic values, duplicated helpers and oversized files are `conventions-audit`'s — route them.
+- A `TODO` on transitional code names what ends it; one with no end state is debt with no owner.
 
 ### Dead code
 
-- Unused **exports**, whole unreferenced **files/modules**, unused local **vars/imports** (→ `code-structure`).
+- Unused **exports**, whole unreferenced **files/modules**, unused local **vars/imports**. A value prefixed `_` is unused on purpose and not a finding (→ `naming`; the lint rule is `devops`').
 - **Unreachable branches** — code after a `return`/`throw`, conditions that can't be true, disabled feature paths, dead feature flags never toggled on.
 
 ### TypeScript strictness
 
 - `strict` (and its family — `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess` where the house uses it) is on in `tsconfig`; flag `strict: false` or the family disabled (→ `typescript`).
+- **What TypeScript 6 deprecates and 7 removes** — `baseUrl`, `moduleResolution` `node`/`node10`/`classic`, `esModuleInterop` or `allowSyntheticDefaultImports` set to `false`, `target: "es5"`, `downlevelIteration`, `outFile`, `module` `amd`/`umd`/`system`/`none`, `alwaysStrict: false`, and the syntax: `module Foo {}` namespaces, import `asserts`, `/// <reference no-default-lib>` — plus `ignoreDeprecations` hiding them. A workspace that reads globals (`process`) lists them in `types`, now `[]` by default.
+- **Presets by resolver** — Bundler for Next.js apps and bundled packages, NodeNext for what plain Node loads (with `.js` on relative imports); a package that emits sets `rootDir: "./src"` beside `outDir`; `noUncheckedSideEffectImports` isn't switched off. A `dist/` package emits `declaration` and `declarationMap` with `isolatedDeclarations`, puts `types` first in its `exports`, and aliases with `#/*` subpath imports rather than `paths`.
+- **Checked and linted with types** — typescript-eslint's `strictTypeChecked` with `projectService`; a Next.js app checks with `next typegen && tsc --noEmit`; exported functions annotate their return types; `type` over `interface` except for merging or `implements`.
+- Erasable syntax only — no `enum`, value `namespace`, parameter properties or `import =` where `erasableSyntaxOnly` is the standard; type-only imports marked under `verbatimModuleSyntax`. A package built to `dist/` emits declarations.
 - No `any` (explicit or implicit on params/returns), no unsafe `as` casts (especially `as unknown as`, `as any`), no non-null `!` used to paper over nullability, no `@ts-ignore` / `@ts-expect-error` silencing real errors.
-- No untyped external boundaries — network/JSON/`process.env`/user input consumed without validation or a declared type (a Zod schema where the house parses at the edge).
+- No untyped external boundaries — network, JSON and user input are typed by the schema that parses them; a hand-written type beside or instead of the schema is the finding (`process.env` is `env-audit`'s).
 
 ### Error handling
 
 - Consistent, **typed** errors — no throwing bare strings or plain objects; a shared error shape where the house has one.
 - No **empty catches** and no **swallowed errors** — every catch logs, rethrows, or handles; no `catch {}` that only `console.log`s and continues on a critical path.
-- No unhandled promise rejections or **floating promises** (async calls not awaited/handled); async paths in loops/handlers actually settle.
+- No unhandled promise rejections or **floating promises** (async calls not awaited/handled); async paths in loops/handlers actually settle — type-aware lint (`no-floating-promises`) catches these where it's on.
+- `catch (error)` treats the error as `unknown` and narrows before use.
 
 ### Tests
 
-- A test setup exists and is runnable at all (a test script + runner configured) — flag a repo with source but no test infrastructure.
-- Shared functions, critical business paths (auth, payments, data mutations), and API routes have **at least one behavioral test** — flag ones that don't.
-- No **skipped/disabled** tests (`.skip` / `.only` / `xit` / `describe.only`) left committed; no empty test bodies or assertion-free tests that always pass.
+Criteria from `testing`:
+
+- A test setup exists and runs — a test script and a runner configured; flag source with no test infrastructure.
+- Shared functions and hooks, services, data modules, guards, routes, Server Actions and workers have a **behavioural spec beside them**, covering the success path and each refusal — flag ones that don't. An async Server Component holds no decisions: it awaits a data function and renders, and that function and its child components carry the tests. A route spec calls the exported handler with a real `Request`; shared generic helpers have type tests (`*.test-d.ts`).
+- **Mocks only at I/O boundaries** — cloud SDKs, `next/navigation`, `next/headers`, `next/cache`, `server-only`, `fetch`, timers, a hosted Redis client — and a project function only when it does I/O itself (the project's client module, swapped for an in-memory fake). A spec that mocks the project's own schemas, utilities or hooks, or a pure dependency, tests the stub.
+- **Setup and placement** — the setup file seeds a placeholder for every env key the guard requires and mocks `server-only`; a mocked module a dependency imports is inlined (`test.server.deps.inline`); manual mocks are typed `Mock<typeof fn>`; fixtures and fakes live in `src/testing/`, and one two workspaces use moves to the shared testing package; node and jsdom run as separate projects, with every test file in exactly one.
+- **Independent and deterministic** — mocks reset after each test; fake timers and a fixed timezone, locale and seed instead of the real clock or `Math.random`; tests pass in shuffled order.
+- No **skipped, focused or weakened** tests (`.skip`, `.only`, `xit`, a deleted or loosened assertion) and no unit or integration retries hiding a flaky test — a flaky test is fixed, never quarantined. No empty or assertion-free tests.
+- A coverage floor on shared packages and critical paths (auth, money, permissions) that only ever rises; no floor at all there is a finding.
+
+### CI hygiene
+
+Criteria from `devops` (action SHAs, scanners and advisories are `dependency-audit`'s):
+
+- Lint fails on any warning (`eslint --max-warnings 0`); `no-console` allows only `info`, `warn`, `error` and `debug`; hooks are husky with lint-staged formatting staged files and commitlint on the message — nothing slow in pre-commit.
+- Every workflow starts from `permissions: {}` and each job grants only what it uses; checkouts that don't push set `persist-credentials: false`.
+- No `${{ github.event.* }}` text inside a `run:` (passed through `env:` instead), and no `pull_request_target` or `workflow_run` workflow that checks out or runs PR code.
+- Every job has `timeout-minutes`, and every workflow a `concurrency` group that cancels superseded runs.
+- Prettier formats every file type with `proseWrap: "preserve"` and ESLint loads `eslint-config-prettier`; flat configs come from one shared preset package, each workspace re-exporting one preset; `turbo/no-undeclared-env-vars` is on.
+- CI runs format, lint and types, build and tests as parallel jobs; pull requests run only what changed and a push to a tier branch runs everything; the build gets placeholder values for every secret its env guard requires; CI never deploys unless the project records otherwise (below).
+
+### Branches, releases and deploys
+
+Criteria from `devops`. Repository settings are read with `gh api` where it's available (`repos/{owner}/{repo}/rulesets`, `rules/branches/{branch}`); what can't be read is "needs confirmation", never a guess.
+
+- **Tier branches are protected by rulesets** — a pull request and the CI checks required, no force-push, no deletion — so nothing reaches them by a direct commit. A tier branch with no ruleset, or one whose required checks don't match the CI job names, is `HIGH`.
+- **Promotion PRs merge with a merge commit, never a squash** — check the history of each higher tier for squashed promotions; pull request titles are checked as Conventional Commits by a workflow; a workflow that applies a label has a seeding script that creates it.
+- **Releases** — every push to `main` publishes a release and tag through release-drafter, with a labelling workflow mapping commit types to labels and marking promotion PRs so the notes skip them; changesets only where a package is published to a registry.
+- **Deploys** — one project or target per tier, from that tier's branch; automatic rollouts off where every backend tracks one branch; functions, rules and indexes deployed from a machine, never CI. A rollback runbook per tier and a named owner of each app's logs, health check and alerts sit in the project's docs — that they were tested needs confirmation.
+- **Where CI does deploy**, it authenticates with short-lived OIDC (Workload Identity Federation) — a long-lived service-account key stored as a CI secret is `HIGH` — and gates on a post-deploy health check.
+- **Opt-in gates** — preview deploys, end-to-end tests, bundle budgets, Lighthouse CI, CODEOWNERS, protected environments, a merge queue, an SBOM: absence isn't a finding; a gate the project's docs record that isn't wired up is.
 
 ### Git hygiene
 
-- No **committed secrets** (API keys, tokens, private keys, credentials in tracked files), large binaries, or build artifacts (`dist/`, `build/`, `.next/`, coverage, `node_modules/`) tracked — verify with `git ls-files` before flagging (→ `devops`).
-- `.gitignore` exists and is sane — covers env files, build/artifact dirs, dependency dirs, and OS/editor cruft.
-- Committed `.env` files with real values, or an `.env`-style file tracked at all (only `.env.example` should be) — cross-check with `git ls-files`.
+- No large binaries or build output (`dist/`, `build/`, `.next/`, coverage, `node_modules/`) tracked — verify with `git ls-files` before flagging. Committed secrets and `.env*` files are `env-audit`'s — route them.
+- `.gitignore` covers build output, dependency folders and OS and editor files.
 - No leftover **debug logging** (`console.log`, `debugger`, `print`, verbose dumps) in shipped/non-test code.
 - No unresolved **merge-conflict markers** (`<<<<<<<`, `=======`, `>>>>>>>`) left in tracked files.
 

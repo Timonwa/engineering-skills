@@ -1,7 +1,7 @@
 ---
 name: conventions-audit
 description: >-
-  Manually invoked. Audits an app or monorepo against the house naming and code-structure standards — hardcoded URLs versus route constants, schema, type and const placement, duplicated utilities and hooks across packages, identifier and file naming (Schema and Props suffixes, UPPER_SNAKE_CASE consts, use* hooks, kebab-case files), and thin route entries. Verifies each finding and writes a prioritized report.
+  Manually invoked. Audits an app or monorepo against the house naming and code-structure standards — identifier, file, test-file, field and error naming; thin route entries and app/ holding only Next's files; components by product area; kind-first lib/ and barrels; server boundaries; typed routes; promotion on the second consumer; duplicated helpers, oversized files, hardcoded values and cross-app config drift. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team conventions audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/conventions-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`naming`** and **`code-structure`** ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`naming`** and **`code-structure`** are installed, they are the fix target for what this finds.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase arg if given; else the audit phase in `AGENTS.md`; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount.
 2. **Load the previous report** — if `_reports/conventions-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -50,48 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/conventions-audit.md`:
-
-```
-# Conventions audit — <app/scope>
-
-**Date:** <YYYY-MM-DD> · **Phase:** <phase> · **Mode:** Report-only · **Branch:** `<branch>` · **Scope:** <what was audited> · **Overall:** <X>/10
-
-## Score change (previous → current)
-| Metric | Previous | Current | Δ | Trend |
-| --- | --- | --- | --- | --- |
-| Overall | <prev/10 or N/A> | <cur/10> | <+N / -N / 0> | <▲ / ▼ / ■ / N/A> |
-
-## Findings
-| ID | Severity | Category | Status | Issue | Location |
-| --- | --- | --- | --- | --- | --- |
-| 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
-
-### F1 — <title>
-- **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
-- **Fix:** <the specific remediation>
-
-## Scorecard
-| Category | Score | Notes |
-| --- | --- | --- |
-| Naming | <X>/10 | <one-line justification> |
-| File naming | <X>/10 | <one-line justification> |
-| Placement | <X>/10 | <one-line justification> |
-| Duplication | <X>/10 | <one-line justification> |
-| Hardcoded values | <X>/10 | <one-line justification> |
-
-## Action items
-Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
-
-### <Tier>
-| # | Priority | Task (finding ID) | Effort |
-| --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
-```
+Write to `_reports/conventions-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change, the findings table with one section per finding, the scorecard, phase-tiered action items and "Resolved since last audit".
 
 ### Output
 
@@ -104,49 +63,56 @@ Every run produces two things:
 
 ## Checklist
 
-The criteria below are the audit's full working rules — self-contained. For house specifics, if installed → `naming` and `code-structure`. Check the shared packages (`@app/*` — `schemas`/`utils`/`hooks`/`ui`) and each app's `src/`.
+The criteria below are the audit's full working rules. Check the shared packages and each app's `src/`.
 
 ### Naming
 
-- **Identifiers** — functions verb-first (`get`/`fetch`/`create`/`build`/`format`/`parse`/`handle`/`on`) and ownership-revealing (feature-prefixed unless genuinely shared).
-- **Suffixes** — Zod schema value ends in `Schema` (`UserSchema`); its inferred type takes the clean noun (`type User = z.infer<…>`, **no** `Type` suffix); component props type ends in `Props`.
-- **Constants** — `UPPER_SNAKE_CASE` (`EVENT_STATUSES`), including `as const` arrays.
-- **Casing** — `camelCase` for variables/functions/props/hooks, `PascalCase` for components and types, `UPPER_SNAKE_CASE` for constants, `kebab-case` for files and CSS classes.
-- **Components** — PascalCase noun phrase for what it renders; feature-local ones carry the feature prefix (`SeoMetaHero`, not a bare second `Hero`).
-- **Descriptive, no rename-on-import** — full words over cryptic abbreviations or vague `data`/`item`/`temp`; one canonical name per symbol (no `import X as Y`).
-- **Hooks** — `use` + Capital (`useCurrentUser`).
-- **Page content** — a composed page export ends in `PageContent` (`LandingPageContent`).
-- **Booleans** — `is`/`has`/`are`/`can`/`should`/`will` (variables, props, boolean-returning fns).
-- **File name = export name = usage** — no rename-on-import; the file's kebab name matches its primary export's concept.
+- **Functions lead with their verb** — `get` (local), `fetch` (network; never `getUser` for a request), `create`/`update`/`delete`/`save`, `build`/`make`, `parse`, `format` or `<x>To<y>`, `require` (a guard), `handle` (internal handler), `on` (callback prop). Booleans are `is`/`has`/`are`/`can`/`should`/`will`; hooks `use` + what they give.
+- **Descriptive and owned** — no bare `data`, `item`, `temp`, `val`, `next`, `target`, `source` or `handle`, no cryptic abbreviations (`btn`, `qty`; `i` in a tight loop is fine); an unused value starts with `_`; a symbol one feature uses carries its name; one canonical name per symbol, never renamed on import; a wrapper never shadows a dependency's name with a near-copy.
+- **Suffixes** — a Zod schema value ends in `Schema`, its inferred type takes the clean noun (no `Type`); `Props` only on component props; constants `UPPER_SNAKE_CASE`; a composed page is `…PageContent`; generics are a lone `T` or `TItem`-style names.
+- **Data and the wire** — API paths plural `kebab-case`; JSON and stored fields `camelCase`; a timestamp ends in `At`, a date in `Date`, an id in `Id`, a count in `Count`, a number with a unit names it; a list is plural; stored enum values lowercase `snake_case`; collections plural, from one constants file; error classes `<Situation>Error` with `UPPER_SNAKE_CASE` codes; analytics events `object_action`, past tense, `snake_case` properties, from one catalogue.
+- **Elsewhere** — route segments `kebab-case` with `[camelCase]` params; env vars `UPPER_SNAKE_CASE`; cache tags from one `CACHE_TAGS` constant in `entity:id` form; CSS classes `kebab-case` and unprefixed; tokens as ramps and roles; assets prefixed (`icon-<name>-<size>`, `illust-…`), a `logo-` suffix naming the artwork's colour.
+- **The project's spelling** — identifiers, routes and product nouns follow the spelling the project records.
 
 ### File naming
 
-- **Code files** — `kebab-case` matching the primary export (`search-input.tsx`, `use-click-outside.ts`); framework-mandated names (`page.tsx`, `layout.tsx`) exempt.
-- **Kinded files** where the project uses them — `*.schema.ts` for schema files, `*.constant.ts` / `*.constants.ts` for constant files.
+- **Component files in an app** are `PascalCase` matching the export; in a shared UI package built on a registry-installed library, `kebab-case`, matching the registry. Folders are `kebab-case`, except an app component's own folder.
+- **Everything else** is `kebab-case` with its kind as a singular suffix — `<domain>.<kind>.ts` (`auth.constant.ts`, `user.schema.ts`, `user.service.ts`) — except `config/` and `seo/` (bare names), a single-function util, framework-mandated names (`page.tsx`, `proxy.ts`) and the `index.tsx` composer. Hooks are `use-<subject>.ts`. The domain is a filename prefix at first; a domain that outgrows one file becomes a folder inside its kind, whose files carry only the concern (`services/event/crud.service.ts`).
+- **Test files** — `<name>.test.ts(x)` beside the unit; `<domain>.fixture.ts`, `<service>.fake.ts`, `<service>.mock.ts`; manual mocks in `__mocks__/` mirroring the import path.
 
-### Placement
+### Structure
 
-- **Kind-first barrels** — schemas/types/consts live in the right kind folder and export through its barrel (`@/lib/<kind>` or `@app/<kind>`), not scattered loose.
-- **Barrels list explicit exports** — one named line per file, never `export *` over a directory of files; a wildcard hides what joined the surface. A barrel that composes other barrels (`ui/index.ts` over its tiers) is the documented exception.
-- **A Zod schema and its inferred type live together** in the `schemas` kind — not re-declared in `types/`, which holds only shapes no const or schema produces.
-- **Shared vs app** — a symbol used by more than one app/feature belongs in the shared package (`@app/schemas`/`utils`/`hooks`); a genuinely app-local one (form/UI state, env schema, app config) stays in the app. Domain schemas/entities don't belong inline in component/page files.
-- **Server boundary** — server-only code sits behind `lib/server/` with its own `server-only` barrel; no server code reachable from a client-safe barrel.
-- **Thin route/entry** — `page.tsx`/route files only import a `…PageContent` and render it; no markup, data, or logic inline. Sections are one-per-file named exports; `index.tsx` composes.
-- **`components/` holds only `.tsx`** — no schemas/types/utils/consts hiding there (allowed exceptions: a stub `data.ts`, the `ui/index.ts` barrel, framework-mandated `manifest`/`robots`/`sitemap`). `components/ui/` follows the tiers where used (`base`/`blocks`/`patterns`/`layouts`).
-- **Small, isolated files** — no oversized files (~200-line guide) mixing many concerns; one file per section/modal, stateful logic extracted to a `use-*` hook in the `hooks` kind, not beside the component.
+- **`app/` holds only the files Next reads by name** — no components, data, helpers or private folders. A `page.tsx` imports a `…PageContent` and renders it; a `layout.tsx` renders a shell; neither holds more than a guard. Every parallel slot has a `default.tsx`; one segment holds a `page.tsx` or a `route.ts`, never both; `global-error` sits only in `app/`; nothing in `public/` duplicates a generated `robots`, `sitemap` or `favicon`. All source sits under `src/` with `@/*`, and `proxy.ts` and `instrumentation.ts` beside `app/`.
+- **Route groups** — a prefixed group keeps a real inner segment (`(auth)/auth/`); a route never repeats its app's name.
+- **`components/` by product area**, pages nested as their URLs are, sections one named export per file composed by `index.tsx`; only `.tsx` (plus colocated stories, tests, CSS modules where the project uses them, and an approved stub). Error, not-found and unauthorised views group in `components/errors/`, client gates in `components/guards/`; there's no root `_shared/index.ts`. Cross-feature widgets in `_shared/` groups, each with an explicit barrel; a **server-coupled component stays out of its barrel**.
+- **`lib/` is kind-first** — one folder per kind, no domain folders or loose files at the root, no mini `hooks/` or `types/` inside a feature, no empty kinds, no `types/` re-declaring a schema's or constant's type. A kind may group its files by domain or concern once it grows (`hooks/auth/ data/ ui/`). Every barrel lists each file by name, never `export *` from a directory. Fixtures and fakes sit in `src/testing/`.
+- **The `config/` barrel is server-only**; client code imports `@/lib/config/routes` by path.
+- **Server code behind one boundary** for the app's shape, with a `server-only` barrel exporting only what app code may call — an app with its own backend: `actions` and `services`; a frontend over an API: `actions` and `data`, plus the identity helpers a guard calls, never the fetchers; the API app: `src/server/` with `services` and `guards` only. No mixed server and client barrel; browser-only entry points are `client-only`; the action-result type sits in its own file.
+- **Imports point one way** — `app/` → `components/` → `ui/` → `lib/` — enforced by a lint rule.
+- **UI tiers** — `foundations`, `assets`, `icons`, `base`, `components`, `blocks`, `layouts` (and `pages` in a shared package); no `patterns` or `composite` tier.
+- **Hooks** — one used by a single section may sit beside it; a shared one lives in the `hooks` kind.
 
-### Duplication
+### Routes
 
-- **Utilities/hooks** re-implemented across apps/packages/features — identical or near-identical copies should be consolidated into the shared package (`@app/utils` / `@app/hooks`) and imported. Truly app-specific helpers (server-lib-bound, app-context-bound) stay put.
-- **Repeated UI/logic** — the same section or logic in two places should be one reusable component/hook (see `reusables`).
+- **`typedRoutes: true`**; each app's `routes.ts` ends `} as const satisfies RouteTable`, a type declared in that file. A path with a parameter is a function typed by its template. **`as Route` on a literal** is a finding; it's kept only for a path known at runtime, with a comment. A nav item's `href` is typed `Route`.
+- **`routes.ts` and `endpoints.ts` are grouped**, not one flat map, and endpoints build from one API version constant.
+
+### Placement across a monorepo
+
+- **Consumer count decides** — code two or more apps use is in a package; code one app uses stays in that app. **Early hoisting** (a package with one consumer) is a finding, as is a copy kept in an app after a package exists.
+- **Cross-app config drift** — per-app lint and tsconfig presets differing with no recorded reason. (Security headers are `security-audit`'s, env guards `env-audit`'s.)
+
+### Duplication and size
+
+- **Helpers and hooks re-implemented** across apps, packages or features, or re-implementing one a dependency or house package already ships (an unused or duplicate dependency is `dependency-audit`'s).
+- **The same UI or logic in two places**, which should be one component or hook.
+- **Oversized files** — well past ~200 lines or mixing concerns; one file per section or modal, stateful logic in a hook.
 
 ### Hardcoded values
 
-- **URLs/paths** — page paths or full URLs hardcoded where a route/endpoint constant or `site.url`/env value exists. Ignore `routes`/`site.metadata`/config files that _define_ these, `.env.example`, comments/JSDoc, the bare `/` root, and Storybook demo data.
-- **Magic values** — unexplained literals (limits, keys, statuses) that should be named constants.
-- **`routes.ts` / `endpoints.ts` are grouped, not one flat map** — routes group by route group, endpoints by the backend's own resource; a parameterised path is a function inside its group so no caller concatenates. Flag a single object carrying dozens of keys.
-- **The API version is a constant the endpoints build from**, never repeated on every line — a version bump should be one edit no endpoint can be missed by.
-- **Nothing in `.env` that isn't a secret** — apply the gate from `devops`: would leaking it hurt? A base URL, cookie domain, CORS origin, analytics id, or project id answers no, so it belongs in a committed config module keyed off `APP_ENV`.
+- **URLs and paths** hardcoded where a route, endpoint or site constant exists. Ignore the files that define them, `.env.example`, comments, the bare `/`, and Storybook demo data.
+- **Magic values** that should be named constants.
+- **Per-tier facts in code** — a base URL, cookie domain, CORS origin or project id hardcoded at a call site instead of the per-tier constant. (What belongs in `.env` is `env-audit`'s.)
 
 ## Boundaries
 

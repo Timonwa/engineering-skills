@@ -1,7 +1,7 @@
 ---
 name: audit-all
 description: >-
-  Manually invoked. Orchestrates the full house audit suite — detects what the repo has, runs every applicable domain audit (accessibility, seo, storybook, conventions, dependencies, environment, frontend, performance, api, access-control, firestore, redis, codebase, security), and aggregates them into one health report with an overall score and cross-cutting priorities. Each domain audit also writes its own report.
+  Manually invoked. Runs the house audit suite across the eng, fe and be plugins — detects what the repo has, runs every installed audit that applies (codebase, conventions, dependencies, env, security, accessibility, frontend, performance, SEO/AEO/GEO, Storybook, content, API, access control, Firestore, Redis), and rolls their reports into one health report with an overall score and cross-cutting priorities. Each audit still writes its own report.
 argument-hint: "[phase]"
 model: opus
 effort: high
@@ -11,9 +11,7 @@ disallowed-tools: Edit, NotebookEdit
 
 # Audit all
 
-The **orchestrator** for the house audit family. It figures out what the repo actually contains, runs each **applicable** audit, and rolls everything up into a single consolidated report — so you get one health picture instead of fifteen. Each domain audit still writes its own `_reports/<name>.md`; this adds `_reports/audit-all.md` on top.
-
-> **The family** (each is its own manually-invoked command): `accessibility-audit`, `seo-audit`, `storybook-audit`, `conventions-audit`, `dependency-audit`, `env-audit`, `frontend-audit`, `performance-audit`, `api-audit`, `access-control-audit`, `firestore-audit`, `redis-audit`, `codebase-audit`, `security-audit`. Firestore/Storage **rule** internals → `firebase-security-rules-auditor`.
+The **orchestrator** for the house audits. It works out what the repo contains, runs each audit that is **installed and applies**, and rolls the results into one report — one health picture instead of a dozen. Each audit still writes its own `_reports/<name>.md`; this adds `_reports/audit-all.md`.
 
 ## Project specifics first
 
@@ -24,35 +22,38 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`. Optional; defaults to `production` (assume the app is live until told otherwise). Passed unchanged to every sub-audit.
+- `[phase]` — `development` | `production`. Optional. Without it, the phase is the one the project's `AGENTS.md` records (an "audit phase" line); with neither, `production` — assume the app is live until told otherwise. The same phase goes to every audit, so their tiers line up.
 
-Severity levels (CRITICAL/HIGH/MEDIUM/LOW) are as defined in each domain audit — this skill only aggregates them.
+Severity levels (CRITICAL / HIGH / MEDIUM / LOW) are each audit's own; this skill only aggregates them.
 
-## Which audits apply
+## The audits
 
-Detect from the repo, then run only what fits (skip the rest and say so in the report):
+Each is its own manually invoked command, in the plugin that owns its domain. Run only the ones installed — a project may have one plugin and not the others — and say in the report which weren't available.
 
-| Audit                                                          | Run when                                                                                                               |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `codebase-audit`                                               | always (broad triage first)                                                                                            |
-| `conventions-audit`                                            | always                                                                                                                 |
-| `dependency-audit`                                             | a lockfile / workspace exists (its deepest checks target pnpm workspaces; on npm/yarn repos it scopes to what applies) |
-| `env-audit`                                                    | there are environment variables / `.env.example`                                                                       |
-| `security-audit`                                               | always (scoped to frontend / backend / both)                                                                           |
-| `frontend-audit` · `performance-audit` · `accessibility-audit` | there's browser/UI code                                                                                                |
-| `seo-audit`                                                    | a public-facing app                                                                                                    |
-| `storybook-audit`                                              | Storybook is configured                                                                                                |
-| `api-audit` · `access-control-audit`                           | there's an API / route-handler layer                                                                                   |
-| `firestore-audit`                                              | Firestore is used — rules, indexes, or Admin-SDK queries                                                               |
-| `redis-audit`                                                  | Redis / Upstash is used                                                                                                |
+| Audit                                                          | Plugin | Run when                                                                                                         |
+| -------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
+| `codebase-audit`                                               | `eng`  | always — broad triage first                                                                                      |
+| `conventions-audit`                                            | `eng`  | always                                                                                                           |
+| `dependency-audit`                                             | `eng`  | a lockfile or workspace exists (its deepest checks target pnpm workspaces; other managers scope to what applies) |
+| `env-audit`                                                    | `eng`  | the code reads environment variables                                                                             |
+| `security-audit`                                               | `eng`  | always — scoped to frontend, backend or both                                                                     |
+| `accessibility-audit` · `frontend-audit` · `performance-audit` | `fe`   | there's browser UI                                                                                               |
+| `seo-aeo-geo-audit`                                            | `fe`   | an app is public and meant to be found                                                                           |
+| `storybook-audit`                                              | `fe`   | Storybook is configured                                                                                          |
+| `content-audit`                                                | `fe`   | there's user-facing copy — pages, help articles, UI strings — or email templates                                 |
+| `api-audit` · `access-control-audit`                           | `be`   | there's an API or route-handler layer                                                                            |
+| `firestore-audit`                                              | `be`   | Firestore is used — rules, indexes or Admin SDK queries                                                          |
+| `redis-audit`                                                  | `be`   | Redis is used                                                                                                    |
+
+Security rules files themselves are reviewed by the official `firebase-security-rules-auditor`, which this skill **doesn't run** — it's a separate, official skill with its own invocation. Where rules files exist, the suite summary lists it as "run separately" (or "not installed"); `firestore-audit` and `access-control-audit` check the code around the rules.
 
 ## Method
 
-1. **Resolve phase once** — a phase arg (`development` | `production`) if given; else default `production` (assume the app is live until told otherwise). Pass the same phase to every sub-audit so tiers line up.
-2. **Detect scope** — single app vs monorepo, which apps are public/internal, and which data/infra (Firestore, Redis, Storybook, API) are present, to pick the applicable audits above.
-3. **Run the applicable audits** — prefer running them **in parallel** (one subagent per audit), each following its own skill and writing its own `_reports/<name>.md`. Every audit is **report-only** — none modify code.
-4. **Aggregate** — collect each sub-report's score, finding counts, and top items; de-duplicate cross-cutting findings (a missing auth guard may surface in both `api-audit` and `access-control-audit` — report it once, note both).
-5. **Write** `_reports/audit-all.md` (overwrite; carry forward the previous roll-up for trend). Never commit or push without explicit approval.
+1. **Resolve the phase once**, as above.
+2. **Detect the scope** — single app or workspace, which apps are public and which internal, and which of the data, tooling and copy above are present — and pick the audits that apply and are installed.
+3. **Run them in parallel**, one subagent per audit. Every audit sets `disable-model-invocation`, so a subagent never loads one by name: tell each subagent to **Read that audit's `SKILL.md` by path** (in the plugin's `skills/<audit>/` folder) and follow it, writing its own report. Every audit is **report-only**: none changes code.
+4. **Aggregate** — each report's score, finding counts and top items. A finding two audits both raise (a missing guard in `api-audit` and `access-control-audit`) is reported once, naming both.
+5. **Write** `_reports/audit-all.md`, overwriting it and carrying the previous roll-up forward for the trend.
 
 ## Report format
 
@@ -64,9 +65,11 @@ Detect from the repo, then run only what fits (skip the rest and say so in the r
 | accessibility-audit | 7/10 | 0 | 2 | 3 | 1 | ▲ | _reports/accessibility-audit.md |
 | … | | | | | | | |
 | (skipped: storybook-audit — no Storybook) |
+| (not installed: redis-audit — the be plugin isn't installed) |
+| (run separately: firebase-security-rules-auditor — rules files present) |
 
-## Top priorities (cross-cutting, worst-first)
-Consolidated CRITICAL/HIGH items across all audits, each pointing to the owning sub-report + finding ID.
+## Top priorities (cross-cutting, worst first)
+Consolidated CRITICAL and HIGH items across all audits, each pointing to its report and finding ID.
 
 ## Action items
 Phase-aware tiers (`development` → Fix Now / Before Launch / Post-Launch; `production` → Fix Now / Next Release / Backlog), merged across audits.
@@ -74,8 +77,10 @@ Phase-aware tiers (`development` → Fix Now / Before Launch / Post-Launch; `pro
 ## Resolved since last run
 ```
 
+The overall score is the mean of the audits that ran, pulled down to the lowest one when any has an open CRITICAL — a single critical hole outweighs a tidy average.
+
 ## Boundaries
 
-- **Report-only** — audits never modify code; `audit-all` only aggregates their reports.
-- **Don't duplicate depth** — the roll-up summarizes; the detail lives in each sub-report. De-duplicate shared findings.
-- Verify sub-audits actually ran (skipped ones are stated, not silently dropped). Never commit or push without explicit approval.
+- **Report-only.** Audits never change code; this skill only aggregates their reports, and never commits or pushes.
+- **Don't duplicate depth.** The roll-up summarises; the detail lives in each audit's report.
+- **Nothing is skipped silently.** An audit that didn't apply or isn't installed is listed with the reason.

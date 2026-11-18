@@ -1,7 +1,7 @@
 ---
 name: dependency-audit
 description: >-
-  Manually invoked. Dependency-health audit of a monorepo — version consistency across workspace members, unused, duplicate and misplaced dependencies, workspace-protocol usage, the pnpm catalog, deprecated packages, lifecycle scripts, lockfile integrity, and known vulnerabilities. Verifies each finding and writes a prioritized report.
+  Manually invoked. Dependency-health audit of a monorepo — one version per dependency through the pnpm catalog with recorded exceptions, workspace protocol and dependency direction, peer dependencies for singletons, unused, missing, duplicate and misplaced packages, build-script allowlists, release-age holds, advisories, automated updates, and lockfile integrity. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team dependency audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/dependency-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`devops`** and **`monorepo`** ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`monorepo`** and **`devops`** are installed, they are the fix target for what this finds.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase arg if given; else the audit phase in `AGENTS.md`; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount.
 2. **Load the previous report** — if `_reports/dependency-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -50,50 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/dependency-audit.md`:
-
-```
-# Dependency audit — <app/scope>
-
-**Date:** <YYYY-MM-DD> · **Phase:** <phase> · **Mode:** Report-only · **Branch:** `<branch>` · **Scope:** <what was audited> · **Overall:** <X>/10
-
-## Score change (previous → current)
-| Metric | Previous | Current | Δ | Trend |
-| --- | --- | --- | --- | --- |
-| Overall | <prev/10 or N/A> | <cur/10> | <+N / -N / 0> | <▲ / ▼ / ■ / N/A> |
-
-## Findings
-| ID | Severity | Category | Status | Issue | Location |
-| --- | --- | --- | --- | --- | --- |
-| 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
-
-### F1 — <title>
-- **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
-- **Fix:** <the specific remediation>
-
-## Scorecard
-| Category | Score | Notes |
-| --- | --- | --- |
-| Version consistency | <X>/10 | <one-line justification> |
-| Workspace protocol | <X>/10 | <one-line justification> |
-| Unused deps | <X>/10 | <one-line justification> |
-| Duplicates | <X>/10 | <one-line justification> |
-| Removed-package regressions | <X>/10 | <one-line justification> |
-| Vulnerabilities & supply chain | <X>/10 | <one-line justification> |
-| Lockfile | <X>/10 | <one-line justification> |
-
-## Action items
-Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
-
-### <Tier>
-| # | Priority | Task (finding ID) | Effort |
-| --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
-```
+Write to `_reports/dependency-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change, the findings table with one section per finding, the scorecard, phase-tiered action items and "Resolved since last audit".
 
 ### Output
 
@@ -106,49 +63,66 @@ Every run produces two things:
 
 ## Checklist
 
-Read the root `package.json`, `pnpm-workspace.yaml` (incl. its `catalog:` block), every member `package.json` (`apps/*`, `packages/*`, any `functions/*`), and the lockfile (`pnpm-lock.yaml`). Everything you need to judge each item is inlined below; `monorepo` / `devops` add fuller rationale _if_ installed, but aren't required.
+Read the root `package.json`, `pnpm-workspace.yaml` (its `catalog`, `allowBuilds` and supply-chain settings), every member's `package.json` (`apps/*`, `packages/*`, `functions/*`), `turbo.json`, the syncpack config, the lockfile and `.github/`. **Probes are read-only** — `pnpm why`, `pnpm dedupe --check`, `pnpm outdated`, `pnpm audit`, `pnpm view <pkg> deprecated`; never run an install, which writes `node_modules`.
 
-### Version consistency
+**Recorded exceptions are not findings.** A place that can't use `catalog:` — a host that reads a framework's exact version from each app, workers whose cloud build runs a plain `npm install`, a linter aliased to an older TypeScript — is correct when a labelled syncpack version group records why. The same goes for a critical-only advisory policy recorded beside the install settings. An exception with no record is the finding.
 
-- Shared runtime/framework deps hold the **same major/minor** across every member — e.g. `next`, `react`/`react-dom`, `typescript`, `tailwindcss`, `zod`, `firebase`/`firebase-admin`. A member one **major** behind is `HIGH`; one **minor** behind is `MEDIUM`.
-- Coupled pairs move together: `react` + `react-dom` share a version; `firebase` + `firebase-admin` stay compatible; a plugin matches its host (`@types/react` ↔ `react` major, `eslint-*` ↔ `eslint`, `@tailwindcss/*` ↔ `tailwindcss`).
-- Framework/runtime deps shared across apps are **pinned once via the pnpm catalog** — `catalog:` in `pnpm-workspace.yaml`, referenced as `"next": "catalog:"` in each member — not repeated as literal ranges that silently drift. A shared dep with divergent literal ranges that _should_ be a catalog entry is a finding.
-- **Root vs member** versions for the same dep don't disagree; a `pnpm.overrides` / `resolutions` entry doesn't mask a member declaring a conflicting range.
-- Ranges are consistent in style and not dangerously loose — no bare `*` or `latest` on a runtime dep, and no mix of pinned-exact vs `^`/`~` for the same shared package.
+### One version per dependency
 
-### Workspace protocol
+- **Every third-party dependency comes from the catalog** — `"<dep>": "catalog:"` in each member, the version once in `pnpm-workspace.yaml`. A literal range on a dependency the catalog has, or a shared dependency left out of it, is a finding; a member a major behind is `HIGH`.
+- **`syncpack lint` passes** (the project's `deps:check`), and every exception is a labelled group with its reason.
+- **Coupled pairs move together** — `react` with `react-dom`, a plugin with its host (`@types/react`, `eslint-*`, `@tailwindcss/*`), and a framework pinned per app moves in the same change as the catalog.
+- **No `overrides` forcing a version inside a third-party tree** to silence an advisory; the fix is that dependency releasing it.
+- **No `*` or `latest`** on a runtime dependency.
 
-- Internal `@app/*` packages are referenced with **`workspace:*`**, never a literal version or range (a literal version won't resolve to the local package and will drift).
-- Every internal package a member imports is actually **declared** as a dependency of that member — no relying on hoisting / phantom dependencies. Likewise no dep is declared but the package doesn't exist in the workspace.
-- Internal packages sit in the right field: build/type-only ones (`typescript-config`, `eslint-config`, `tailwind-config`) in `devDependencies`; runtime ones (`ui`, `utils`, `hooks`, `schemas`) in `dependencies`.
+### Workspace packages and direction
 
-### Unused deps
+- **Internal packages use `workspace:*`**, never a literal version.
+- **Every import is declared** in that member's manifest — nothing resolves only through hoisting — and nothing is declared that the workspace doesn't contain.
+- **Dependencies point one way** — apps on packages, packages on lower packages; no package depends on an app.
+- **A shared package declares singletons as peer dependencies** — `react`, `react-dom`, `next`, `firebase`, a form library — so every app supplies one copy.
+- Build- and type-only packages (`typescript-config`, `eslint-config`) are `devDependencies`; runtime ones are `dependencies`.
 
-- Each declared dep (in `dependencies` / `devDependencies`) is imported somewhere in that member — `import`, `require`, dynamic import, CSS `@import`, or a config-file plugin reference.
-- **Don't flag** compiler/tooling deps used indirectly: `typescript`, `@types/*`, `eslint*`, `@tailwindcss/*`, `turbo`, `postcss`/`autoprefixer`, formatters, test runners, build tools, and declared **peer dependencies**.
-- **Misplaced deps** — a package used only in build/test/config lives in `devDependencies`, not `dependencies` (bloats what ships / gets installed in prod); a package imported by shipped runtime code isn't hiding in `devDependencies`.
-- **Missing deps** — a package imported in a member's source but not declared anywhere in that member's manifest (resolving only via hoisting) is a finding, since it breaks under stricter installs.
+### Unused, missing and misplaced
+
+- Each declared dependency is imported somewhere in that member — `import`, `require`, dynamic import, CSS `@import`, or a config file. Don't flag tooling used indirectly (`typescript`, `@types/*`, `eslint*`, `turbo`, test runners, build tools) or declared peers.
+- A package used only to build, test or configure sits in `devDependencies`; one shipped code imports isn't hiding there.
 
 ### Duplicates
 
-- No package resolves to **multiple versions** in the lockfile — focus on heavy or singleton-sensitive ones (`react`, `react-dom`, `next`, `firebase`, `zod`, state/context libs) where two copies cause bloat or "two Reacts" runtime bugs. Confirm with `pnpm ls --depth 0` (or `pnpm why <pkg>`) per member and by grepping the lockfile.
-- **Overlapping/redundant** packages that solve the same job in one tree (two date libs, two HTTP clients, two icon sets) — flag for consolidation.
+- **One copy of each singleton** — `pnpm why react` (and `next`, `firebase`, `zod`) shows one version; two copies break hooks and context with no type error. `pnpm dedupe --check` shows what a dedupe would change.
+- **Overlapping packages** for one job — two date libraries, two HTTP clients, two icon sets.
+- **A helper a house package already ships**, re-added as a dependency or rewritten.
 
-### Removed-package regressions
+### Deprecated and removed packages
 
-- Deliberately dropped / replaced packages haven't crept back in any member (deprecated-or-replaced packages the house no longer uses — e.g. an HTTP client superseded by native `fetch`, a client data-fetching lib superseded by Server Components/Actions, sitemap/SEO packages superseded by the Next Metadata/route conventions). Flag as a regression.
-- **Deprecated / unmaintained** packages generally — anything `pnpm install` reports as `deprecated`, or a package with no releases in years where a maintained successor exists.
+- A package its registry marks deprecated (`pnpm view <pkg> deprecated`), or unmaintained with a maintained successor.
+- A package the project replaced creeping back (a client fetching library replaced by Server Components, an SEO package replaced by Next's metadata files).
 
-### Vulnerabilities & supply chain
+### Build scripts, release age and advisories
 
-- Run **`pnpm audit`**; triage **critical/high** advisories — package, severity, advisory, whether a **non-major** fix exists. Non-major fixes are low-risk; major-only fixes are recommendations.
-- **Lifecycle-script exposure** — note dependencies with `postinstall`/`preinstall`/`install` scripts (the top npm-malware vector); the house default is to **disable install scripts** (`ignore-scripts`) and allow-list only packages that genuinely need one. Flag if scripts run unrestricted.
-- Prefer deps published with **provenance** (npm green-check / Trusted Publishing) for anything newly added or newly relied on.
+- **Dependency build scripts are blocked except an allowlist** — pnpm 11's `allowBuilds` map (`sharp: true`). `onlyBuiltDependencies` is the removed pnpm 10 form; scripts switched on for everything — `dangerouslyAllowAllBuilds: true` or `strictDepBuilds: false` — is `HIGH`.
+- **Release-age holds** — `minimumReleaseAge` isn't switched off (`0`; the default is a day); a `minimumReleaseAgeExclude` entry names an exact version (`zod@4.5.1`) and is removed once that version ages past the window.
+- **pnpm's other guards stay on** — `blockExoticSubdeps` (on by default) isn't disabled; `trustPolicy: no-downgrade`, which refuses a version whose publishing trust dropped, is recommended, its absence `LOW`.
+- **`pnpm audit`** — every advisory reported; CI fails at the level the project records (critical, by the house default). Each known advisory and where it lives is recorded beside the install settings.
+- **Automated updates** — Renovate or Dependabot, grouped and scheduled, including GitHub Actions SHAs; a project on alerts alone records that.
 
-### Lockfile
+### Supply chain in CI
 
-- The lockfile (`pnpm-lock.yaml`) is **committed** and **in sync** with the manifests — `pnpm install --frozen-lockfile` succeeds with **no changes**. A drifted or uncommitted lockfile is `HIGH` (it means CI installs something different from local, and `--frozen-lockfile` in CI will fail).
-- Exactly **one** lockfile at the workspace root; no stray `package-lock.json` / `yarn.lock` from another package manager, and `packageManager: "pnpm@…"` is set so `corepack` pins the version.
+Owned here; `security-audit` points to it.
+
+- **Every third-party action pinned to a full commit SHA** with a version comment, first-party ones included; a tag is `HIGH`.
+- **Scanners on every PR** — CodeQL, `dependency-review-action`, and `zizmor` or `actionlint` over the workflows; secret scanning with push protection on the repository (needs confirmation — a repository setting).
+
+### Turborepo
+
+- **Tasks** — `build` depends on `^build` and declares `outputs` with `!.next/cache/**`; `lint` and `check-types` depend on a `transit` task, never `^lint`/`^check-types`; nothing depends on a `persistent` task; `globalEnv` stays minimal (what each build reads is `env-audit`'s).
+- **Running** — dev through pnpm (`pnpm -r --parallel --filter …`), not `turbo dev`; tests `--concurrency=2`; CI uses `--affected` with `TURBO_SCM_BASE=origin/<base>` and `fetch-depth: 0`.
+
+### Lockfile and tooling
+
+- **One `pnpm-lock.yaml`**, committed at the root and in sync — CI's `--frozen-lockfile` install passes (read its last run rather than installing); no stray `package-lock.json` or `yarn.lock`. Drift is `HIGH`.
+- **`packageManager` names an exact pnpm version**, `engines.node` the minimum, and `.nvmrc` the version CI and every machine run. CI's setup action runs `pnpm/action-setup` (reading `packageManager`; Node 25 and later don't ship corepack), then `setup-node` from `.nvmrc` with the pnpm cache, then `pnpm install --frozen-lockfile`.
 
 ## Boundaries
 
