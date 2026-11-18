@@ -65,7 +65,7 @@
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/cloudinary-devs/skills.git",
-        "path": "skills/cloudinary-docs",
+        "path": "skills/platform/cloudinary-docs",
         "ref": "main"
       },
       "description": "Looks up implementation details in the latest Cloudinary docs via the relevant llms.txt file. Use when building code or answering questions relating to image or video uploads, management, SDKs, APIs, webhooks, or integrations.…"
@@ -75,7 +75,7 @@
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/cloudinary-devs/skills.git",
-        "path": "skills/cloudinary-transformations",
+        "path": "skills/platform/cloudinary-transformations",
         "ref": "main"
       },
       "description": "Create and debug Cloudinary transformation URLs from natural language instructions. Use when building Cloudinary delivery URLs, applying image/video transformations, optimizing media, or debugging transformation syntax errors."
