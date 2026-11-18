@@ -1,7 +1,7 @@
 ---
 name: frontend-audit
 description: >-
-  Manually invoked. Next.js App Router frontend audit — Pages Router residue, thin route entries and feature-grouped sections, the server and client boundary, server-side data fetching, Server Actions placement, caching tiers and revalidation, Metadata API usage, component organization and shared-UI adoption, and React 19 idioms. Verifies each finding and writes a prioritized report.
+  Manually invoked. Next.js App Router frontend audit — Pages Router residue, app/ holding only Next's files, thin entries, the server and client boundary, typed fetchers and Cache Components scopes, Server Actions with action results and updateTag, URL-owned panel state, typed routes, shared-UI adoption with skeletons, the Tailwind v4 setup with its token layers and dark mode, favicons and app icons, and React 19 idioms. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team frontend audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/frontend-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`nextjs`**, **`code-structure`**, **`reusables`**, and **`react`** (deep perf → **`performance-audit`**; client security → **`security-audit`**) ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`nextjs`**, **`react`**, **`reusables`**, **`design-system`**, **`tailwind`**, **`logos-and-icons`**, **`code-structure`** and **`typescript`**, which are the fix targets when installed; speed goes deeper in **`performance-audit`**, client security in **`security-audit`**.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise — the safer default).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase argument if given; else the audit phase `AGENTS.md` records; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
 2. **Load the previous report** — if `_reports/frontend-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -41,10 +41,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Severity
 
-- **CRITICAL** — actively exploitable or broken now: data loss/leak, security breach, or total failure of the audited concern. Fix immediately.
-- **HIGH** — a serious defect that will bite in production or blocks launch. Fix before shipping.
-- **MEDIUM** — a real issue with a workaround or limited blast radius. Schedule it.
-- **LOW** — minor, polish, or defense-in-depth.
+- **CRITICAL** — a page is broken or leaks: a server-only module or secret in the client bundle, data shown to the wrong person from a cache, a build that can't prerender, a crash with no boundary.
+- **HIGH** — a defect users will hit: stale data after a mutation, a lost form after a failed action, a broken route, a hydration mismatch. Fix before shipping.
+- **MEDIUM** — a structure or pattern the next feature would copy — a fetch in an effect, a hand-rolled primitive, a misplaced file. Schedule it.
+- **LOW** — naming, tidiness and small departures from the house rules.
 
 Findings are ordered worst-first in the report.
 
@@ -69,7 +69,7 @@ Write to `_reports/frontend-audit.md`:
 
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
+- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. the `nextjs` rule it breaks>
 - **Fix:** <the specific remediation>
 
 ## Scorecard
@@ -82,6 +82,10 @@ Write to `_reports/frontend-audit.md`:
 | Mutations | <X>/10 | <one-line justification> |
 | Caching | <X>/10 | <one-line justification> |
 | Components | <X>/10 | <one-line justification> |
+| URL and routes | <X>/10 | <one-line justification> |
+| Design system | <X>/10 | <one-line justification> |
+| Tailwind | <X>/10 | <one-line justification> |
+| Logos and icons | <X>/10 | <one-line justification> |
 | React | <X>/10 | <one-line justification> |
 
 ## Action items
@@ -107,52 +111,75 @@ Every run produces two things:
 
 ## Checklist
 
-Enumerate from each app's `app/` route tree, its component tree, and its server data layer. Each item states its own pass/fail criterion — run the whole checklist without any other skill. Where a fix benefits from deeper guidance, the optional references (`nextjs` / `code-structure` / `reusables` / `react`) are noted, but they're never needed to detect the issue.
+Enumerate from each app's `app/` route tree, its component tree and its server data layer. Each item states its own pass and fail; `nextjs`, `react`, `reusables`, `code-structure`, `design-system`, `tailwind` and `logos-and-icons` are the fix targets if installed, `performance-audit` goes deeper on speed and `security-audit` on client security.
 
-### Router hygiene
+### Router and files
 
-- **Zero Pages Router residue** — no `pages/` dir, `_app`/`_document`/`_error`, `getServerSideProps`/`getStaticProps`/`getStaticPaths`/`getInitialProps`, or `next/router` imports (use `next/navigation`); no legacy SEO stack (`next-seo`/`NextSeo`, `next-sitemap`).
-- **No `next/head`** — page/route metadata comes from the Metadata API (`metadata` export or `generateMetadata`), never a `next/head` or custom head component.
-- **Async `params`/`searchParams`** — dynamic segments and search params are `await`ed (they are promises in current Next); flag props destructured as sync objects or read without `await`.
-- **Route-level UI boundaries present** — a data-fetching segment has a `loading.tsx` (streaming/Suspense fallback) and, where an error is possible, an `error.tsx`; dynamic routes that can 404 call `notFound()`/have a `not-found.tsx`. Flag a segment that fetches with no loading or error boundary.
+- **No Pages Router residue** — no `pages/`, `_app`, `_document`, `getServerSideProps`, `getStaticProps`, `getInitialProps` or `next/router`; no `next/head` or `next-seo` (metadata comes from the Metadata API).
+- **Async request APIs** — `params`, `searchParams`, `cookies()` and `headers()` are awaited; page and layout props use `PageProps` and `LayoutProps` from `next typegen`.
+- **`app/` holds only files Next.js reads by name** — no components, data or helpers, no private `_components/` folders; every parallel slot has a `default.tsx`; `global-error.tsx` sits only in `app/` and renders its own `<html>` and `<body>`.
+- **Thin entries** — a `page.tsx` renders a `…PageContent`; a `layout.tsx` renders a shell; neither holds more than a guard. Sections are one file each, composed by an index; files stay around 200 lines.
+- **A detail route that can miss calls `notFound()`**, and an `error.tsx` sits beside the segment it guards — usually the route group's, not one per page; a layout that can throw is caught one level up, since `error.tsx` doesn't catch the `layout.tsx` beside it. A missing `loading.tsx` is not a finding where each data-waiting component has its own `<Suspense>` and skeleton.
+- **Folders** — one segment holds a `page.tsx` or a `route.ts`, never both; a prefixed route group keeps a real inner segment; a route never repeats its app's name; `components/errors/` and `components/guards/` grouped by kind; `_shared/` groups have barrels, with server-coupled components imported by path; imports point one way, enforced by a lint rule.
 
-### Page structure
+### Server and client
 
-- **Thin route/entry files** — each `page.tsx` (and `layout.tsx`) is a small Server Component that resolves data and delegates JSX to a composed `PageContent`/index; flag inline JSX beyond a few lines and client state (`useState`/`useEffect`/`useRouter`) living directly in a route file.
-- **Feature-grouped, section-per-file** — content is composed from a per-page index of sections, one section/modal/hook per file, grouped by feature; flag a flat component dump or a route file that inlines whole sections.
-- **Small files** — files stay small (~200 lines); flag oversized sections/components that should be decomposed.
+- **Server Components by default**; `"use client"` only on the leaf that needs a hook, a browser API or a handler — flag it on files that need none, or high enough to ship a whole subtree.
+- **Only the props a client leaf uses** cross the boundary; no server-only module (`next/headers`, the server data layer, `env`) in client code, server modules start with `import "server-only"`, and the `config/` barrel is imported by path from client code. A Server Component is passed into client code as `children`, never imported there.
+- **No module-level mutable state on the server** — it leaks between requests.
+- **Rendering is the same on server and client** — no `typeof window` branch in render; browser values via `useSyncExternalStore`.
 
-### Server/client boundary
+### Reading data
 
-- **Server Components by default** — a component is server unless it needs the client; flag `use client` on files with no hook, browser API, or event handler.
-- **`use client` only for hooks/browser APIs/handlers** — the directive sits on the leaf that needs interactivity, not high in the tree; flag a boundary pushed up so a whole subtree ships to the client, and barrels re-exporting server + client code together.
-- **No server-only libs in the client bundle** — `next/headers` (`cookies()`/`headers()`), the server data layer, and secret-reading code stay out of client modules.
-
-### Data fetching
-
-- **Server-side only** — initial data is read on the server (in the route/section or the `lib/server` layer), never fetched from the client for first render; flag client fetch-in-effect and `useFetch`/`useQuery`-style hooks for initial data, plus `axios`/`apiClient` calls to internal APIs from client code.
-- **Parallelized, no waterfalls** — independent reads run concurrently (e.g. `Promise.all`), not awaited one after another; flag sequential awaits that have no data dependency. (Perf depth → `performance-audit`.)
+- **Reads go through typed fetchers** in the server data layer, with API paths from the endpoints file — never a raw `fetch` in a component; no initial data fetched in a client effect. The server barrel exports actions and reads, never the fetchers.
+- **Independent reads run in parallel**, not as a waterfall; `cache()` shares one read between a page and its `generateMetadata`.
+- **Cache Components:** a cached read is a `…WithData` component behind its own `<Suspense>` with a skeleton; every cached scope has a tag from the constants module and a `cacheLife` tier with a one-line reason; a near-live tier has a recorded reason. The default is to read the cookie outside and pass values into `use cache`; `use cache: private` is allowed where the read must stay off the server. A shared `use cache` scope that can `redirect()`, call `notFound()` or reads who's asking is a finding. Under Cache Components there's no `unstable_cache` and no `dynamic`, `revalidate` or `fetchCache` segment export; `Date.now()` or `Math.random()` comes after `connection()`; `useSearchParams` sits under `<Suspense>`; `generateStaticParams` returns at least one param; `redirect()` comes after the cache calls.
+- **The current user** is read in a route group's layout behind `<Suspense>`, never in the root layout; repeated reads deduped by `cache()` are fine. Proxy checks no session and authorises nothing.
+- **Metadata** — `generateMetadata` or `metadata` on every public page through the project's metadata factory; Route Handlers don't re-serve data a Server Component already reads.
 
 ### Mutations
 
-- **Server Actions in the server boundary** — writes are Server Actions in the server layer (`"use server"`), invoked via a `<form action>` or called from a handler; flag mutations done via client `fetch`/`axios` to an internal API, or a Server Action wrapped in a client data hook.
-- **Validated with Zod** — every action validates its input with a Zod schema before doing work and returns a typed result; flag unvalidated inputs or untyped error returns.
+- **Server Actions** validate with a shared schema, are authorised — by their own check in an app with its own backend, by the API's guard in a frontend over an API — and answer an action result — `{ success: false, error, fieldErrors, values }` on failure — never a thrown error; the form re-shows the submitted `values`.
+- **After a write, `updateTag` on every tag it changed** — it re-renders the route and clears the client cache, so a `refresh()` beside it is redundant; a write that touches a cached read with no invalidation is a finding — `updateTag`, `revalidateTag(tag, 'max')` and a Route Handler's revalidation all count.
+- **Forms use Actions** — `useActionState`, `useFormStatus`, uncontrolled fields — not a client `fetch` to an internal API.
 
-### Caching
+### URL, routes and navigation
 
-- **Cache tiers + revalidation** — server reads pass an explicit cache tier/lifetime and a tag; mutations revalidate the affected tags; flag uncached expensive reads, missing tags (can't be invalidated), or a revalidate call for a tag nothing sets. (Caching mechanics → `nextjs`.)
+- **Drawer, dialog and tab state lives in the URL** — a drawer or dialog pushes a history entry when it opens, and closing one the reader arrived on through a shared link replaces it; an in-page tab replaces rather than pushes; list params are parsed by one shared parser.
+- **Paths come from the routes table** (`typedRoutes`, ending `as const satisfies RouteTable` — `typescript`), never a hard-coded string; `as Route` only on a runtime path, with a comment; a nav item's `href` is typed `Route`.
 
-### Components
+### Components and the design system
 
-- **Organized by feature** — components live in feature/section folders (with a shared bucket for cross-cutting ones), not a flat root; flag misplaced or root-level components.
-- **Shared UI adopted, not re-implemented** — raw elements that have a shared-UI equivalent use it, and app code doesn't re-build a primitive/widget the UI package already ships; flag duplication and one-off re-implementations. (Reusable design → `reusables`.)
-- **Primitives prop-driven** — shared primitives are self-contained and controlled via props with sensible defaults, no hardcoded magic values; flag context-coupled or hardcoded reusables.
+- **Shared UI adopted, not re-built** — a raw element with a shared equivalent uses it; no one-off copy of a primitive the UI package ships.
+- **Shared components own their behaviour, not the product's** — animation, focus, open and close are theirs; copy, links and business behaviour come in through props or a `labels` object. Props extend the element's own (`ComponentPropsWithRef`) with `className` merged last by `cn()`; inputs work controlled and uncontrolled; compound parts are named exports, never statics; `asChild` makes a button a link, never a button wrapping a link; `data-state` and `data-slot` for styling; an empty region renders nothing; overlays build on native `<dialog>` and `popover`.
+- **Anything that waits on data has a `<Component>Skeleton`** reusing the component's own shell.
+- **Tokens, not literals** — semantic token classes, no palette shades; an arbitrary value only when no token fits, with a comment.
+- **One system** — no variant families (`PrimaryButton`), fixed `size`, `radius` and `tone` vocabularies, status colours kept apart from accents, one font and icon set, the base library installed by its CLI with local edits tracked; nothing promoted to the shared package before a second app uses it.
+- **Components in the right tier and folder** — the tier chosen by what it's built from, with no `patterns` tier; `components/` organised by product area, nested as their URLs are.
+
+### Tailwind
+
+- **Setup** — `@tailwindcss/postcss` is the only PostCSS plugin (`@tailwindcss/vite` under Vite); no `tailwind.config.js`, `content` array, `postcss-import` or `autoprefixer`, and `@config` only during a recorded migration. One compilation per app, from one entry that starts with `@import "tailwindcss"`; a shared UI package isn't compiled on its own and takes no prefix.
+- **`@source` for packages** — automatic detection skips `node_modules` and gitignored files, so an app that renders a workspace package's components names its source (`@source "../../packages/ui/src"`); prove a miss by a package class absent from the built CSS. Stories are kept out with `@source not`.
+- **Every authored rule sits in a `@layer` or an `@utility`** — an unlayered class beats every utility, so a caller's class can't override it. The entry imports its files in order (theme, base, typography, utilities, animations, components), and files a base library's CLI installs are kept apart from the project's own.
+- **Three token layers** — ramps in `@theme`, with any default namespace they replace cleared (`--color-*: initial`); roles per mode on `:root` and `[data-mode="dark"]`; roles exposed through `@theme inline`. A role that references another variable from a plain `@theme` resolves where it's defined, so a per-mode or per-section override never reaches the utility.
+- **Dark mode** — a `@custom-variant dark` on the `data-mode` attribute with the roles overridden there; with no saved choice, the same overrides under `prefers-color-scheme: dark`; `color-scheme` set per mode; a pre-paint script in `<head>` sets the attribute, with `suppressHydrationWarning` on `<html>`. A component carrying light and dark pairs (`bg-white dark:bg-zinc-900`) is a finding.
+- **Class names are complete literals** — `` `bg-${tone}` `` generates no CSS; a prop maps to complete strings in one scales file. `cn()` is `clsx` with `tailwind-merge`, custom theme scales and custom `@utility` groups registered through `extendTailwindMerge` — prove a missing registration with a merge that drops one of two classes that don't conflict. State is styled with `data-[state=…]:` and `data-slot`, not conditional strings.
+- **CSS modules and `<style>` blocks** `@reference` the entry before `@apply` or `@variant`; `theme()` is deprecated in favour of `var(--…)`; decorative animation sits behind `motion-safe:` or stops under `motion-reduce:`. v3 residue — `@tailwind` directives, `darkMode: "class"`, `bg-[--x]` — is a finding.
+
+### Logos and icons
+
+- **The favicon set** — `favicon.ico` (16, 32, 48) for browsers and Google Search, which reads raster formats only and recommends larger than 48px; an SVG `icon` for the tab; `apple-icon.png` at 180px, opaque and unrounded. Next's file conventions or `metadata.icons` emit the tags, and no file sits in both `app/` and `public/`; `browserconfig.xml`, `mstile-*` and `mask-icon` are dead and a finding.
+- **Every raster is rendered from the source SVG, opaque on a plate** — a hand-exported PNG that has drifted from the SVG, or a transparent home-screen or email icon, is a finding; where several apps share the marks, one committed generator renders them.
+- **Installable apps only** — the manifest lists `any` and `maskable` icons as separate entries, never `"purpose": "any maskable"`, with maskable artwork inside the 40% safe circle; a site that doesn't install needs none, so their absence isn't a finding.
+- **The logo** is an SVG whose type is outlined paths (no `<text>`), in a literal brand colour (never `currentColor` or a themeable token), imported from the shared assets. Standalone it's `role="img"` with a name; inside a link it's `aria-hidden` and the link is named; email uses PNG copies.
 
 ### React
 
-- **Derive, don't sync** — state derived from props/other state is computed during render, not mirrored via an effect; flag effect-driven state syncing.
-- **Keys & no needless effects** — stable list keys (no index-as-key on dynamic lists); no effects for what belongs in an event handler or a derived value.
-- **Let the compiler memoize** — rely on the React Compiler rather than hand-rolled `useMemo`/`useCallback`/`memo`; flag manual memoization added defensively where the compiler covers it.
+- **Derive, don't sync** — no effect that mirrors props or state; no `setState` straight in an effect body.
+- **Stable keys**, and a reset done with `key`, not an effect; effects only for outside systems; `useEffectEvent` for non-reactive logic; `useLayoutEffect` only to measure; one `data-*` handler per list reading `currentTarget`; a component is never called as a function and props are never mutated; no `forwardRef` or `.Provider` in new code.
+- **The compiler is on** (`reactCompiler`), with `eslint-plugin-react-hooks`' recommended preset and StrictMode on; new code adds no defensive `useMemo`, `useCallback` or `memo`, and existing memoisation is left alone until a profile says otherwise.
+- **Error boundaries** — every `<Suspense>` has one above it: `error.tsx` and `catchError` in Next.js; a `react-error-boundary` that would swallow `redirect()` or `notFound()` is a finding.
 
 ## Boundaries
 

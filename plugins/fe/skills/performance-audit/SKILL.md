@@ -1,7 +1,7 @@
 ---
 name: performance-audit
 description: >-
-  Manually invoked. Frontend performance audit of a Next.js App Router app or a diff — image optimization, the server and client boundary and bundle weight, dynamic imports for heavy libraries, font loading, streaming and Suspense with loading states, caching tiers and revalidation, rendering, and Core Web Vitals proxies (LCP, CLS, INP). Verifies each finding and writes a prioritized report.
+  Manually invoked. Frontend performance audit of a Next.js App Router app or a diff — image optimization, uploaded-image delivery and Cloudinary, the server and client boundary and bundle weight, dynamic imports for heavy libraries, font loading, streaming behind Suspense with component skeletons, cacheLife thresholds and updateTag, rendering, and Core Web Vitals proxies (LCP, CLS, INP). Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team performance audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/performance-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`nextjs`** and **`devops`** (general structure → **`frontend-audit`**) ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`nextjs`**, **`react`**, **`tailwind`**, **`image-handling`** and **`cloudinary`**, which are the fix targets when installed; CI budgets are **`devops`**', general structure **`frontend-audit`**'s.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise — the safer default).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase argument if given; else the audit phase `AGENTS.md` records; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
 2. **Load the previous report** — if `_reports/performance-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -41,10 +41,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Severity
 
-- **CRITICAL** — actively exploitable or broken now: data loss/leak, security breach, or total failure of the audited concern. Fix immediately.
-- **HIGH** — a serious defect that will bite in production or blocks launch. Fix before shipping.
-- **MEDIUM** — a real issue with a workaround or limited blast radius. Schedule it.
-- **LOW** — minor, polish, or defense-in-depth.
+- **CRITICAL** — a key page fails a Core Web Vital badly or can't render: an LCP image lazy-loaded or multi-megabyte, a build that can't prerender, a whole app shipped as client JavaScript.
+- **HIGH** — a measurable regression on a key route: a request waterfall, a heavy library in the client bundle, layout shift from undimensioned media or fonts. Fix before shipping.
+- **MEDIUM** — a cost with limited reach: a non-key route, a below-fold widget loaded eagerly, a cache tier with no reason. Schedule it.
+- **LOW** — small wins and hygiene.
 
 Findings are ordered worst-first in the report.
 
@@ -69,13 +69,14 @@ Write to `_reports/performance-audit.md`:
 
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
+- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. LCP, or the `nextjs` rule it breaks>
 - **Fix:** <the specific remediation>
 
 ## Scorecard
 | Category | Score | Notes |
 | --- | --- | --- |
 | Images | <X>/10 | <one-line justification> |
+| Uploaded images | <X>/10 | <one-line justification> |
 | Bundle | <X>/10 | <one-line justification> |
 | Server/client boundary | <X>/10 | <one-line justification> |
 | Dynamic imports | <X>/10 | <one-line justification> |
@@ -112,25 +113,41 @@ First scope it: identify the **frontend routes/components** in scope (exclude AP
 
 ### Images
 
-- `next/image` everywhere a raster image renders — flag raw `<img>` under app routes/components (allowed in a shared UI package, OG image routes, inline SVG/data-URI, favicon `<link>`).
+- `next/image` everywhere a raster image renders — flag raw `<img>` under app routes and components (allowed for OG image routes, inline SVG or data URIs, and favicon `<link>`s).
 - Every image has `alt` and stable dimensions — `width`+`height`, or `fill` on a sized parent — to prevent CLS. Responsive/`fill` images set `sizes` so a 200px slot isn't served a 4K file.
-- `priority` **only** on the above-fold LCP image (hero/banner) — not sprayed across every image (which deprioritizes the real LCP).
-- Every remote host is allowlisted in `images.remotePatterns` (not the deprecated `domains`); modern formats (AVIF/WebP) enabled in `images.formats`.
+- The above-fold LCP image loads with `loading="eager"` or `fetchPriority="high"` (`preload` only rarely, never together) — and only that image. `priority` is deprecated in Next 16; any use is a finding. Images below the fold stay lazy.
+- Every remote host is allowlisted in `images.remotePatterns` (not the deprecated `domains`). WebP is the default format; adding AVIF to `images.formats` is optional, so its absence isn't a finding.
 - No huge unoptimized raster assets shipped from `public/` (multi-MB PNG/JPG) or referenced with `unoptimized`; route them through `next/image` or pre-compress. Prefer SVG for icons/logos.
+
+### Uploaded images
+
+- **Served as derivatives sized for delivery, never the original upload**; the browser compresses a display image to its slot's size before upload, and a stored copy is no larger than the biggest derivative needs (`image-handling`).
+- **URLs are built when the record is read**, from a stored path or public id and a version; a stored URL, or a replace that keeps the same URL, is a finding.
+- **Public files cache long** — the `?v=` version changes on every replace, so a long `Cache-Control` is safe; left at the storage default (an hour on Cloud Storage), hot images re-download, and a CDN sits in front of them.
+- **The processing worker runs in the bucket's region**, so reading the file is free; a function region that differs from the bucket's location is a finding (the bucket's location may be console-only — mark it "needs confirmation").
+
+### Cloudinary
+
+Only where the project uses it (`cloudinary`):
+
+- **`f_auto` and `q_auto` end every delivery URL as their own components** — `c_limit,w_800/f_auto/q_auto`, never merged into the resize step, and after a named transformation (`t_card_v1/f_auto/q_auto`), never inside it, where they're ignored. A URL without them is a finding unless it needs a fixed format or quality.
+- **Crops are chosen** — `c_limit` for content images so nothing is upscaled, `c_fill,g_auto` for fixed-shape slots.
+- **Responsive images use one width ladder through one URL helper**, with a real `sizes`. In Next.js the components that show Cloudinary images pass `next/image` a per-image `loader` that only adds the width, with `images.deviceSizes` set to the ladder; `images.loaderFile` rewrites every image on the site and is a finding.
+- **Cost** — each new transformation URL is a billed derivative, then bandwidth: a width or transformation taken from request input, or widths off the ladder, multiplies the meter. A named transformation is versioned (`t_card_v2`), never edited in production; a delete passes `invalidate: true`; whether strict transformations are on is a console setting — "needs confirmation".
 
 ### Bundle
 
-- No barrel / whole-library imports that defeat tree-shaking (`import { x } from "lodash"` → `lodash/x`; `import * as` on a large package). Icon libs like `lucide-react` are already tree-shakeable — don't flag.
+- `optimizePackageImports` lists third-party barrel packages that Next doesn't already optimise — `lucide-react`, `date-fns`, `lodash-es`, `ramda` and others are optimised by default, so don't flag them or ask for per-path imports.
+- No whole-library imports that defeat tree-shaking (`import { x } from "lodash"` on the CJS build; `import * as` on a large package).
 - No server-only libraries in client code (admin SDKs, DB clients, Node built-ins `fs`/`path`/`crypto`/`child_process`) — these belong on the server side of the boundary.
-- Tree-shakeable imports: named imports from ESM packages, no `require()` pulling a whole CJS lib into client code, no `import * as` on a large package. Prefer per-path imports for utilities (`lodash/x`, `date-fns/x`).
-- No stray `console.log` in shipped paths (allow dev-guarded diagnostics / a real logger).
+- No `require()` pulling a whole CommonJS library into client code.
 - Third-party scripts (analytics, chat, ads) load via `next/script` with the right `strategy` (`afterInteractive`/`lazyOnload`) — not a raw blocking `<script>` in the head. Flag heavy trackers that block the main thread on load.
-- Confirm a byte budget guards the build — a bundle analyzer or **`size-limit`** budget. Flag if neither is wired (CI wiring detail → `devops` when present).
+- A byte budget guards the build where the project sets one (`size-limit` on the client output — `devops`); the bundle is inspected with `next experimental-analyze` under Turbopack, or `@next/bundle-analyzer` under Webpack. An analyzer alone isn't a budget.
 
 ### Server/client boundary
 
 - Minimize client JS: every `"use client"` file must actually need the browser (hooks, event handlers, `window`/`document`, a browser-only lib). Flag directives with none of these — they should be Server Components.
-- Push interactivity to the leaves: a page marked `"use client"` for one small widget should split into a server `page.tsx` (fetch + metadata) plus a small client child. Server Components split per route automatically — don't flag heavy _server_ imports as client bundle weight.
+- Push interactivity to the leaves: a page marked `"use client"` for one small widget moves the reads into `…WithData` server components and keeps only the widget as a client leaf. Pass a client leaf only the fields it uses, so the serialised payload stays small; pass Server Components into client code as `children`, never by importing them. Server Components split per route automatically — don't flag heavy _server_ imports as client bundle weight.
 
 ### Dynamic imports
 
@@ -138,31 +155,35 @@ First scope it: identify the **frontend routes/components** in scope (exclude AP
 
 ### Fonts
 
-- Fonts load via `next/font` (google or local) in the root layout with `display: "swap"` and a subset, exposed as a CSS variable — `next/font` self-hosts and removes the extra round-trip. Flag legacy `<link>` Google-Fonts tags, `@import url(fonts.googleapis…)` in CSS, and local font files `next/font` could self-host. Preload only the fonts actually used above the fold; set `fallback`/`adjustFontFallback` to minimize font-swap CLS. For any font/asset host you still hit directly, use `<link rel="preconnect">` (not for `next/font`, which self-hosts).
+- Fonts load via `next/font` (google or local), chosen and loaded by the UI package and exposed as CSS variables (`tailwind`), with a subset — `next/font` self-hosts and removes the extra round-trip; `display: "swap"` is its default, so don't flag its absence. Flag legacy `<link>` Google-Fonts tags, `@import url(fonts.googleapis…)` in CSS, and local font files `next/font` could self-host. Preload only the fonts actually used above the fold; keep `adjustFontFallback` on, so the metric-matched fallback stops the swap shifting the layout. For any font/asset host you still hit directly, use `<link rel="preconnect">` (not for `next/font`, which self-hosts).
 
 ### Streaming
 
-- Heavy async segments have a sibling `loading.tsx` so users see a skeleton, not a blank screen. Where a page renders multiple independent server-fetched panels, each slow panel is wrapped in its own `<Suspense>` so one slow fetch doesn't block the rest. Don't flag static/near-instant segments where a skeleton would just flash.
+- Anything that waits on data sits behind its own `<Suspense>` with the component's own `<Component>Skeleton` — skeletons belong to components, so a missing route-level `loading.tsx` is not a finding where each waiting component has one. Where a page renders multiple independent server-fetched panels, each slow panel is wrapped in its own `<Suspense>` so one slow fetch doesn't block the rest. Don't flag static/near-instant segments where a skeleton would just flash. `<Suspense>` sits as low as it can, around the part that waits.
+- No waterfalls — independent reads run with `Promise.all`, and cheap checks run before an expensive `await`; a promise can be streamed to a client leaf and read with `use()`. `useSearchParams` sits under `<Suspense>`.
 
 ### Caching
 
-- Fetchers use the correct cache tier + `revalidate`, and tags that can be invalidated. Cache Components model: `use cache` + a named `cacheLife` tier (freshness-based, e.g. `realtime`/`frequent`/`daily`/`static`) + a `cacheTag` constant. Legacy model: `fetch(url, { next: { revalidate, tags } })` — never `unstable_cache`. Flag data with no tier, string-literal or undeclared tags, per-user data cached as shared, and duplicate per-render fetches that need `cache(...)` memoization.
-- After a mutation, data is revalidated by tag (`updateTag`/`revalidateTag`) rather than left stale or blanket `revalidatePath`. Flag writes that don't invalidate what they changed.
-- Avoid over-dynamic rendering — flag stray `cookies()`/`headers()`/`searchParams` reads outside `<Suspense>` that force a whole page dynamic when it could stay a static shell (an authed page that legitimately reads cookies is fine; wrap the runtime-reading part). Deeper caching tiers/revalidation how-to → `nextjs` `references/caching.md` when installed.
+- **`cacheLife` thresholds:** `stale` under 30 seconds is excluded from prerendering (a request-time hole); `stale` under 5 minutes is prerendered but kept out of the app shell; `revalidate` of 0 or `expire` under 5 minutes is never prerendered and needs its own `<Suspense>`. A tier that lands in one of these without a recorded reason is a finding.
+- Fetchers use the correct cache tier + `revalidate`, and tags that can be invalidated. Cache Components model: `use cache` + a named `cacheLife` tier (freshness-based, e.g. `realtime`/`frequent`/`daily`/`static`) + a `cacheTag` constant. Legacy model: `fetch(url, { next: { revalidate, tags } })` — never `unstable_cache`. Flag data with no tier, string-literal or undeclared tags, per-user data cached as shared, duplicate per-render fetches that need `cache(...)` memoization, and a short-lived `cacheLife` nested inside a longer one, which throws.
+- After a mutation, `updateTag` on what it changed — it re-renders the route and clears the client cache, so no `refresh()` beside it — rather than leaving data stale or a blanket `revalidatePath`. Flag writes that don't invalidate what they changed.
+- Every route prerenders a static shell — under Cache Components, reading request data or uncached data outside `<Suspense>` fails the build (the blocking-route error), so wrap the part that reads it. Deeper caching tiers/revalidation how-to → `nextjs` `references/caching.md` when installed.
 
 ### Rendering
 
-- Stable `key` props on mapped elements (not the array index when the list reorders). No large inline object/array/`style` props recreated every render (extract to a module constant or `useMemo`) that churn child re-renders. Media/embeds carry explicit dimensions to prevent CLS. Let the React Compiler handle memoization — don't recommend manual `memo`/`useMemo` sprawl.
-- Long lists use URL-driven pagination (`?page=` / a cursor in `searchParams`) rather than loading everything client-side — an unbounded fetch grows with the data and hydrates an oversized tree, while URL-driven pages stay server-rendered, cacheable, and shareable.
+- Stable `key` props on mapped elements (not the array index when the list reorders). The React Compiler memoises inline objects and callbacks — don't flag them or recommend manual `memo`/`useMemo`. Media/embeds carry explicit dimensions to prevent CLS.
+- INP: `useTransition` or `useDeferredValue` for slow updates; scroll and touch listeners `passive`; `useLayoutEffect` only to measure, since it blocks paint; no data fetched in `useEffect`; `content-visibility: auto` on long lists; `<Link prefetch={false}>` on long link lists.
+- CSS: one Tailwind compilation per app, with `@source not` excluding stories (`tailwind`).
+- Long lists load in pages or windows — URL-driven pagination, a cursor, infinite scroll or virtualisation — never everything at once; an unbounded fetch grows with the data and hydrates an oversized tree.
 
 ### Core Web Vitals
 
-Targets (75th-percentile field data): **LCP < 2.5s · INP < 200ms · CLS < 0.1**. From code, audit the proxies:
+Good at the 75th percentile of field data: **LCP ≤ 2.5 s · INP ≤ 200 ms · CLS ≤ 0.1**. From code, audit the proxies:
 
-- **LCP** — optimized `priority` hero image, no render-blocking scripts/CSS in the root layout, low TTFB (static-renderable public pages).
-- **CLS** — image/embed dimensions and `next/font` `display: swap` (covered above).
+- **LCP** — an eager or high-priority hero image, no render-blocking scripts/CSS in the root layout, low TTFB (static-renderable public pages).
+- **CLS** — image and embed dimensions, and the metric-matched font fallback (covered above).
 - **INP** — heavy client work / large hydration / long tasks on interactive pages (big synchronous handlers, un-debounced input, oversized client trees). **INP is field-only** — it needs real interaction, so it can't be scored from code or a lab run; track it with production RUM (`web-vitals`). Note this limitation in the report rather than assigning it a code-derived score.
-- Measure LCP/CLS with a lab tool (Lighthouse, ideally Lighthouse CI on money pages — CI wiring → `devops` when installed) **and** CrUX/RUM (field). Field data is what counts; lab catches regressions.
+- Field data can't be read from code: check only that it's collected (`web-vitals` reporting, or CrUX for the origin), and mark the numbers "needs confirmation". Lab runs (Lighthouse CI on key pages — `devops`) catch regressions.
 
 ## Boundaries
 

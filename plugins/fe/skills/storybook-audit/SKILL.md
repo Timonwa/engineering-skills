@@ -1,7 +1,7 @@
 ---
 name: storybook-audit
 description: >-
-  Manually invoked. Storybook coverage and story-quality audit — cross-references shared UI components against existing stories to find gaps, and checks stories against the house conventions (CSF3 with TS satisfies Meta, tier-based titles, argTypes for every prop, the fixed taxonomy). Verifies each finding and writes a prioritized report.
+  Manually invoked. Storybook coverage and story-quality audit — cross-references shared UI components against existing stories to find gaps, and checks stories against Storybook 10 practice — CSF3 with satisfies Meta and framework-package types, tier-first titles, a control per prop, keyboard plays that assert behaviour, axe failing the run, no dark-mode or coverage-only stories. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team Storybook audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/storybook-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`storybook-story-writing`** and **`storybook-setup`** ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`storybook`**, and **`design-system`** for the tiers; both are the fix targets when installed.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise — the safer default).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — the phase argument if given; else the audit phase `AGENTS.md` records; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
 2. **Load the previous report** — if `_reports/storybook-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -41,10 +41,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Severity
 
-- **CRITICAL** — actively exploitable or broken now: data loss/leak, security breach, or total failure of the audited concern. Fix immediately.
-- **HIGH** — a serious defect that will bite in production or blocks launch. Fix before shipping.
-- **MEDIUM** — a real issue with a workaround or limited blast radius. Schedule it.
-- **LOW** — minor, polish, or defense-in-depth.
+- **CRITICAL** — the stories no longer test anything: they don't run in CI, axe is off, or Storybook doesn't build.
+- **HIGH** — a component the shared package ships has no story, or an interactive one has no keyboard story; a story that turns an axe rule off or marks it `"todo"`. Fix before shipping.
+- **MEDIUM** — a story that misleads or can't be used: a frozen controlled component, a missing control, a wrong tier, assertions on markup. Schedule it.
+- **LOW** — naming, order and tidiness.
 
 Findings are ordered worst-first in the report.
 
@@ -69,7 +69,7 @@ Write to `_reports/storybook-audit.md`:
 
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
+- **Why it matters:** <impact / who it affects> <· the `storybook` rule it breaks>
 - **Fix:** <the specific remediation>
 
 ## Scorecard
@@ -77,6 +77,10 @@ Write to `_reports/storybook-audit.md`:
 | --- | --- | --- |
 | Coverage | <X>/10 | <one-line justification> |
 | Story quality | <X>/10 | <one-line justification> |
+| Titles and tiers | <X>/10 | <one-line justification> |
+| Which stories | <X>/10 | <one-line justification> |
+| Interactions and accessibility | <X>/10 | <one-line justification> |
+| Setup | <X>/10 | <one-line justification> |
 
 ## Action items
 Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
@@ -101,27 +105,50 @@ Every run produces two things:
 
 ## Checklist
 
-Everything needed to run the audit is inlined here. For fuller rationale, `storybook-story-writing` / `storybook-setup` are an optional reference if installed; tiers → `code-structure`.
+Everything needed to run the audit is inlined here; `storybook` is the fix target if installed, and the tiers are `design-system`'s.
 
 ### Coverage
 
-- **Detect the layout first** — locate (a) the **component source of truth**: a shared UI package's tier barrels (`base` / `blocks` / `patterns` / `layouts`, plus `icons` / `assets`) OR a single app's `components/` tree; and (b) the **story location as it is**: colocated `*.stories.tsx` beside each component (the house standard) OR a separate `stories/<tier>/` tree (legacy). Enumerate coverage from what was actually found — a repo with either layout must still get a real coverage number. A separate tree is **drift, reported once as a single finding**, not re-flagged per story; migrating it is a refactor to propose, never a silent rewrite.
-- **Enumerate components** — from the detected source of truth: walk tier barrel exports (resolving each `export * from "./x"` to its real component(s)) or, absent barrels, walk the components tree. Skip type-only (`*-types.ts`), defaults/config-only (`*-defaults.ts`), and internal non-user-facing helpers.
-- **Enumerate stories** — list **every `*.stories.tsx`** in the detected story location; map each to the component it imports (ignore `_Template.stories.tsx`).
-- **Report components with no story** — every enumerated component with **no matching story** is a coverage finding, grouped by tier.
-- **Shipped-without-a-story** — flag any new/changed component in the diff whose story wasn't added/updated in the same change (a component isn't done until its story ships).
-- **Orphan / mismatched stories** — flag a `*.stories.tsx` whose imported component no longer exists or was moved to another tier (dangling coverage).
+- **Detect the layout first** — the component source of truth (a shared UI package's tier folders and barrels, or an app's own `src/ui/` and `components/`) and where stories live. Stories belong **beside their component**, the file named like the component's file; a separate `stories/` tree is one layout finding, never re-flagged per story.
+- **Enumerate components** from the tier barrels (resolving each `export *`) or the component folders; skip type-only, defaults-only and internal helpers.
+- **Enumerate stories** — every `*.stories.tsx`, mapped to the component it imports (ignore `_Template.stories.tsx`).
+- **Components with no story**, grouped by tier — each is a coverage finding.
+- **Shipped without its story** — a new or changed component in the diff whose stories weren't added or updated in the same change (a new, changed or removed prop, variant or state).
+- **Orphan stories** — a story whose component no longer exists or moved tier.
 
 ### Story quality
 
-- **CSF3 + TS** — object stories using `satisfies Meta<typeof X>` (not `: Meta`) with `type Story = StoryObj<typeof meta>`, and each story typed `: Story`; no CSF2 `Template.bind({})`, no untyped `export const X = {}`. Carve-out: multi-component or non-component story files (icon galleries, form compositions) may use a plain `Meta` annotation.
-- **Title tier** — the meta `title` matches the component's tier (`Base/…`, `Blocks/…`, `Patterns/…`, `Layouts/…`). The title is what builds the sidebar, so it is the thing that must be right; the file's own location is checked once as a layout finding, not per story.
-- **Subcategory taxonomy** — Blocks and Patterns share one closed, behaviour-based subcategory set: `Disclosure` / `Display` / `Feedback` / `Forms` / `Navigation` / `Overlay`. Flag subcategories outside the set; flag any subcategory under `Base/`, `Layouts/`, `Icons/`, or `Assets/` (a `Base/<Sub>/` title signals the component is really a Block); flag domain-named subcategories in a shared package (domain components belong in app feature folders); flag shape buckets like "Cards" (file by what a component displays or does, never by shape).
-- **argTypes for every prop** — a control defined for **every public data prop** (`select` for unions, `boolean`, `text`, `{ type: "number", … }`); callbacks are `fn()` spies in `args` imported from `storybook/test` — flag the legacy `{ action: "…" }` argTypes pattern and any `@storybook/test` import (removed in Storybook 9/10); flag props with no control and controls for props that no longer exist.
-- **Taxonomy present** — the fixed order present as applicable: `Default` (required props supplied), `Variants`, `Sizes`, `States` (disabled / loading / error + dark), `With*`, `AllVariants` / `AllSizes` via `render`.
-- **Interactive stories use render/play** — stateful components drive state via `render` + hooks (not static `args`); user-flow stories script and assert via a `play` function where relevant.
-- **`_Template` exists** — the Storybook app has a `_Template.stories.tsx` to scaffold from.
-- **autodocs enabled** — the story (or global `preview`) sets `tags: ["autodocs"]` so the component is documented.
+- **CSF3 with TypeScript** — `satisfies Meta<typeof X>` (not `: Meta`), `type Story = StoryObj<typeof meta>`, every story typed `: Story`; no `Template.bind({})`, no untyped stories. A file with no single component may annotate `Meta` plainly.
+- **Types from the framework package** (`@storybook/nextjs-vite`, or `@storybook/react-vite` outside Next.js) — an import from `@storybook/react` fails `eslint-plugin-storybook`'s `no-renderer-packages`; any `@storybook/test` import is removed in Storybook 9 and later.
+- **Callbacks are `fn()` spies** from `storybook/test`; flag `{ action: "…" }` argTypes.
+- **Every public prop has a working control** — inferred, or an `argTypes` entry for a union or a ranged number, with a `description` where the name doesn't say enough; callbacks (spies), `children` and `ref` need none. Flag other props with no control, and controls for props that no longer exist.
+- **Shared args on the meta**, not repeated in every story; data from shared fixtures, never a fetch; wrapper JSX built from design-system components and tokens.
+- **A JSDoc `/** … */` comment on each story**, which the docs page uses; a `//` comment isn't picked up.
+- **Controlled components** (`open`/`onOpenChange`, `value`/`onChange`) keep the arg in step with `useArgs` or a stateful `render` wrapper — a bare spy freezes them.
+
+### Titles and tiers
+
+- **Tier first**, from the tiers the project's design system defines (typically `Foundations`, `Assets`, `Icons`, `Base`, `Components`, `Blocks`, `Layouts`, `Pages`). A title in a tier the system doesn't have — such as `Patterns` — or a component titled in the wrong tier is a finding.
+- **Subcategories are by behaviour** (`Disclosure`, `Display`, `Feedback`, `Forms`, `Navigation`, `Overlay`), allowed in any tier that has grown; a new one is fine when the project records it. Flag product-domain subcategories in a shared package and shape buckets ("Cards").
+
+### Which stories
+
+- **In this order, as they apply, named in whole words (`Small`, not `SmallSize`):** `Default`; one story per variant or size that differs in more than colour (otherwise one overview); each reachable state (disabled, loading, empty, error); `With…` parts; real configurations (real-length text, a full list, the usual container).
+- **Not stories:** dark mode (the toolbar covers it), right-to-left, combinations nothing uses, or a story that exists only to raise a count. Flag them.
+
+### Interactions and accessibility
+
+- **A keyboard story for every interactive component** — reached with Tab, operated with its pattern's keys, asserting where focus goes.
+- **`play` asserts behaviour, never markup** — `canvas` and `userEvent` from its context, `screen` for portals; queries by role, label or text; flag assertions on tag names, classes, landmarks or hard-coded structure.
+- **One behaviour per interaction story**, named for it; test-only stories carry `tags: ["!dev", "!autodocs"]`.
+- **Axe fails the run** — `a11y: { test: "error" }` in the preview; flag any story that turns a rule off or sets `test: "todo"` or `"off"` (a third-party component is fixed or wrapped so the wrapper passes).
+
+### Setup
+
+- **Storybook 10 packages at one version**, the framework package matching the consumers, only the a11y, vitest and docs addons on top of the built-in essentials — plus `@chromatic-com/storybook` where the project takes visual tests (flag `@storybook/addon-essentials`). The UI package declares its framework package and `storybook` as devDependencies and keeps stories out of its build.
+- **The preview** imports the global CSS, pins the tier order (no `method: "alphabetical"`), sets a dark-mode toolbar global with `backgrounds: { disable: true }` and `nextjs.appDirectory: true`, supplies providers and a router as decorators, and mocks I/O modules with `sb.mock` (paths relative to the preview, with the extension, no alias); a story never wraps itself in providers or mocks the project's own logic.
+- **Stories run as tests in CI** through the Vitest addon; `eslint-plugin-storybook`'s recommended rules are on at error; Tailwind compiles once — the Vite plugin or PostCSS, never both.
+- **`tags: ["autodocs"]`** set once in the preview, globally.
 
 ## Boundaries
 
