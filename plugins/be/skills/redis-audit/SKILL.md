@@ -1,7 +1,7 @@
 ---
 name: redis-audit
 description: >-
-  Manually invoked. Audits an app's Redis usage — key namespacing via central builders, TTL discipline on every write, atomic operations, single-client hygiene, per-request command cost, missed caching, dedup and rate-limit opportunities, and input and secret safety. Verifies each finding and writes a prioritized report. Only for apps that use Redis.
+  Manually invoked. Redis audit — one client with a short timeout, keys from builders with a TTL on every write, a failure direction per primitive (caches open, locks and claims closed, rate limits by tier, timeouts as failures), caches parsed on every hit with group invalidation, owned locks and short claims released on failure, rate-limit layers and the client IP, eviction and tiers, and tests that prove each direction. Only for apps that use Redis.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team Redis audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/redis-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`redis`** (the authoring mirror of this audit), **`api-architecture`**, **`backend-security`**, and **`devops`** ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`redis`**, **`rate-limiting`** and **`api-architecture`** are installed, apply their house rules too.
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise — the safer default).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else the audit phase the project's `AGENTS.md` records; else `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
 2. **Load the previous report** — if `_reports/redis-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -69,19 +69,20 @@ Write to `_reports/redis-audit.md`:
 
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
+- **Why it matters:** <impact / who it affects> <· optional ref, e.g. Upstash docs / OWASP API4>
 - **Fix:** <the specific remediation>
 
 ## Scorecard
 | Category | Score | Notes |
 | --- | --- | --- |
-| Key namespacing | <X>/10 | <one-line justification> |
-| TTL discipline | <X>/10 | <one-line justification> |
-| Atomicity | <X>/10 | <one-line justification> |
-| Connection hygiene | <X>/10 | <one-line justification> |
-| Cost | <X>/10 | <one-line justification> |
-| Missed opportunities | <X>/10 | <one-line justification> |
-| Security | <X>/10 | <one-line justification> |
+| Client | <X>/10 | <one-line justification> |
+| Keys and TTLs | <X>/10 | <one-line justification> |
+| Failure direction | <X>/10 | <one-line justification> |
+| Caching | <X>/10 | <one-line justification> |
+| Locks and claims | <X>/10 | <one-line justification> |
+| Rate limits | <X>/10 | <one-line justification> |
+| Storage settings | <X>/10 | <one-line justification> |
+| Tests | <X>/10 | <one-line justification> |
 
 ## Action items
 Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
@@ -106,51 +107,62 @@ Every run produces two things:
 
 ## Checklist
 
-First confirm the app actually uses Redis (a client/config/dependency). Then find the surface: the shared client module, the key builders, cache/rate-limit/dedup/lock helpers, and grep call sites (`redis.` ops, the Redis import, the rate-limit import). Every criterion needed is inlined below; if the related standards are installed they add house-specific depth (`redis` / `api-architecture` / `backend-security` / `devops`).
+First confirm the app uses Redis (a client, config or dependency). Then find the surface — the client module, the keys module, the cache, lock, claim and rate-limit helpers — and grep the call sites. The fix targets are `redis` and `rate-limiting`.
 
-### Key namespacing
+### The client
 
-- **Built via central builders** — every key is constructed through the central key-builder constants, not an ad-hoc string literal or an inline template built at the call site.
-- **Consistent prefixes** — each namespace uses one documented prefix; no prefix appears outside the key-builder module. (A rate-limit library that manages its own keys under its configured prefix is fine.)
+- **One client**, in the server's clients module, configured from the validated env; never constructed per request or helper; never imported into a browser bundle; its token never logged or echoed in an error.
+- **A short timeout and few retries on the request path** (`signal: () => AbortSignal.timeout(…)`, one or two retries). The SDK's default of five retries with backoff stalls a cache that should fail open for seconds. Flag a plain `AbortSignal` passed as `signal`: the SDK then resolves an aborted command as `null` instead of throwing, and every command after it too. A `TimeoutError` is transient; an `UpstashError` such as `WRONGTYPE` is a bug no retry fixes, so retrying it is a finding.
+- **Few round trips per request:** `mget` over many `get`s, pipelining for concurrent commands; flag an awaited command inside a loop.
+- **The SDK serialises:** flag a manual `JSON.stringify` on write, or two writers of one key using different codecs.
 
-### TTL discipline
+### Keys and TTLs
 
-- **Every write expires** — every `set`/cache entry carries a TTL (`ex`/`px`/`exat`/`pxat`), unless it's intentionally permanent with a comment saying why.
-- **No unbounded keys** — no key grows without a lifecycle (memory + cost leak); no call removes a TTL (`persist`) or sets an unreasonably long / zero one without justification.
-- **TTLs are sized to the job** — lockout counters ~15 min, refreshed on each failure and cleared on success; webhook dedup ≥ the provider's retry window (typically 7 days, never <24 h in prod); idempotency keys ~24 h; cache entries per call site by staleness tolerance; locks longer than the worst-case guarded operation. Flag a TTL that contradicts its purpose (e.g. a 1 h dedup key against a multi-day retry window).
+- **Every key comes from a builder** in one keys module, in the `domain:action` grammar, with user-supplied segments encoded; flag a template string at a call site.
+- **Each namespace documents its TTL default and failure direction** beside its builder.
+- **Every key expires, with the TTL on the write itself** (`ex`, `px`, `exat`, `pxat`); flag a separate `expire` call a crash can skip, and a key without a TTL and no comment saying what bounds it — a cache group's generation key is the expected exception, with its comment. TTLs come from shared presets and fit their purpose: a lock at 2–3× the work's p99, a claim covering the work.
 
-### Atomicity
+### Failure direction
 
-- **Atomic ops, not races** — counters/claims/scores use atomic primitives (`SET NX`, `INCR`, `ZINCRBY`, pipelines/transactions) rather than a read-modify-write (`get` then `set`) that can lose updates under concurrency.
-- **Claim-once is atomic** — "do this exactly once" logic (a dedup claim, a lock acquire) uses `SET NX` with a TTL, not check-then-set; a lock releases only its own token.
+- **Caches fail open:** the read and the write-back each sit in a `try`, and a failure falls back to the source. Flag a cache error reaching the response.
+- **Locks and claims fail closed:** an unreachable check refuses. Flag a fallback or catch-and-continue.
+- **Rate limits fail by tier:** a tier guarding a credential or a guessable secret fails closed, every other tier fails open. Flag closed-for-everything and open-on-credentials alike. `@upstash/ratelimit` resolves a timeout as a success with `reason: "timeout"`, which a closed tier must read as a denial.
+- **A timeout is a failure in every direction**, and one helper has one direction. `@upstash/ratelimit`'s own `timeout` is set short, never left at its 5-second default.
+- **State Redis owns** — session records, an operator's idle clock — fails closed, like a lock.
 
-### Connection hygiene
+### Caching
 
-- **One shared client** — a single shared client instance, imported everywhere; no `new` client constructed per request, per helper, or per module.
-- **Config through validated env** — connection URL/token come from a validated `env` object (schema-checked at boot), not raw `process.env` reads; a missing URL/token fails loudly at startup, not silently at first use. (If `devops` is installed, follow its env-validation pattern.)
-- **Production instance uses `noeviction`** — any eviction policy (`allkeys-lru`, etc.) silently drops locks/dedup/rate-limit keys under memory pressure; correctness keys must error loudly, not vanish.
-- **Right database per environment** — the classic misconfig signature is "429 never fires / no rate-limit keys appear": the app is pointed at the wrong environment's Redis database. Verify the configured instance matches the env.
+- **One read-through helper**, the TTL chosen per call site by how stale the caller can bear.
+- **Every hit is parsed with the value's schema**, a failure counting as a miss; values are stored in their wire form, never revived `Date`s or Firestore `Timestamp`s.
+- **The mutation that changes the source invalidates the cache** in the same change; a group is retired by bumping its generation number, never by `SCAN` and delete on a request path.
+- **No auth decision is cached** (claims, tokens, permission checks); Server Component reads use the framework's cache instead, never both for the same data; an expensive fetcher is protected from stampedes.
 
-### Cost
+### Locks and claims
 
-- **Commands per flow minimized** — trace a few representative request flows and count Redis commands; flag chatty loops and paths that fan out many small calls where a pipeline/batch (`mget`, a single pipeline) would do.
-- **No redundant round-trips** — no repeated lookups of the same key in one request; no cache probe on a path that never benefits.
-- **No dangerous full-scan / bulk ops** — no `KEYS`, `FLUSHALL`/`FLUSHDB`, or unbounded `SMEMBERS`/`HGETALL`/`LRANGE 0 -1` on hot or request paths (they block or scale with data size); prefer `SCAN`, bounded ranges, or a maintained index set.
-- **Caches fail OPEN** — a Redis error or miss on a cache/read path falls back to the primary store (wrapped in try/catch) rather than throwing and taking down the request; a Redis blip must degrade performance, not availability. Flag a cache path that propagates the error.
-- **Security/correctness primitives fail CLOSED** — rate limits, locks, webhook dedup, and idempotency keys must NOT fall back to a secondary store or skip the check when Redis errors; a 5xx on those routes is by design. Flag a fallback or catch-and-continue that quietly lets the request through.
+- **Locks** are acquired with `set(key, token, { nx: true, ex })` and a random token, released by an owner-checked compare-and-delete script, and sized above the work; contention throws a typed error, never a spin-wait; ordered writes carry a fencing token. A lock is never used as deduplication.
+- **Claims** use `set nx ex` with a short TTL and are released when the work fails, so a retry runs. Dedup that must last — a webhook event, a payment — is a database record, and a public API's `Idempotency-Key` replay is stored in the database. Flag a claim not released when its work fails, and a long-lived dedup key in Redis. A claim left to expire after the work succeeds is correct.
 
-### Missed opportunities
+### Rate limits
 
-- **Webhook dedup** — an inbound webhook that processes events without a dedup claim (re-delivery causes duplicate side effects) — recommend the dedup helper.
-- **Idempotency keys** — a side-effecting mutation (charge, payout, email, plan change) with no idempotency key / lock (a double-submit double-acts).
-- **Rate-limit counters** — a sensitive/expensive route (auth, mutation) with no rate limit — recommend a per-identity, atomic (`INCR` + TTL, or a sliding-window library) rate limit sized to the route. (If `api-architecture` is installed, use its rate-limit tiers.)
-- **Hot-read caching** — a hot read hitting the primary store every request for data that changes slowly should use a short-TTL cache; flag it, don't cache anything with a user's auth state/claims/token. Watch for a cache stampede on a popular key (many concurrent misses recomputing at once) where a short lock / single-flight would help.
-- **Consistent serialization** — cached values are read back with the same codec they were written with (both JSON, or both raw); no `set(JSON.stringify(x))` paired with a `get` that assumes an object, and no silent type mismatch on read.
+- **Layers:** a per-IP limit first in the handler, a per-account limit in the session guard, a per-key limit for API keys, a pooled per-organisation budget where many act for one tenant; the IP budget above the account budget.
+- **The client IP** is read from the right of `x-forwarded-for`, skipping only your own proxies; IPv6 is keyed by its /64 after unmapping `::ffff:`; no usable IP shares an `unknown` bucket. A frontend server forwards the visitor's IP only with a verified platform identity token, and a high-volume browser call goes straight to the API.
+- **Sliding window or token bucket, never a fixed window**; limiter instances constructed once; each route its own action name.
+- **Lockouts** count failures per (IP, email) and per account, lapse on their own, and clear on success; a locked account answers exactly like a wrong password, and a reset link still works while locked. Email sends have a per-recipient budget.
+- **Deny lists** carry a reason and an expiry, and nothing blocks addresses automatically. Calls to providers honour their 429 and `Retry-After` with capped, jittered retries, and bulk sends go through a queue.
+- **Each 429 and lockout is logged** with its tier, action and key kind, never the full key or address, and spikes alert someone.
 
-### Security
+### Storage settings
 
-- **Input sanitized into keys** — any key built from user input is encoded/sanitized so a delimiter (`:`) or crafted value can't collide with or forge another namespace's key.
-- **No secrets in keys or values** — no token/secret stored in plaintext or embedded in a key; the client token is never logged, echoed in an error, or returned in a response; no Redis client imported into a client/browser bundle (the token would ship to the client).
+- **Eviction off** wherever locks, claims or rate limits live: on Upstash that's the default, and turning it on uses optimistic-volatile, which evicts keys with a TTL first; on self-hosted Redis, `noeviction`, with `allkeys-lru` only on a cache-only database. **One database per tier**, with its own credentials — "429 never fires" is the sign of an app pointed at another tier. Both are console settings: infer what the env and config show, else "needs confirmation".
+- **No `KEYS`, `FLUSHALL` or unbounded `SMEMBERS`, `HGETALL` or `LRANGE 0 -1`** on a request path.
+
+### What never lives in Redis
+
+- **Source-of-truth data**, a second session store or pub/sub beside the auth system's or the database's own, and secrets in a key or value. Session records `auth` keeps here are state Redis owns, not a finding.
+
+### Tests
+
+- **A fake client that fails or times out on demand**, and a test proving each primitive's direction: a cache serves the source, a lock and a claim refuse, a claim is released when the work throws, a closed tier refuses and an open tier passes on a Redis error, two addresses in one IPv6 /64 share a key, every 429 carries its headers, and the account lockout is stricter than the IP budget on the same route.
 
 ## Boundaries
 

@@ -1,7 +1,7 @@
 ---
 name: access-control-audit
 description: >-
-  Manually invoked. Access-control and authorization-coverage audit — unprotected API routes and Server Actions, function-level (BFLA) and object-level (BOLA) coverage, property-level and mass-assignment (BOPLA) exposure, the permission registry, the role-to-permission hierarchy, frontend gates that must back onto server checks, and data-layer rules coverage. Verifies each finding and writes a prioritized report.
+  Manually invoked. Access-control audit — guards on every route and Server Action (BFLA), 404 before 403 and tenant scoping (BOLA), allowlisted writes and projected reads (BOPLA), verbs never role names, roles that add up, escalation and invitations, claims and revocation, sessions and sign-in, API keys and share links, the plan and flag order, UI gates, data rules and the tests. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team access-control audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/access-control-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`backend-security`**, **`firestore`**, and **`api-architecture`** (rule internals → **`firebase-security-rules-auditor`**) ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`access-control`**, **`auth`**, **`api-architecture`** and **`backend-security`** are installed, apply their house rules too; rule internals go to **`firebase-security-rules-auditor`** (the official Firebase skill, where installed).
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise — the safer default).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else the audit phase the project's `AGENTS.md` records; else `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
 2. **Load the previous report** — if `_reports/access-control-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -69,19 +69,22 @@ Write to `_reports/access-control-audit.md`:
 
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
+- **Why it matters:** <impact / who it affects> <· optional standard ref, e.g. OWASP A01 / API1 / NIST SP 800-63B>
 - **Fix:** <the specific remediation>
 
 ## Scorecard
 | Category | Score | Notes |
 | --- | --- | --- |
-| Route coverage | <X>/10 | <one-line justification> |
-| Permission registry | <X>/10 | <one-line justification> |
-| Role hierarchy | <X>/10 | <one-line justification> |
-| Object-level | <X>/10 | <one-line justification> |
-| Property-level | <X>/10 | <one-line justification> |
-| Frontend gates | <X>/10 | <one-line justification> |
+| Guards and coverage | <X>/10 | <one-line justification> |
+| Verbs and the policy | <X>/10 | <one-line justification> |
+| Roles to verbs | <X>/10 | <one-line justification> |
+| Object and property level | <X>/10 | <one-line justification> |
+| Escalation and revocation | <X>/10 | <one-line justification> |
+| Sessions and sign-in | <X>/10 | <one-line justification> |
+| Keys and links | <X>/10 | <one-line justification> |
+| Plans, flags and UI | <X>/10 | <one-line justification> |
 | Data rules | <X>/10 | <one-line justification> |
+| Audit and tests | <X>/10 | <one-line justification> |
 
 ## Action items
 Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
@@ -106,61 +109,69 @@ Every run produces two things:
 
 ## Checklist
 
-Self-contained — the concrete criteria are inline below. Check every API route/Server Action, the permission registry, the role mappings, the object-level checks, the frontend gates, and the data rules. If `backend-security` (authorization), `access-control` (role model), or `api-architecture` (guards) are installed, they deepen each section and give the app's own patterns to match — but the audit runs without them. Only rules-file _internals_ hand off — to `firebase-security-rules-auditor`.
+The frame is **broken access control** (OWASP A01; API1, API3 and API5): **object level (BOLA)** — a forged id reaches another actor's resource; **function level (BFLA)** — an operation runs without the verb it requires; **property level (BOPLA)** — a request sets or reads fields the actor may not. Check every route, Server Action, guard, the verb registry, the role maps, keys, links, the UI gates and the data rules. The fix target for each finding is `access-control` (sessions and keys: `auth`).
 
-The frame is **broken access control** (OWASP #1): **Broken Object-Level Authorization (BOLA)** (object-level — a forged id reaches another actor's resource), **Broken Function-Level Authorization (BFLA)** (function-level — an operation runs without the permission it requires), and **Broken Object-Property-Level Authorization (BOPLA)** (property-level — a request sets or reads fields the actor may not, e.g. mass assignment of `role`/`ownerId`/`status`). Every section below targets one or more of these.
+### Guards and coverage (BFLA)
 
-### Route coverage (BFLA)
+- **Every route and Server Action that acts for a person runs a guard**, after the rate limit and any feature-flag check, before validation. Categorise each as public (named: sign-in, health, a webhook), session only, or verb-guarded; flag any non-public route with none. Webhooks verify a signature and cron an OIDC token instead.
+- **The API's guard is the only gate.** A Server Action that calls the API doesn't need its own check; one in an app with its own backend calls the guard itself. Flag a mutation whose only check is client-side, or a guard placed after a side effect.
+- **Routes on the caller's own record need a session, not a verb** — flag a missing session, not a missing verb.
+- **Identity comes from the verified token** (`token.uid`): flag the caller's own uid, role or ownership taken from a body, query or header. Ids of the record acted on (`/admin/users/[uid]`, the member being invited) are input like any other, authorised by the guard. An unverified email is refused outside a tested allowlist.
+- **Guards throw typed errors** (`ForbiddenError`, `NotFoundError`) mapped centrally; flag a guard returning a boolean a route can ignore.
 
-- **Every mutating or sensitive endpoint is guarded** — each exported HTTP handler (POST/PUT/PATCH/DELETE and any sensitive GET) and each Server Action asserts **auth + the specific permission that operation requires**, not just "is authenticated". Enforced server-side, never from a client flag. A route reachable without the permission it needs is BFLA (function-level).
-- **No unprotected endpoints** — categorize each route as public (explicitly, e.g. auth/webhook), auth-only (authenticated, no role), or permission-guarded; flag any non-public route with none of these. Webhooks/cron verify a signature / OpenID Connect (OIDC) instead of a user permission — flag those that verify nothing.
-- **Guard sits in the right place** — at the thin route/action boundary before the service runs (→ `api-architecture`), not buried mid-service or after a side effect.
+### Verbs and the policy
 
-### Permission registry
+- **Checks name verbs, never roles.** Grep routes, services and components for `role ===`, `isAdmin`, `roles.includes(`, `hasRole(`; each hit gating an action is a finding. Not findings: the role-to-verb map, the rank check for who may manage whom, the last-top-role guard, and role labels shown in the UI.
+- **No permissions stored on a user document** — roles are stored, verbs derived.
+- **Every verb comes from one typed registry** (`scope.resource.action`, a fixed action vocabulary, each reverse action its own verb); flag inline strings and unregistered verbs. A registered verb no route uses is cleanup in `production`, a note in `development`.
+- **`can(actor, verb)` is pure** — no reads or side effects — with `canAll`/`canAny`, and denies by default: an unknown role, a missing membership or a pending invite holds nothing.
 
-- **Actions are registered and typed in one place** — every permission passed to a guard/`can()` call comes from the single permission registry, typed (no ad-hoc string literals scattered across routes).
-- **No unregistered actions** — flag any permission string used in code that the registry doesn't define (a typo silently grants or denies).
-- **No orphans** — flag registered actions used by no route/action. In `development` these are often "defined, not yet used" for planned routes — note them, don't treat as errors; in `production`, treat a truly dead permission as cleanup.
+### Roles to verbs
 
-### Role hierarchy
+- **One map per role kind, each role a set of verbs; roles add up** — a person's verbs are the union of their roles. Flag logic assuming one role per person or inheritance by rank.
+- **Allowlist roles get each new verb explicitly**, in the same change as the route that needs it; for every recently added verb, check each role the project's docs or feature spec say should hold it does; where nothing says, mark it "needs confirmation". Exclusion roles receive it unless excluded.
+- **Least privilege:** read-only roles hold only read verbs; no role holds a verb outside its job.
+- **Operators hold no resource verbs** — they act through operator routes with operator verbs; flag an operator borrowing a member's role. **Resource roles are resolved per request**, never stored in claims.
 
-- **Mapping is correct** — the role→permission mapping assigns each permission deliberately; every registered action belongs to at least one role.
-- **Higher roles superset lower** — where roles are tiered, a higher role holds every permission of the one below it plus its own. Flag a lower role holding a permission its superior lacks (a hierarchy gap).
-- **No privilege gaps or over-grants** — flag a role granted a permission outside its intended domain (over-grant) or a sensitive action reachable by a role that shouldn't have it. Read-only/limited roles must not hold create/update/delete outside their scope.
-- **Allowlist roles received recent permissions** — for every recently added permission, verify each allowlist-based role that should hold it was explicitly granted it. Allowlists never auto-receive new permissions (only top/exclusion-based roles do), and a route shipped without the grant is the most common RBAC bug: the endpoint exists, the intended role is denied.
+### Object and property level (BOLA, BOPLA)
 
-### Revocation and staleness
+- **404 before 403:** a resource guard loads the record first, so a stranger asking for a hidden id gets 404, never a 403 that confirms it exists.
+- **Ownership from the record, every query scoped to the tenant**, and every id in a request (parent, child, batch item, move target) authorised, not just the first.
+- **Writes take a `.pick()` allowlist** — flag a body spread into a write or a write schema built with `.omit()`; **responses return the projection for that caller**, never a raw document across a trust boundary.
 
-- **A token-embedded role is a cached role** — where roles live in a JWT/custom claims, they stay live until the token refreshes (up to an hour). Flag any check that must take effect immediately — a ban, a role downgrade, a plan/entitlement drop, removing someone from a resource — resolved from the token rather than the store.
-- **Revocation actually revokes** — removing a role, banning a user, or deleting an account invalidates the existing session (refresh tokens revoked, and verification checks the revoked flag), rather than relying on natural expiry. Flag a "ban" that leaves a valid session usable.
-- **The store is the source of truth** — cached roles are re-derived from the stored records, never edited independently, and a client-writable role field is immutable at the data layer. Flag any path where a user can set their own role.
+### Escalation, invitations and revocation
 
-### Object-level (BOLA)
+- **Manage only strictly lower roles; nobody grants themselves or a role at or above their own; the last holder of the top role can't be removed.** Tests cover every pair.
+- **Invitations** are single-use, expiring, stored hashed, bound to the invited email, accepted only by that verified address, and void if the inviter has lost the right; resending replaces the old one; the owner can see and revoke pending invites; a pending invite grants nothing.
+- **The riskiest operator acts need a second approver**, nobody approves their own request, and both people are audited; task grants carry an end date; break-glass access is time-limited and alerts the owners (the review after it, and periodic access reviews, are process — "needs confirmation").
+- **Claims are a cache:** role documents are written first and claims re-derived, awaited, under 1,000 bytes. Removing a role revokes the person's sessions; a suspension disables and revokes; anything that must hold instantly reads the store. Flag a client-writable role field.
 
-- **Per-resource roles checked on the resolved doc** — for resource-scoped access, the guard resolves the target document and checks the actor's **per-resource role on that doc**, not merely "is authenticated" or "has some global role". Flag any id-addressed handler that skips the object-level check (BOLA/IDOR).
-- **Tenant / owner isolation** — reads and writes are scoped to the actor's tenant/owner; changing an id in the path/body must not reach another tenant's data.
-- **Every id in the payload is re-authorized** — when a request references multiple resources (parent + child, a batch, or a nested/foreign-key id like "move X into Y"), **each** referenced id is authorized, not just the first/outermost one. Flag any handler that trusts an inner or foreign-key id because the outer one passed.
+### Sessions and sign-in (`auth`)
 
-### Property-level (BOPLA)
+- **A session is minted only by the API**, from an ID token signed in within the last five minutes (`auth_time`), else 401. The client SDK uses `inMemoryPersistence` and signs out once the cookie is set; password sign-in and account creation go through the API (lockout, Identity Toolkit, a custom token), never the browser SDK.
+- **Verification passes `checkRevoked: true`; sign-out ends the session on the server** (deletes its record, or revokes refresh tokens) and sends `Clear-Site-Data: "cache", "storage"`, never `"cookies"`. Other sessions are revoked on a password change, an account recovery or a role removal.
+- **Auth email is sent by the API** with the Admin SDK's `generate…Link`, never the client SDK or Firebase's templates. A password or email change needs the current password and emails the owner. Providers are linked with `linkWithCredential`, and an unverified account never gains one.
+- **Operator sessions:** a required second factor, a separate cookie only the admin routes accept, an absolute cap of 24 hours or less, an idle timeout of an hour or less, and step-up for the most sensitive acts.
+- **In the Next.js app:** each route group's layout gates behind `<Suspense>`, never the root layout; the proxy checks only that the cookie exists; the current-user helper never imports `firebase-admin`. Cookie attributes, session caps and password rules are `security-audit`'s.
 
-- **Writes are an allowlist, not the raw body** — the write path sets only fields the actor may set; server-controlled fields (`ownerId`, `role`/permissions, `status`, `tenantId`, timestamps, counters, billing) are never bound from the request body. Flag any handler that spreads the request body into a write (mass assignment) — a privilege escalation via a smuggled `role`/`ownerId`.
-- **Reads don't over-expose** — responses return an explicit field set, not the whole document, to a less-privileged caller. Flag a raw `{ id, ...doc }` returned across a trust boundary (leaks server-only or other-actor fields).
+### API keys and share links
 
-### Frontend gates
+- **Key scopes are verbs** from the same registry; a key never holds a verb its creator lacks, acts only in its account, stops when the account is suspended or the creator loses the verbs, and never reaches operator routes. Keys are 32 random bytes with a product and tier prefix and a checksum, generated server-side, shown once, stored as a SHA-256 hash, sent only as `Bearer`, separate per tier, rate-limited by key, rotatable with old and new working side by side; issuing and revoking are audited and emailed to the owners.
+- **Share links** carry at least 120 random bits, grant one read verb on one resource, expire or are single-use, are revocable, and answer 404 when wrong, expired or revoked; a `GET` on one never triggers an action, and its page loads no third-party scripts. **Passcodes** are stored hashed or encrypted, compared in constant time, rate-limited with a lockout, and set a short-lived cookie for that resource only. The page sends `Referrer-Policy: no-referrer` and `noindex` (meta and `X-Robots-Tag`), never a robots.txt disallow. Access bought or earned is a relationship, not a link.
 
-- **Gates exist but are UX, not the boundary** — page/layout gates and Server Action re-checks improve UX and prevent obvious mistakes, but the **server is the real gate**. Confirm the frontend layering exists (authenticated route groups require auth; role-differentiated areas filter by permission; nav hides links the actor can't use) — and confirm it is _not_ the only thing standing between a user and a mutation.
-- **Server Actions re-check server-side** — every data-mutating Server Action re-resolves the actor server-side and calls the permission check itself; flag any that trust client-side gating alone (an exploitable bypass).
-- **Gate by differentiation, not blanket wrapping** — recommend a page-level check only when a page is narrower than its layout's already-gated role set; a redundant check on a page no smaller than its layout is noise, not defense-in-depth.
+### Plans, flags and the UI
+
+- **The order:** rate limit → a switched-off feature answers 404 → session and verb → the resource's attributes → the plan's entitlement → the usage limit reserved in the work's transaction. Entitlement refusals are 403 with their own codes (`FEATURE_NOT_IN_PLAN`, `PLAN_LIMIT_REACHED`); flag a plan-name check.
+- **The UI runs the same `can()`** through a hook and a gate component; it hides what can't be done (rather than disabling it without saying why) and protects nothing. Flag a control whose action has no server guard.
 
 ### Data rules
 
-- **Rules exist for every collection/bucket** — each data collection and storage bucket has a security rule; flag any with none (especially private originals that must never be public).
-- **Rules align with API guards** — client-writable paths in the rules match what should be client-writable; anything meant to flow only through the privileged server path (Admin SDK) must not be client-writable in the rules. Flag a collection missing from the rules, or writable by clients when it shouldn't be.
-- **Rules files declare `rules_version = '2'`** — a file without the declaration falls back to v1 semantics (no collection-group queries, different wildcard behavior); flag any rules file missing it.
-- **`firebase.json` references exist on disk** — every rules/indexes file it points at (`firestore.rules`, `firestore.indexes.json`, each storage target's rules file) is actually present; a dangling reference breaks deploy or silently deploys nothing.
-- **Deny-all posture holds** — in a server-mediated architecture every `allow` clause is either `if false` or carries a comment justifying the client access; flag client bucket/collection writes that have neither.
-- **No server service imports the client SDK** — server code talks to the data store via the Admin SDK only; flag any server-side import of `firebase/firestore` / `firebase/storage` (client-SDK calls from the server are subject to rules and break the access model).
-- **Depth → `firebase-security-rules-auditor`** — this audit checks _coverage and alignment_ only. Hand off rule-internal correctness (privilege-escalation, create-vs-update inconsistencies, `hasOnly`/type/size checks) to that specialist.
+- **Default deny**; where every path goes through the API, clients are denied entirely. Any opened path checks ownership and membership in the rule, keeps role fields immutable, and is commented. `rules_version = '2'`; every file `firebase.json` names exists; no server code imports the client SDK; rules have unit tests. Rule internals → `firebase-security-rules-auditor` (official).
+
+### Audit and tests
+
+- **The privileged guard audits its own denials**; role grants and removals, key issuing and revoking are audited (`audit-log`).
+- **Tests:** the role map verb by verb in both directions; the hierarchy pairs; each guarded route's 401, 404, 403 and success; a key without the scope gets 403; a wrong, expired and revoked link each get 404.
 
 ## Boundaries
 

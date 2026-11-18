@@ -1,7 +1,7 @@
 ---
 name: firestore-audit
 description: >-
-  Manually invoked. Firestore cost, performance and data-modeling review — reads and writes per endpoint, N+1 query patterns, atomic operations (FieldValue.increment, transactions), batched writes, denormalization and counters, server-side caching, field selection, pagination limits, and required composite indexes. Verifies each finding and writes a prioritized report.
+  Manually invoked. Firestore audit — clients denied and the data layer the only caller, one Admin client, Timestamps converted before parsing, reads that match the response (batched, chunked at 30, counted, projected), transactions, counters and batches over 500, drift repair, cursor pagination, TTL and cascade deletes, idempotent triggers, indexes by edition, rules and their tests, and backups. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
 model: opus
 effort: high
@@ -13,7 +13,7 @@ disallowed-tools: Edit, NotebookEdit
 
 A **manually-invoked, red-team Firestore audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/firestore-audit.md`.
 
-> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house standard(s) **`firestore`** (Firestore/Storage rules → **`firebase-security-rules-auditor`**) ARE present, also apply their house-specific rules as an enhancement.
+> **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`firestore`** is installed, apply its house rules too; rule internals go to **`firebase-security-rules-auditor`** (the official Firebase skill, where installed).
 
 ## Project specifics first
 
@@ -24,7 +24,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Arguments
 
-- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → `production` (assume the app is live until told otherwise — the safer default).
+- `[phase]` — `development` | `production`; sets the action-item tiers. Omitted → the audit phase the project's `AGENTS.md` records, else `production` (assume the app is live until told otherwise — the safer default).
 - `[path]` — a file, directory, or PR/diff to scope the audit to; omitted → the whole repo.
 
 ## Audit protocol
@@ -33,7 +33,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ### Method
 
-1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else default `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
+1. **Resolve phase** — use a phase arg (`development` | `production`) if given; else the audit phase the project's `AGENTS.md` records; else `production` — assume the app is live with real users until told otherwise, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
 2. **Load the previous report** — if `_reports/firestore-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating.
@@ -69,19 +69,20 @@ Write to `_reports/firestore-audit.md`:
 
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
-- **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. WCAG 2.1.2 / OWASP A01>
+- **Why it matters:** <impact / who it affects> <· optional ref, e.g. Firestore best practices / OWASP A01>
 - **Fix:** <the specific remediation>
 
 ## Scorecard
 | Category | Score | Notes |
 | --- | --- | --- |
+| Access boundary | <X>/10 | <one-line justification> |
 | Reads | <X>/10 | <one-line justification> |
-| Writes | <X>/10 | <one-line justification> |
-| Atomicity | <X>/10 | <one-line justification> |
-| Denormalization / counters | <X>/10 | <one-line justification> |
-| Caching | <X>/10 | <one-line justification> |
+| Writes and atomicity | <X>/10 | <one-line justification> |
 | Pagination | <X>/10 | <one-line justification> |
+| Lifecycle | <X>/10 | <one-line justification> |
 | Indexes | <X>/10 | <one-line justification> |
+| Security rules | <X>/10 | <one-line justification> |
+| Backups | <X>/10 | <one-line justification> |
 
 ## Action items
 Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; `production` → **Fix Now / Next Release / Backlog**. Each task references a finding ID.
@@ -106,49 +107,53 @@ Every run produces two things:
 
 ## Checklist
 
-Trace each endpoint through route → service → helper, counting Firestore operations. Each item below is self-sufficient; where the `firestore` skill is installed, its patterns (+ `references/patterns.md`) are the recommended fix target.
+Trace each endpoint through route → service → data function, counting Firestore operations. The fix target is `firestore`, with its `references/patterns.md`.
+
+### The access boundary
+
+- **Clients are denied every read and write**; a path opened for a client feature is read-only, checks ownership and membership in the rule, and its listener is unsubscribed on unmount.
+- **Only the data layer calls Firestore.** Flag `collection()` or `doc()` in a route, action, component or service.
+- **One lazy Admin client** kept on `globalThis`, with `ignoreUndefinedProperties: true`; credentials from the platform (Application Default Credentials), never a key file in the repo or a public variable.
 
 ### Reads
 
-- **Reads per page/endpoint minimized** — count `.get()` on a doc (1), on a query (1 per doc returned, estimate from `limit`), `count().get()` (1), and reads inside a transaction; flag routes doing more reads than the response needs.
-- **N+1 lookups batched** — a list query followed by one lookup per item is batched via `getAll(...)` or an `in`/`where` query, not a loop of `.get()`.
-- **No over-fetching whole collections** — never fetch a full collection to filter/count/derive in memory; filter with `where`, count with `count().get()`.
-- **Field selection where supported** — reads that need a subset use `.select(...)` (Admin SDK) rather than pulling whole documents; list responses strip fields via a doc→list-item mapper (Firestore has no `SELECT` on the wire).
-- **Filter/sort/count in the query, not memory** — `where`/`orderBy` and `count().get()` push work to Firestore; flag fetching a set then filtering, sorting, slicing, or `.length`-counting it in JS (bills every scanned doc).
-- **Real-time listeners scoped and torn down** — `onSnapshot` is billed per changed doc for the listener's life; flag broad/unbounded listeners, listeners where a one-shot `.get()` would do, and any that aren't unsubscribed on unmount/route-change.
+- **Collection paths come from constants and builders**; flag a literal path.
+- **Every document is parsed with Zod on the way out**, through the tolerant read schema, with `Timestamp` converted to an ISO string first; flag a `Timestamp` reaching a contract or a response.
+- **Reads match the response:** N+1 lookups batched (`getAll`, `in`); `in` and `array-contains-any` chunked at 30 (Firestore's cap) and run in parallel, `getAll` chunked where the project chooses; counts with `count().get()`; filters and sorts in the query, never in memory; `.select()` where a large document is read for a few fields; lists through a `.pick()` projection.
+- **A sorted field exists on every document** — `orderBy` silently drops those without it.
+- **Listeners** are scoped, used only where live data is needed, and torn down.
 
-### Writes
+### Writes and atomicity
 
-- **Writes per endpoint** — count `.set()`/`.update()`/`.delete()`/`.create()`, each `FieldValue.increment`, and every op inside a batch/transaction; flag mutations doing more writes than the change needs.
-- **Batched writes / transactions for multi-doc** — multiple related writes that must land together use a batch (independent writes) or a transaction (read-then-write); flag sequential separate writes that should be one atomic unit.
-- **No write amplification** — a single logical change doesn't fan out into avoidable extra writes (redundant mirror docs, per-field updates that could be one, denormalized copies updated outside the same batch/tx).
-
-### Atomicity
-
-- **Counters via `FieldValue.increment()`** — any incremented/decremented number uses the atomic sentinel, never read-modify-write.
-- **Balances / inventory in a transaction** — money and stock operations check-and-decrement inside one transaction (no oversell, no lost update).
-- **Race safety** — uniqueness via a transaction or `create()` (fails if exists); read-then-write sequences that can interleave are wrapped in a transaction; transactions are idempotent (external calls/notifications after commit).
-
-### Denormalization + counters
-
-- **Denormalized reads for hot paths** — derived/summary data read on hot paths is stored on the parent doc to avoid an extra read or an N+1; denormalized copies are updated in the same tx/batch as their source.
-- **Aggregate counters instead of counting docs** — a maintained counter field (updated atomically) is used for totals shown on hot paths rather than reading/counting the collection each time; on delete, a counter is reversed only if the doc was counted.
-- **Fan-out reads bounded** — `collectionGroup` and cross-collection aggregations don't scan unbounded document sets on a hot path; heavy aggregates are precomputed/denormalized or moved off the request path. A single hot counter that could see high write contention uses distributed/sharded counters.
-
-### Caching
-
-- **Server-side cache tiers on hot reads** — repeated identical hot reads sit behind a server cache tier (hot/warm/cold) so they don't re-hit Firestore each request; cached identity/config reads are deduped and tagged for invalidation on the relevant mutation (→ `nextjs` caching + `firestore`).
+- **Read-then-write is a transaction**, with calls to the outside world after the commit; uniqueness uses `create()` or a transaction; counters use `FieldValue.increment()`.
+- **Timestamps:** `serverTimestamp()` on writes, `Timestamp.now()` inside a transaction; `createdAt` and owner fields never change after create.
+- **Writes take a validated, allowlisted body.** Batches group related writes and stay under the 10 MiB request size — there is no 500-write limit any more; a large volume of independent writes uses `BulkWriter`.
+- **Denormalised data** — the counts and names lists read — is updated in the same transaction or batch as its source; a delete reverses a counter only if it was counted; a scheduled recount repairs drift and logs each correction; a hot counter is sharded.
+- **No unbounded growth** on one document — an array or map that grows without limit is a subcollection.
 
 ### Pagination
 
-- **Cursor + capped page size** — list endpoints use cursor pagination (doc-id token, `limit + 1` to detect more) with a capped page size, not offset.
-- **No unbounded queries** — every list query enforces a `limit`; flag any query that can return an unbounded result set.
-- **No unbounded document growth** — arrays/maps that grow without bound on a single doc (approaching the ~1 MB doc cap, and re-billed in full on every write) are a subcollection instead.
+- **Cursor pagination** — a document-id cursor, `limit + 1` to detect more, `documentId()` as the tie-breaker — with a capped page size. **Every list query has a limit**; a bounded lookup (an `in` chunk, a `create()`, a recount job walking a collection in pages) isn't a finding.
+
+### Lifecycle
+
+- **TTL** for expiry with no side effects: one `expiresAt` per collection group, set from a retention constant, reads still filtering `expiresAt > now`. TTL doesn't cascade, so a parent with subcollections needs its own cleanup. Whether the policy is set on every tier is console state — check with `gcloud firestore fields ttls list`, else "needs confirmation".
+- **A delete with consequences** flips a status, answers 202, and a trigger cleans up, guarded against work in progress.
+- **Triggers are idempotent** on the event id, 2nd-gen, one codebase per concern, with region, memory and timeout set deliberately and secrets from the secret manager. Scheduled work runs through the API's cron route, not scheduled functions.
 
 ### Indexes
 
-- **Required composite indexes declared as code** — every compound query (multiple `where`, or `where` + `orderBy` on different fields, inequality-filtered fields ordered) has a matching entry in `firestore.indexes.json`.
-- **No missing-index errors** — a query missing its composite index yields an empty page (not a throw) with the house cursor helper, so silent-empty-results are as bad as a runtime crash; audit both directions (missing = wrong results, unused = waste).
+- **Every query that needs a composite index has one** in the committed `firestore.indexes.json`, changed in the same PR: an equality filter with a range or an `orderBy`, or several ranges. Queries of equality filters alone can merge single-field indexes and need no entry. On the Standard edition a missing index throws `FAILED_PRECONDITION` in production — the emulator doesn't enforce indexes — so such a query without an entry is HIGH. On the Enterprise edition an index is optional, a speed and cost choice.
+- **Both directions:** an index no query uses costs writes and storage. A new index deploys before the code that needs it, an old one is removed only after nothing uses it, and never with `--force` on production.
+
+### Security rules
+
+- **Deny by default** with a catch-all; each opened path commented. Create and update validated by one function; ownership and the role from `request.auth` (the token), not a `get()`; size and type caps on every field; `createdAt`, owners and roles unchanged; append-only collections `write: false`; `hasOnly` always paired with ownership. `rules_version = '2'`.
+- **Rules have unit tests** (`@firebase/rules-unit-testing`) in CI, covering a signed-out caller and another account, with `assertSucceeds` for each caller a rule allows; `--dry-run` alone isn't a test. Whether the console matches the repo's rules file can't be seen from code — "needs confirmation". Rule internals → `firebase-security-rules-auditor` (the official Firebase skill, where installed).
+
+### Backups and recovery
+
+- **Delete protection on every tier, point-in-time recovery on production, and a scheduled backup** (weekly is enough; a development tier holding only seed data may skip it) — console state, checked with `gcloud firestore databases describe` and `gcloud firestore backups schedules list`, else "needs confirmation". A restore goes into a new database; whether it's been rehearsed is process, "needs confirmation". A migration that reshapes documents ships with its way back or is recorded as one-way.
 
 ## Boundaries
 
