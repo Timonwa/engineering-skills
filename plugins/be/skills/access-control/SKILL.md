@@ -85,13 +85,13 @@ A key lets a customer's own scripts and integrations call the API. Issuing, stor
 
 ## Share links and passcodes
 
-A link or code grants access to whoever holds it. Following the W3C's capability-URL guidance:
+A link or code grants access to whoever holds it. Following the W3C's capability-URL guidance, except where Google's noindex rule overrides it:
 
 - **Unguessable:** at least 120 bits from a secure generator (a v4 UUID, or 16 random bytes), never a sequential or derived id.
 - **One resource, read only:** the link resolves to an actor with one read verb on one resource; a `GET` never triggers an action.
 - **Expiring and revocable:** each link has an expiry or a single use, the owner can revoke it and issue another, and an expired, revoked or wrong link answers 404 — the same as a resource that doesn't exist.
 - **A passcode is a weaker secret:** stored encrypted or hashed, compared in constant time, its attempts rate-limited per resource and caller with a lockout (`rate-limiting`); a correct code sets a short-lived cookie for that resource only, so the code isn't sent again.
-- **Nothing leaks it:** the page sends `Referrer-Policy: no-referrer`, loads no third-party scripts, and is `noindex` (a meta tag and `X-Robots-Tag`) — never disallowed in `robots.txt`, which would stop crawlers reading the `noindex` (`seo-aeo-geo`).
+- **Nothing leaks it:** the page sends `Referrer-Policy: no-referrer`, loads no third-party scripts, and is `noindex` (a meta tag and `X-Robots-Tag`) — never disallowed in `robots.txt`. The W3C note suggests listing the links' path there, but Google never reads a `noindex` on a page it's blocked from crawling, so a blocked link can still be indexed from links elsewhere (`seo-aeo-geo`).
 - **Access bought or earned is a relationship**, not a link: "ticket holders may see this album" is checked against the purchase, like a membership.
 
 ## Where plans and flags sit

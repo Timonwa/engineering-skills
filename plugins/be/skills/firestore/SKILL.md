@@ -31,9 +31,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Collection paths are constants** — top-level names in one shared constants file, subcollections as path builders, so the API, workers and rules tests name a path the same way. Never a literal in a data file.
 - **Every document is parsed with Zod on the way out** of the data layer, through the tolerant read schema (`schemas-and-contracts`). Firestore's `Timestamp` is converted to an ISO string there, before the schema, and never reaches a contract or the frontend; a shared timestamp schema accepts a `Timestamp`, a `Date` or milliseconds.
 - **Cursor pagination, never offset** — the cursor is a document id, the query asks for `limit + 1` to know whether there's more, and `documentId()` breaks ties. Offset reads and bills every skipped document. The shared helper is in [references/patterns.md](references/patterns.md).
+- **Filters and sorts run in the query**, never on documents fetched into memory.
 - **Counts use `count().get()`**, billed per thousand index entries, never a fetch of every document.
 - **`orderBy` drops documents that lack the field**, silently — a field a list sorts on is written on every document, with a default.
-- **`in` and `getAll` are chunked** at 30 values, and the chunks run in parallel.
+- **`in` and `array-contains-any` are chunked at 30 values** — Firestore's cap — and the chunks run in parallel. The Admin SDK's `getAll` has no such cap; chunking it is a house choice that keeps each request small.
 - **A small read takes only its fields** — `.select()` on the Admin SDK — when a document is large and the read needs a few fields; it bills the same reads, but sends fewer bytes.
 
 ## Writing
@@ -41,8 +42,9 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **Read-then-write is a transaction.** A uniqueness check, a stock decrement, a status move: the read and the write commit together or not at all. Calls to the outside world (email, claims, payments) happen after the commit, because a transaction can run more than once.
 - **Counters use `FieldValue.increment()`**, never a read and a write. **Uniqueness** uses `create()`, which fails if the document exists, or a transaction.
 - **Timestamps:** `FieldValue.serverTimestamp()` on writes; `Timestamp.now()` inside a transaction, where a value must be known before commit. `createdAt` and owner fields never change after create.
-- **Batches** group related writes, split at Firestore's 500-operation limit.
-- **Denormalise what lists read** — a count, a name, a cover — onto the parent document, updated in the same transaction or batch as the change, so a list is one query, not one per row. A delete reverses a counter only if that document was counted, and a scheduled recount repairs any counter that drifts, logging each correction.
+- **Batches** group related writes. Firestore no longer caps a batch or transaction at 500 writes; the limit is the 10 MiB request size, and a large volume of independent writes goes through `BulkWriter`, which batches and retries for you.
+- **Denormalise what lists read** — a count, a name, a cover — onto the parent document, updated in the same transaction or batch as the change, so a list is one query, not one per row. A delete reverses a counter only if that document was counted, and a scheduled recount repairs any counter that drifts, logging each correction. A counter written more often than about once a second is sharded across documents.
+- **No document grows without limit** — an array or map that keeps growing becomes a subcollection, since a document caps at 1 MiB.
 - **Writes take a validated, allowlisted body** — the schema is the gate (`schemas-and-contracts`).
 
 ## Lifecycle
@@ -54,7 +56,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## Indexes
 
 - **Indexes are code**, in the committed `firestore.indexes.json`, changed in the same PR as the query that needs them.
-- **The edition is a project fact.** On the Standard edition a query that filters and orders, or filters on several fields, needs a composite index, and without one it fails with `FAILED_PRECONDITION` — in production, because the emulator runs any valid query. On the Enterprise edition indexes are optional: a query without one scans, so there an index is a speed and cost choice.
+- **The edition is a project fact.** On the Standard edition a query that combines an equality filter with a range filter or an `orderBy`, or filters on several ranges, needs a composite index, and without one it fails with `FAILED_PRECONDITION` — in production, because the emulator runs any valid query. Queries of equality filters alone can be served by merging single-field indexes, so they need no entry. On the Enterprise edition indexes are optional: a query without one scans, so there an index is a speed and cost choice.
 - **Check before release:** deploy the index file to the development project and run the new query there; `firebase firestore:indexes` prints what's deployed, to compare with the file both ways — an index no query uses costs writes and storage.
 - **A new index deploys before the code that needs it**, and an old one is removed only once no deployed code uses it. `firebase deploy --only firestore:indexes` asks before deleting indexes missing from the file; never answer it with `--force` on production.
 

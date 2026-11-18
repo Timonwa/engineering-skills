@@ -22,7 +22,7 @@ export const redis = new Redis({
   token: env.UPSTASH_REDIS_REST_TOKEN,
   enableAutoPipelining: true, // concurrent commands share one HTTP request
   retry: { retries: 1, backoff: () => 50 }, // the default is five, with exponential backoff
-  signal: () => AbortSignal.timeout(300), // per command; a timeout throws TimeoutError
+  signal: () => AbortSignal.timeout(300), // a function, so each command gets a fresh signal and a timeout throws; a plain signal resolves null
 });
 ```
 
@@ -34,6 +34,7 @@ export const REDIS_TTL = { MINUTE: 60, TEN_MINUTES: 600, HOUR: 3_600, DAY: 86_40
 
 export const REDIS_KEYS = {
   cache: (group: string, generation: number, key: string) => `cache:${group}:g${generation}:${encodeURIComponent(key)}`,
+  // No TTL: one integer per group, bounded by the number of groups; losing it would revive stale entries.
   cacheGeneration: (group: string) => `cache:${group}:generation`,
   lock: (resource: string) => `lock:${resource}`,
   claim: (work: string, id: string) => `claim:${work}:${encodeURIComponent(id)}`,

@@ -52,7 +52,7 @@ A per-IP limit alone locks out strangers who share an address; a per-account lim
 | Guards a credential or a guessable secret | **Fails closed** — the request is refused; no store, no guesses |
 | Everything else                           | **Fails open** — logged, and the request goes through           |
 
-An outage should cost the limit, not the product — except where an open window is unlimited guessing. `@upstash/ratelimit` resolves a timed-out call as a success with `reason: "timeout"`; a closed tier reads that as a denial. The client and its settings are `redis`'s; the SDK's options are the official `upstash-ratelimit-js` skill's.
+An outage should cost the limit, not the product — except where an open window is unlimited guessing. `@upstash/ratelimit` resolves a timed-out call as a success with `reason: "timeout"`; a closed tier reads that as a denial. Its own `timeout` defaults to 5 seconds, which stalls the request path during an outage, so set it to a few hundred milliseconds. The client and its settings are `redis`'s; the SDK's options are the official `upstash-ratelimit-js` skill's.
 
 ## Lockouts
 

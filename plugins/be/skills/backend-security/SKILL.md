@@ -30,7 +30,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 | A06 Insecure Design · API6 Sensitive Business Flows                     | Abuse cases designed in: limits, atomic flows, bot checks             | below, `rate-limiting`                 |
 | A07 Authentication Failures · API2 Broken Authentication                | Server-minted sessions, lockouts, MFA for operators                   | `auth`, `rate-limiting`                |
 | A08 Software or Data Integrity Failures                                 | No unsafe deserialisation; signed webhooks                            | below, `api-architecture`              |
-| A09 Security Logging and Alerting Failures                              | An audit log for privileged acts, a security log for refusals, alerts | `api-architecture`, `rate-limiting`    |
+| A09 Security Logging and Alerting Failures                              | An audit log for privileged acts, a security log for refusals, alerts | `audit-log`, `rate-limiting`           |
 | A10 Mishandling of Exceptional Conditions                               | Fail closed, generic errors, no stack traces                          | below                                  |
 | API4 Unrestricted Resource Consumption                                  | Budgets per tier, size and page caps, timeouts                        | `rate-limiting`, below                 |
 | API9 Improper Inventory Management                                      | Versioned routes, the API reference as inventory, no debug routes     | `api-architecture`, `openapi-registry` |

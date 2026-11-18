@@ -19,7 +19,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 - **One client**, in the server's `clients/` kind, from the validated env (`env`); never a second one per request or helper. Server-only: its token reads and writes the whole database, so it's never logged, echoed in an error or bundled for a browser.
 - **Upstash talks REST**, one HTTP round trip per command — no connections to pool, which suits serverless, but every awaited command costs a trip. Keep a request path to a few round trips: `mget` over many `get`s, `enableAutoPipelining` so concurrent commands share a request, an explicit pipeline for a fixed batch. An awaited command inside a loop is a bug. (Over TCP with ioredis, a command is sub-millisecond and the concern becomes connection reuse.)
-- **A short timeout and few retries on the request path.** The SDK retries a failed command five times with exponential backoff by default — seconds, during an outage, before a cache that should fail open gives up. Set a per-request timeout (`signal: () => AbortSignal.timeout(…)`, a few hundred milliseconds) and one or two retries.
+- **A short timeout and few retries on the request path.** The SDK retries a failed command five times with exponential backoff by default — seconds, during an outage, before a cache that should fail open gives up. Set a per-request timeout (`signal: () => AbortSignal.timeout(…)`, a few hundred milliseconds) and one or two retries. The signal must be the function form: given a plain `AbortSignal`, the SDK treats an aborted request as a `null` result rather than an error, and once that signal has fired every later command returns `null` silently.
 - **Know the errors:** a `TimeoutError` or network failure is transient; an `UpstashError` from a bad command (`WRONGTYPE`, wrong arguments) is a bug that no retry fixes. Its message includes the command sent.
 - **The SDK serialises:** `set` writes JSON and `get<T>` parses it. Never `JSON.stringify` a value yourself, and never let two writers of one key use different codecs.
 
@@ -57,7 +57,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 - **One read-through helper** — `cached(namespace, key, ttl, fetcher, schema)` — and the TTL chosen per call site by how stale the caller can bear.
 - **Every hit is parsed with the value's schema**, and a value that fails is a miss. A cache outlives deploys: a value written by the old code meets the new schema, and dates come back as strings, never `Date` or a Firestore `Timestamp`. Store the wire form (`schemas-and-contracts`).
 - **The mutation that changes the source invalidates the cache** in the same change; the TTL is the backstop, not the strategy.
-- **Invalidate a group with a generation number**: keys in a group include the group's current generation (`cache:events:g7:<eventId>`), and bumping it with `INCR` retires the whole group at once — never `SCAN` and delete on a request path. The old keys expire on their own.
+- **Invalidate a group with a generation number**: keys in a group include the group's current generation (`cache:events:g7:<eventId>`), and bumping it with `INCR` retires the whole group at once — never `SCAN` and delete on a request path. The old keys expire on their own. The generation key itself has no TTL — losing it would resurrect stale entries — so it carries a comment saying it's one small integer per group, bounded by the number of groups.
 - **Never cache an auth decision** — claims, tokens, a permission check. A stale entry there is a security bug. State Redis itself owns, like an operator's idle clock, fails closed like a lock (`auth`).
 - **The framework's cache first** where it exists: a Server Component's read belongs in Next's cache with tags (`nextjs`); Redis is for what the API shares across instances and non-framework callers. Never both for the same data.
 - **Stampedes:** a popular key expiring under load sends every request to the source at once. An expensive fetcher recomputes behind a short lock, and the rest wait for it or serve the stale value.
@@ -80,8 +80,8 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ## What never lives in Redis
 
 - **Source-of-truth data.** The database owns records; Redis holds only what can be rebuilt or safely forgotten.
-- **What another system owns** — sessions beside the auth system's, a second pub/sub beside the database's listeners.
-- **Eviction is a correctness setting.** A database holding locks, claims or rate limits runs `noeviction`, so memory pressure fails writes loudly instead of silently deleting the key that prevented a double charge. A cache-only database may run `allkeys-lru`. Mixing both in one database means `noeviction`, with TTLs keeping the cache bounded, until the cache earns its own.
+- **What another system owns** — a second session store beside the one the auth system uses, a second pub/sub beside the database's listeners. Session records and an operator's idle clock may live here when `auth` puts them here; they're state Redis owns and fail closed.
+- **Eviction is a correctness setting, and it stays off.** With eviction off, memory pressure fails writes loudly instead of silently deleting the key that prevented a double charge. On Upstash, eviction is off by default, and turning it on uses its one algorithm, optimistic-volatile, which evicts keys with a TTL first — exactly the locks, claims and rate-limit counters. On self-hosted Redis the same rule is `noeviction`; only a cache-only database may run `allkeys-lru`. Keep the cache bounded by TTLs, and give it its own database once it dominates memory.
 - **One database per tier**, with its own credentials. "429 never fires and no `rl:` keys appear" is the signature of an app pointed at another tier's database.
 
 ## Testing
@@ -92,7 +92,7 @@ Code for the client, keys, cache, lock and claim is in [references/patterns.md](
 
 ## Do / Don't
 
-- **Do** use one client with a short timeout; build every key from the keys module; put the TTL on the write; fail caches open and locks and claims closed; count a timeout as a failure; parse every cache hit; invalidate groups by generation; release a claim when the work fails; run `noeviction` where locks and claims live.
+- **Do** use one client with a short timeout; build every key from the keys module; put the TTL on the write; fail caches open and locks and claims closed; count a timeout as a failure; parse every cache hit; invalidate groups by generation; release a claim when the work fails; keep eviction off where locks and claims live; pass `signal` as a function.
 - **Don't** construct a client per request; await commands in a loop; leave a key without a TTL or a reason; cache an auth decision; release a lock you don't own; use a lock as dedup; keep dedup that must last in Redis; `SCAN` on a request path; share a database across tiers.
 
 ## Related skills

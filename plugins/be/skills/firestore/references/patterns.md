@@ -43,7 +43,7 @@ await db.runTransaction(async (tx) => {
 ## TTL — commands
 
 - Retention constants sit in one module keyed by collection; the writing service sets `expiresAt` from it.
-- One TTL field per collection group, and each policy counts against the 500 field-configuration cap. Renaming the TTL field means disable, rename, backfill and recreate — so don't.
+- One TTL field per collection group, and each policy counts as a single-field configuration against the database's cap (200 without billing, 1,000 with it). Renaming the TTL field means disable, rename, backfill and recreate — so don't.
 - Registering is idempotent and scriptable, and per project — run it for every tier:
 
 ```bash

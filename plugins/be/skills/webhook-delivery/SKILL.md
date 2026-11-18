@@ -39,7 +39,7 @@ Follow the [Standard Webhooks](https://www.standardwebhooks.com/) spec, so custo
 - **Each endpoint has its own secret**, 24–64 random bytes, shown as `whsec_…` once on creation, stored encrypted (`field-encryption`) because it must be read to sign. A leaked secret affects one endpoint, not every customer.
 - **Rotation sends both signatures**, space-separated, for a set overlap (a day to a week), so the customer switches without a missed delivery; then the old secret is deleted.
 - **Sign each attempt afresh**, with that attempt's timestamp: a signature built when the event was queued fails a receiver's few-minute tolerance on a retry hours later.
-- **Asymmetric signing** (ed25519, `v1a`) is the spec's preference where receivers can take it; it lets them verify without holding a shared secret.
+- **Asymmetric signing** (ed25519, `v2a`, over `endpoint_id.msg_id.timestamp.payload`) lets receivers verify without holding a shared secret, and one key pair serves every endpoint; the older `v1a` is deprecated.
 - **Tell receivers** to verify in constant time, reject a timestamp outside a few minutes, and dedupe on `webhook-id` — the same rules the house applies when it receives webhooks.
 
 ## Delivery
