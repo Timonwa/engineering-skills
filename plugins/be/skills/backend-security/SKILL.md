@@ -79,7 +79,7 @@ When the server fetches a URL a user gave it — an import, a link preview, a cu
 - **Cookie-authenticated mutations are checked in the proxy:** the `Origin` header must be on the allowlist, falling back to `Referer` when `Origin` is absent, and anything else is a 403. OWASP now adds **Fetch Metadata**: refuse a mutation whose `Sec-Fetch-Site` is `cross-site`. `SameSite=Lax` on the session cookie is a layer, not the defence (`auth`).
 - **A `Bearer` request isn't open to CSRF** — the browser never attaches it on its own — but the same route still runs the origin check when a cookie is present.
 - **A `GET` never changes state**, so no check is needed on it.
-- **A Server Action is a public `POST` endpoint**: it authorises and validates on its own, every time, like a route. Next compares its `Origin` with `Host`; set `experimental.serverActions.allowedOrigins` only for a known proxy, and never treat the encrypted closure as a place to keep a secret.
+- **A Server Action is a public `POST` endpoint.** In an app with its own backend it authorises and validates on its own, every time, like a route; one that only calls a separate API passes the session through and relies on that API's guard. Next compares its `Origin` with `Host`; set `experimental.serverActions.allowedOrigins` only for a known proxy, and never treat the encrypted closure as a place to keep a secret.
 - **Responses that vary on `Origin` or `Sec-Fetch-Site`** send `Vary` with those headers, so a cache can't serve one caller's answer to another.
 
 ## Firebase's public surface

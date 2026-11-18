@@ -47,8 +47,8 @@ The allowlist is prefix matches, checked before the flag is read, so exempt path
 - **One URL**, `/maintenance-bypass?token=…`, sets an `httpOnly`, `Secure`, `SameSite=Lax` cookie for 24 hours and redirects home. Both gates accept it, so an operator or a developer can use the live product while everyone else sees the page.
 - **A wrong or missing token is a 404**, never a 401 or 403, which would confirm the route exists. Compare it in constant time; an unset token disables the bypass rather than opening it.
 - **The cookie must reach the API**, so the apps and the API share its domain — and a frontend's server-side calls to the API forward it, or an operator past the page gate still gets a 503 on every read.
-- **The token sits in a URL once**, so it reaches access logs and history; the route redirects to a clean URL, and the token is rotated after every use.
-- **The token is 32 random bytes or more**, set on every deployed tier, and rotated after every use — it gets pasted into chats.
+- **The token sits in a URL once**, so it reaches access logs and history; the route redirects to a clean URL, and the token is rotated after every use, since it also gets pasted into chats.
+- **The token is 32 random bytes or more**, and set on every deployed tier.
 - **Staff use the URL too.** Letting a staff session through would cost a profile read per request in the proxy.
 
 ## When the flag can't be read

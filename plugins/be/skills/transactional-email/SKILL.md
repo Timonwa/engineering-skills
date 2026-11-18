@@ -28,7 +28,7 @@ From [Gmail's sender guidelines](https://support.google.com/a/answer/81126) and 
 
 - **SPF and DKIM on every sending domain**, with keys of at least 1024 bits (2048 where the provider supports it), and **DMARC published**, aligned with the From domain — `p=none` with reports (`rua`) to start, moving to `quarantine` once the reports are clean.
 - **Valid forward and reverse DNS** and TLS — a provider handles both; check it does.
-- **Spam rate under 0.1%**, and never 0.3%, in Google Postmaster Tools. Above that, mail gets throttled or refused.
+- **Spam rate under 0.3%**, and under 0.1% recommended, in Google Postmaster Tools. Above that, mail gets throttled or refused.
 - **The provider's domain checks pass on every tier** before that tier sends anything real; a tier that only sends tests uses the provider's sandbox or a test domain.
 
 ## Sending

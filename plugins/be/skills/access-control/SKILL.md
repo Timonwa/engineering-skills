@@ -117,7 +117,7 @@ How a person gains a resource role:
 
 - **Single-use and expiring** (days, not months), stored as a hash like any token; resending replaces the old one.
 - **Bound to the invited email**, accepted only by a signed-in account whose verified email matches. A forwarded link is useless to anyone else.
-- **The role is fixed when it's sent**, by someone allowed to grant it (the rank rules below), and checked again on acceptance — if the inviter has since lost the right, the invite is void.
+- **The role is fixed when it's sent**, by someone allowed to grant it (the rank rules above), and checked again on acceptance — if the inviter has since lost the right, the invite is void.
 - **The owner sees and revokes pending invites**; a pending invite grants nothing.
 
 ## Operator safeguards
