@@ -1,32 +1,16 @@
 {
   "name": "be",
   "displayName": "Backend Skills",
-  "description": "House backend standards for a Next.js API on Firebase: API architecture, the OpenAPI registry, backend security, Firebase, Redis, images, Cloudinary, field encryption, feature flags and maintenance mode, with an audit per domain.",
+  "description": "House backend standards for a Next.js API on Firebase: API architecture, the OpenAPI registry, auth, access control, rate limiting, plan entitlements, audit logs, backend security, field encryption, Firestore, Redis, images, Cloudinary, feature flags, maintenance mode, email and webhooks, with audits for the API, access control, Firestore and Redis.",
   "version": "1.0.0",
   "dependencies": [
     "eng",
-    "cloudinary-docs",
-    "cloudinary-next",
-    "cloudinary-react",
-    "cloudinary-transformations",
-    "extension-to-functions-codebase",
-    "firebase-ai-logic-basics",
     "firebase-app-hosting-basics",
-    "firebase-auth-basics",
-    "firebase-basics",
-    "firebase-data-connect-basics",
-    "firebase-firestore",
-    "firebase-hosting-basics",
-    "firebase-remote-config-basics",
     "firebase-security-rules-auditor",
-    "upstash-blob-js",
-    "upstash-cli",
-    "upstash-qstash-js",
+    "extension-to-functions-codebase",
     "upstash-ratelimit-js",
-    "upstash-redis-js",
-    "upstash-search-js",
-    "upstash-vector-js",
-    "upstash-workflow-js"
+    "cloudinary-transformations",
+    "cloudinary-docs"
   ],
   "author": {
     "name": "Timonwa"

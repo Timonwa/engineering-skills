@@ -3,22 +3,22 @@
   "owner": {
     "name": "Timonwa"
   },
-  "description": "Engineering skills for Next.js, React and Firebase projects, in three plugins (eng, fe, be), plus the official Firebase, Upstash and Cloudinary skills they build on.",
+  "description": "Engineering skills for Next.js, React and Firebase projects, in three plugins (eng, fe, be), plus the official Vercel, Firebase, Upstash and Cloudinary skills they build on.",
   "plugins": [
     {
       "name": "eng",
       "source": "./plugins/eng",
-      "description": "House engineering standards for Next.js, React, TypeScript and Firebase projects: structure, naming, TypeScript and schemas, monorepo, CI/CD, env, testing, scaffolding, shipping and reviewing changes, and the cross-cutting audits."
+      "description": "House engineering standards for Next.js, React, TypeScript and Firebase projects: AGENTS.md, structure, naming, TypeScript, schemas and contracts, the monorepo, env, testing, CI/CD, scaffolding, migrations, shipping and reviewing changes, and the repo-wide audits."
     },
     {
       "name": "fe",
       "source": "./plugins/fe",
-      "description": "House frontend standards for Next.js and React: React, Next.js, semantic HTML, accessibility, Tailwind, the design system, reusables, Storybook, SEO, frontend security, cookie consent and logos, with an audit per domain."
+      "description": "House frontend standards for Next.js and React: Next.js, React, semantic HTML, accessibility, Tailwind, the design system, reusables, frontend design, Storybook, SEO/AEO/GEO, copywriting, frontend security, cookie consent and logos, with audits for each and for copy."
     },
     {
       "name": "be",
       "source": "./plugins/be",
-      "description": "House backend standards for a Next.js API on Firebase: API architecture, the OpenAPI registry, backend security, Firebase, Redis, images, Cloudinary, field encryption, feature flags and maintenance mode, with an audit per domain."
+      "description": "House backend standards for a Next.js API on Firebase: API architecture, the OpenAPI registry, auth, access control, rate limiting, plan entitlements, audit logs, backend security, field encryption, Firestore, Redis, images, Cloudinary, feature flags, maintenance mode, email and webhooks, with audits for the API, access control, Firestore and Redis."
     },
     {
       "name": "extension-to-functions-codebase",
@@ -31,16 +31,6 @@
       "description": "Skill for converting an installed Firebase Extension (or extension source) into a standalone Cloud Functions for Firebase codebase or publishable npm package, including V1 to V2 trigger upgrades, lifecycle hooks, and declarative security"
     },
     {
-      "name": "firebase-ai-logic-basics",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-ai-logic-basics",
-        "ref": "main"
-      },
-      "description": "Official skill for integrating Firebase AI Logic (Gemini API) into web applications. Covers setup, multimodal inference, structured output, and security."
-    },
-    {
       "name": "firebase-app-hosting-basics",
       "source": {
         "source": "git-subdir",
@@ -49,66 +39,6 @@
         "ref": "main"
       },
       "description": "Deploys and manages full-stack web applications (Next.js, Angular) with Server-Side Rendering (SSR) using Firebase App Hosting. Use when deploying Next.js/Angular apps, configuring apphosting.yaml or firebase.json apphosting…"
-    },
-    {
-      "name": "firebase-auth-basics",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-auth-basics",
-        "ref": "main"
-      },
-      "description": "Guide for setting up and using Firebase Authentication. Use this skill when the user's app requires user sign-in, user management, or secure data access using auth rules."
-    },
-    {
-      "name": "firebase-basics",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-basics",
-        "ref": "main"
-      },
-      "description": "Provides foundational Firebase CLI setup, CLI installation, version checks (`firebase-tools@latest --version`), CLI login (including --no-localhost), project creation, project selection (`firebase use`), and app config file…"
-    },
-    {
-      "name": "firebase-data-connect-basics",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-data-connect-basics",
-        "ref": "main"
-      },
-      "description": "Builds and deploys Firebase SQL Connect (aka Firebase Data Connect) backends with PostgreSQL securely. Use when designing schemas with tables and relations, writing authorized queries and mutations, configuring real-time data…"
-    },
-    {
-      "name": "firebase-firestore",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-firestore",
-        "ref": "main"
-      },
-      "description": "Sets up, manages, queries, and configures Cloud Firestore databases (Standard/Enterprise edition), including data modeling, security rules, indexes, and SDK integrations (Web, Python, iOS, Android, Flutter). Use when…"
-    },
-    {
-      "name": "firebase-hosting-basics",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-hosting-basics",
-        "ref": "main"
-      },
-      "description": "Deploys and configures classic Firebase Hosting for static websites, single-page apps (SPAs), and microservices. Use when deploying static sites/SPAs, setting up custom domains, configuring firebase.json hosting settings…"
-    },
-    {
-      "name": "firebase-remote-config-basics",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/firebase/agent-skills.git",
-        "path": "skills/firebase-remote-config-basics",
-        "ref": "main"
-      },
-      "description": "Manages Firebase Remote Config templates, feature flags, loading strategies, and SDKs (Android, iOS). Use when downloading/deploying remoteconfig JSON templates, managing version history/feature flags, setting in-app defaults,…"
     },
     {
       "name": "firebase-security-rules-auditor",
@@ -121,36 +51,6 @@
       "description": "Audits Firebase (Firestore, Cloud Storage) security rules for vulnerabilities, privilege escalation, role bypasses, create vs update inconsistencies, resource exhaustion, type safety, size limits, and hasOnly ownership checks.…"
     },
     {
-      "name": "upstash-blob-js",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-blob-js",
-        "ref": "main"
-      },
-      "description": "Work with the @upstash/blob TypeScript/JavaScript SDK for S3-compatible object storage with direct browser uploads, presigned URLs, multipart, and signed reads. Use when storing files or blobs, uploading avatars, images, videos,…"
-    },
-    {
-      "name": "upstash-cli",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-cli",
-        "ref": "main"
-      },
-      "description": "Run the Upstash CLI (`upstash`) against the Upstash Developer API for Redis, Vector, Search, QStash, Blob, and teams, with non-interactive commands and JSON output for scripts, CI, and agents. Use when creating, listing,…"
-    },
-    {
-      "name": "upstash-qstash-js",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-qstash-js",
-        "ref": "main"
-      },
-      "description": "Work with the @upstash/qstash TypeScript/JavaScript SDK, an HTTP-based message queue, task scheduler, and background job system for serverless and edge runtimes (Next.js, Vercel, Cloudflare Workers, Deno, Node.js). Use when…"
-    },
-    {
       "name": "upstash-ratelimit-js",
       "source": {
         "source": "git-subdir",
@@ -161,46 +61,6 @@
       "description": "Rate limiting for serverless and edge apps with the @upstash/ratelimit TypeScript/JavaScript SDK backed by Upstash Redis. Use when adding a rate limiter or throttling to an API route, Next.js middleware, Vercel Edge, Cloudflare…"
     },
     {
-      "name": "upstash-redis-js",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-redis-js",
-        "ref": "main"
-      },
-      "description": "Work with the @upstash/redis TypeScript/JavaScript SDK, a serverless HTTP-based Redis client for Next.js, Vercel, Cloudflare Workers, edge runtimes, and Node.js. Use when adding a cache (cache-aside, write-through, TTL and…"
-    },
-    {
-      "name": "upstash-search-js",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-search-js",
-        "ref": "main"
-      },
-      "description": "Work with the @upstash/search TypeScript/JavaScript SDK, a serverless full-text and semantic search database with built-in reranking. Use when adding search to an app or site, creating a search index, upserting documents with…"
-    },
-    {
-      "name": "upstash-vector-js",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-vector-js",
-        "ref": "main"
-      },
-      "description": "Work with the @upstash/vector TypeScript/JavaScript SDK, a serverless vector database for embeddings, similarity search, semantic search, and RAG (retrieval-augmented generation). Use when upserting, querying, fetching, ranging,…"
-    },
-    {
-      "name": "upstash-workflow-js",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/upstash/skills.git",
-        "path": "skills/upstash-workflow-js",
-        "ref": "main"
-      },
-      "description": "Work with the @upstash/workflow TypeScript/JavaScript SDK for durable, long-running workflows in serverless functions, multi-step processes that survive timeouts, retries, and restarts (built on QStash). Use when defining a…"
-    },
-    {
       "name": "cloudinary-docs",
       "source": {
         "source": "git-subdir",
@@ -209,26 +69,6 @@
         "ref": "main"
       },
       "description": "Looks up implementation details in the latest Cloudinary docs via the relevant llms.txt file. Use when building code or answering questions relating to image or video uploads, management, SDKs, APIs, webhooks, or integrations.…"
-    },
-    {
-      "name": "cloudinary-next",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/cloudinary-devs/skills.git",
-        "path": "skills/cloudinary-next",
-        "ref": "main"
-      },
-      "description": "Guidance for building, debugging, and reviewing next.js apps that use cloudinary through next-cloudinary and the cloudinary node sdk v2. Use for tasks involving CldImage, CldVideoPlayer, CldUploadWidget, CldUploadButton,…"
-    },
-    {
-      "name": "cloudinary-react",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/cloudinary-devs/skills.git",
-        "path": "skills/cloudinary-react",
-        "ref": "main"
-      },
-      "description": "Provides opinionated React SDK patterns for configuration, common integration scenarios, and troubleshooting for frequent errors and TypeScript pitfalls. Use when writing code or answering questions related to the Cloudinary React SDK."
     },
     {
       "name": "cloudinary-transformations",
@@ -249,6 +89,36 @@
         "ref": "main"
       },
       "description": "Build system guide for JavaScript and TypeScript monorepos with task caching and parallel execution."
+    },
+    {
+      "name": "next-dev-loop",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/vercel/next.js.git",
+        "path": "skills/next-dev-loop",
+        "ref": "canary"
+      },
+      "description": "Verify Next.js runtime behavior after editing app code, through the dev server's MCP endpoint and a browser. Requires a running next dev."
+    },
+    {
+      "name": "next-cache-components-adoption",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/vercel/next.js.git",
+        "path": "skills/next-cache-components-adoption",
+        "ref": "canary"
+      },
+      "description": "Turn on Cache Components in a Next.js app and resolve the blocking routes it surfaces."
+    },
+    {
+      "name": "next-cache-components-optimizer",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/vercel/next.js.git",
+        "path": "skills/next-cache-components-optimizer",
+        "ref": "canary"
+      },
+      "description": "Grow the UI a Next.js route shows immediately on a hard or soft navigation, guarded by a failing instant() e2e worked to green."
     }
   ]
 }

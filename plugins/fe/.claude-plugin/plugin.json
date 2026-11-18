@@ -1,9 +1,14 @@
 {
   "name": "fe",
   "displayName": "Frontend Skills",
-  "description": "House frontend standards for Next.js and React: React, Next.js, semantic HTML, accessibility, Tailwind, the design system, reusables, Storybook, SEO, frontend security, cookie consent and logos, with an audit per domain.",
+  "description": "House frontend standards for Next.js and React: Next.js, React, semantic HTML, accessibility, Tailwind, the design system, reusables, frontend design, Storybook, SEO/AEO/GEO, copywriting, frontend security, cookie consent and logos, with audits for each and for copy.",
   "version": "1.0.0",
-  "dependencies": ["eng"],
+  "dependencies": [
+    "eng",
+    "next-dev-loop",
+    "next-cache-components-adoption",
+    "next-cache-components-optimizer"
+  ],
   "author": {
     "name": "Timonwa"
   },
