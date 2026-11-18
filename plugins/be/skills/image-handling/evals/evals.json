@@ -1,0 +1,54 @@
+{
+  "skill_name": "image-handling",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The avatar upload route checks `file.type.startsWith('image/')` and the .png/.jpg/.svg extension, then saves it as `${uid}/${file.name}`. Good enough?",
+      "expected_output": "Should say the type and extension are whatever the client sends. Read the first bytes with `file-type`, check the real type against an allowlist from one shared constants module, decode with a pixel cap (`sharp`'s `limitInputPixels`) and refuse what's over or doesn't decode, and store the detected type as the contentType. Refuse user SVG — it's a document that can run script. Name the object by a fixed slot path (`{ownerId}/avatar`) or record id, never the user's filename.",
+      "files": [],
+      "expectations": [
+        "Checks the file's bytes, not the label",
+        "Decodes within a pixel limit",
+        "Refuses SVG and says why",
+        "Takes caps and allowlist from one shared module",
+        "Names the object by slot or record id, not filename"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "For private event photos, generate a signed URL valid for 7 days when the photo is uploaded and save it on the photo document so the gallery loads fast.",
+      "expected_output": "Should refuse storing a signed URL: it's a bearer credential that can't be revoked. Store the path (and a version), and mint a short link — minutes, 15 to start — only in server code that has just checked the caller's access in the same request. A download link sets `Content-Disposition: attachment`. Private files live in the private bucket.",
+      "files": [],
+      "expectations": [
+        "Refuses to store the signed URL",
+        "Explains it is a non-revocable bearer credential",
+        "Mints a short-lived link after the access check, per request",
+        "Stores the path instead"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "When a user replaces their cover photo we overwrite gs://public/{uid}/cover, but people still see the old one for a while. Should we set Cache-Control: no-cache on it?",
+      "expected_output": "Should keep long caching and bust it with a version: store the path plus a version (the record's updatedAt or a counter) and build the URL at read time with `?v=`, which changes on every replace. Browsers and CDNs hold the old bytes (public objects default to an hour) until the query string changes. After the mutation the page refreshes so the new URL reaches it.",
+      "files": [],
+      "expectations": [
+        "Does not recommend no-cache",
+        "Adds a ?v= version that changes on replace",
+        "Builds the URL at read time from path and version",
+        "Refreshes the page after the mutation"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Generate thumbnails inside the upload API route with sharp before responding, and keep the EXIF so we can show where photos were taken.",
+      "expected_output": "Should move processing to a storage-triggered worker (`onObjectFinalized`), not the request; mark the worker's output with custom metadata so it skips its own files. Apply the orientation with `rotate()` then strip EXIF — delivered files never carry GPS or device serials; keep only allowlisted fields like capture time, with GPS off. Showing location would need the owner's explicit choice, outside the delivered file.",
+      "files": [],
+      "expectations": [
+        "Moves processing to a storage-triggered worker",
+        "Guards against the worker processing its own output",
+        "Strips EXIF after applying the orientation",
+        "Refuses to keep GPS in delivered files"
+      ]
+    }
+  ]
+}

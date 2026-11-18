@@ -1,0 +1,54 @@
+{
+  "skill_name": "openapi-registry",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Register POST /v1/events/{eventId}/publish in the OpenAPI registry. Status 201, and describe the body in the description since it's small: '{ notifyAttendees: boolean }'.",
+      "expected_output": "Should register a state transition as 200, not 201 (201 is for a create). Import the handler's own body schema from the shared contracts into the `body` field, marked required — never describe inputs in prose. Add a response schema for the returned data, set `auth` because the handler runs a guard, keep a stable operationId, and let the helper derive 400, 401, 403, 404, 429 and 500.",
+      "files": [],
+      "expectations": [
+        "Uses 200 for an action POST",
+        "Uses the handler's own schema in the body field",
+        "Marks the body required",
+        "Adds a response schema",
+        "Sets auth because the handler is guarded",
+        "Does not restate the standard errors"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Rename the operationId for GET /v1/albums from getAlbums to listAlbums to match our naming. It's just docs, right?",
+      "expected_output": "Should flag a renamed operationId as a breaking change: client generators name methods after it, so integrators' code breaks. Keep it, or ship the change in a new version with deprecation.",
+      "files": [],
+      "expectations": [
+        "Says operationId renames are breaking",
+        "Explains client generators use it",
+        "Keeps it or moves it to a new version"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add oasdiff to CI: `oasdiff breaking base.json head.json`. That'll block breaking changes.",
+      "expected_output": "Should say that command never fails the job; add `--fail-on ERR`. The document is built once from the branch and once from the base branch by a script, linted with Spectral or Redocly, and a coverage test checks both ways that every exported method is registered and nothing registered is unserved.",
+      "files": [],
+      "expectations": [
+        "Adds --fail-on ERR",
+        "Says the bare command never fails",
+        "Lints the document in CI",
+        "Mentions the two-way coverage test"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Document the avatar upload route. Use z.file() in the body schema so the OpenAPI shows a file input.",
+      "expected_output": "Should note the generator has no `z.file()` support: register a `multipart/form-data` body with the file field documented as `.openapi({ type: 'string', format: 'binary' })`, while the handler validates the real file.",
+      "files": [],
+      "expectations": [
+        "Says the generator doesn't support z.file()",
+        "Uses multipart/form-data",
+        "Documents the field as a binary string",
+        "Keeps the handler's real validation"
+      ]
+    }
+  ]
+}

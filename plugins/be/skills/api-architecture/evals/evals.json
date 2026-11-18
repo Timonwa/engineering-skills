@@ -1,0 +1,56 @@
+{
+  "skill_name": "api-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write POST /api/events/[eventId]/publish. Read the event from Firestore in the route, check event.ownerId === body.userId, set status to 'published', and return NextResponse.json({ ok: true }).",
+      "expected_output": "Should rebuild it in the six steps — rate limit, authorise, validate, delegate, audit, respond — under a version (`app/api/v1/events/[eventId]/publish/route.ts`). The guard loads the event and checks a verb, taking identity from the session token, never from a body field, and answers 404 before 403. `ctx.params` is awaited then validated. One service call does the publish; the route never touches Firestore. The privileged change is audited after the response. The answer goes through the shared builders, which set `Cache-Control: no-store`. Ships with its schemas, API-reference entry and a colocated route test.",
+      "files": [],
+      "expectations": [
+        "Follows rate limit → authorise → validate → delegate → audit → respond",
+        "Puts the route under v1",
+        "Takes identity from the session, not body.userId",
+        "Moves store access into a service and data module",
+        "Responds through the shared builders, not NextResponse.json",
+        "Ships the API-reference entry and a route test"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a 'deactivate' option for API keys. I'll just use DELETE /v1/api-keys/[id] and set active: false in the service.",
+      "expected_output": "Should refuse DELETE for switching something off: DELETE removes a thing. A state transition is its own POST sub-route (`/v1/api-keys/[id]/deactivate`, and `reactivate` as its own), each with its own permission verb and audit action.",
+      "files": [],
+      "expectations": [
+        "Does not use DELETE to switch something off",
+        "Adds a POST transition sub-route",
+        "Gives the reverse transition its own route",
+        "Gives each transition its own verb and audit action"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The export endpoint takes about 3 minutes for large accounts and our host times out at 60s. Can we just raise maxDuration?",
+      "expected_output": "Should answer 202 with the id and path of an operation record, run the export from a queue, and have the client poll the operation for status, progress and the result or error. Should not hold a request open for slow work.",
+      "files": [],
+      "expectations": [
+        "Answers 202 with an operation id and path",
+        "Runs the work from a queue",
+        "The client polls the operation",
+        "Does not recommend holding the request open"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "List endpoint for orders: GET /v1/orders?page=3&sortBy=anyField. Use offset pagination, it's simpler.",
+      "expected_output": "Should use cursor pagination through the shared helper, with the total from a stored counter and `paginated` building the metadata. `sortBy` must be an enum of allowlisted fields, each with its composite index committed; an unknown field is a 400. The list returns a projection, not whole documents.",
+      "files": [],
+      "expectations": [
+        "Uses cursor pagination, not offset",
+        "Allowlists the sort field as an enum",
+        "Answers 400 for an unknown sort field",
+        "Commits a composite index for each sort",
+        "Returns a projection"
+      ]
+    }
+  ]
+}

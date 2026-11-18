@@ -1,0 +1,41 @@
+{
+  "skill_name": "firestore-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run the Firestore audit. src/server/data/ticket.data.ts has `importTickets` that splits writes into batches of 500 'because of Firestore's limit', and `listTickets` does `.where('eventId','==',id).orderBy('soldAt')` with no entry in firestore.indexes.json.",
+      "expected_output": "Should not flag the 500-write chunking as needed (there's no 500-write limit any more; the limit is 10 MiB per request, and BulkWriter suits independent writes) — at most a low-severity note that the comment is wrong. Should flag the missing composite index (equality plus orderBy on the Standard edition fails with FAILED_PRECONDITION in production, though the emulator runs it) as HIGH, and that `soldAt` must exist on every document. Report to `_reports/firestore-audit.md`; no code edits.",
+      "files": [],
+      "expectations": [
+        "Does not treat 500 writes as a Firestore limit",
+        "Flags the missing composite index",
+        "Explains the emulator won't catch it",
+        "Flags orderBy dropping documents without soldAt",
+        "Writes the report without editing code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit Firestore. Is point-in-time recovery on in production, and do our console rules match firestore.rules?",
+      "expected_output": "Should check with `gcloud firestore databases describe` and `gcloud firestore backups schedules list` where available; otherwise mark PITR, delete protection, backups and the console rules matching the repo as 'needs confirmation' — console state the code can't show — not as findings or passes.",
+      "files": [],
+      "expectations": [
+        "Uses gcloud to check where possible",
+        "Marks console-only state as needs confirmation",
+        "Does not invent a pass or a finding"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit src/server/data/event.data.ts. getEventsWithOrganisers loops over 40 events and awaits `db.doc(`users/${event.ownerId}`).get()` for each; the collection name is a literal.",
+      "expected_output": "Should flag the N+1 (40 sequential reads; batch with `getAll` or `in` chunked at 30 and run in parallel, or denormalise the organiser's name onto the event) and the literal path (paths come from the shared constants and builders). Each with file:line and a verified cost.",
+      "files": [],
+      "expectations": [
+        "Flags the N+1 read",
+        "Recommends getAll or in-chunks of 30, or denormalising",
+        "Flags the literal collection path",
+        "Gives file:line evidence"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "skill_name": "plan-entitlements",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Custom domains are Pro-only. In the service, `if (account.plan !== 'pro') throw new HttpError(402, 'Payment required')`.",
+      "expected_output": "Should replace the plan-name check with the entitlements map — `hasFeature(entitlements, 'custom-domain')` on the effective entitlements computed by one function. The refusal is a 403 with its own code, `FEATURE_NOT_IN_PLAN`, and the key in details — not 402, which HTTP still reserves, and not the permission refusal's code. The resource owner's plan applies, and the check runs after the permission and the resource's state.",
+      "files": [],
+      "expectations": [
+        "Removes the plan-name comparison",
+        "Uses the entitlements map with a stable key",
+        "Answers 403 FEATURE_NOT_IN_PLAN, not 402",
+        "Explains why 402 is wrong",
+        "Uses the resource owner's plan",
+        "Places the check after permission and state"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Before creating a member, I call countMembers(), compare it with the seat limit, then create the member doc. Some teams end up over their limit.",
+      "expected_output": "Should reserve in the same transaction as the work: read usage, refuse if used + requested > limit with `PLAN_LIMIT_REACHED`, increment, and create the member — all in one transaction, so two requests at the edge can't both fit. Add a test where two reservations that only fit one at a time race and exactly one succeeds.",
+      "files": [],
+      "expectations": [
+        "Names the check-then-write race",
+        "Reserves usage in the work's transaction",
+        "Refuses with PLAN_LIMIT_REACHED",
+        "Adds a concurrency test where exactly one succeeds"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "After Paystack redirects to /billing/success?plan=pro, set the account's plan to pro in the page's server action.",
+      "expected_output": "Should never grant from the success page, which can be faked. On return the server asks the provider for the payment's status and applies it if paid, running the same idempotent fulfilment as the verified webhook; until either has run, the page says the payment is being confirmed. Webhooks are applied from the state they carry, older events ignored, each recorded once.",
+      "files": [],
+      "expectations": [
+        "Refuses to trust the success URL",
+        "Verifies the payment with the provider server-side",
+        "Shares idempotent fulfilment with the webhook",
+        "Shows a confirming state until applied"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Put the plan in Firebase custom claims so we can check entitlements without a read, and reset the monthly email counter with a cron job on the 1st.",
+      "expected_output": "Should refuse both: a plan in claims lives until the session is re-minted, so a downgrade keeps the old plan running — read it from the account's snapshot. Periods are keys, not resets: key the counter by billing period (`usage/<accountId>_<periodStart>`), so a new period starts at zero with no job to miss, and it can sit in the work's transaction.",
+      "files": [],
+      "expectations": [
+        "Refuses plans in session claims",
+        "Explains the stale-downgrade problem",
+        "Keys counters by billing period",
+        "Rejects the reset job"
+      ]
+    }
+  ]
+}

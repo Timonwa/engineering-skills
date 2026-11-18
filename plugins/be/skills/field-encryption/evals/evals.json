@@ -1,0 +1,53 @@
+{
+  "skill_name": "field-encryption",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write encryptField(plaintext, iv) and decryptField using AES-256-GCM. Pass the IV in from the caller so it's deterministic and we can search by ciphertext.",
+      "expected_output": "Should refuse a caller-supplied nonce: a fresh random 12-byte nonce is generated inside encrypt every time, because reusing one under a key leaks the XOR of plaintexts and lets an attacker forge tags. Ciphertext isn't searchable; for equality lookups store a blind index — an HMAC of the normalised value under a separate key. Uses a versioned format (`v1:<nonce>:<tag>:<ciphertext>`), binds collection, document id and field name as associated data, passes `authTagLength: 16`, and decrypt fails closed with a generic error.",
+      "files": [],
+      "expectations": [
+        "Generates the nonce inside encrypt",
+        "Explains the danger of nonce reuse in GCM",
+        "Proposes a blind index under a separate key for lookups",
+        "Uses a versioned format",
+        "Binds context as associated data",
+        "Sets authTagLength to 16 and fails closed"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We already have FIELD_ENCRYPTION_KEY. Reuse it to sign our magic-link tokens and as the HMAC key for the email blind index, so we have fewer secrets to manage.",
+      "expected_output": "Should refuse: one key per purpose. Field encryption, a blind index and signed tokens each get their own key, so leaking or rotating one never touches the others (OWASP). Generate the new ones with a secure generator and store them in the secret manager with `printf`, not `echo`.",
+      "files": [],
+      "expectations": [
+        "Refuses reusing the field key",
+        "States one key per purpose",
+        "Generates separate keys for the index and tokens"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Users should be able to log in with a password; let's encrypt the password field with the field key so support can read it back if needed.",
+      "expected_output": "Should refuse: a login password is only ever verified, so it's hashed (`auth`), never encrypted, and support never reads it back. Encryption is only for a value someone must read in clear.",
+      "files": [],
+      "expectations": [
+        "Refuses to encrypt passwords",
+        "Says verified-only values are hashed",
+        "Rejects support reading passwords back"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "The payout key leaked. Rotate it: put the new key in the secret manager, delete the old one, and re-encrypt everything.",
+      "expected_output": "Should rotate by version: add the new key as v2 beside v1; decrypt picks the key by prefix and encrypt writes v2; backfill every v1 value in a transaction that checks the value is unchanged. Retire the old key from the app once nothing reads v1, but keep it archived while any backup or PITR window still holds v1 data, or a restore brings back unreadable data.",
+      "files": [],
+      "expectations": [
+        "Adds v2 beside v1 rather than replacing",
+        "Picks the key by version prefix on decrypt",
+        "Backfills in a transaction that checks the value is unchanged",
+        "Keeps the old key archived while backups hold v1 data"
+      ]
+    }
+  ]
+}

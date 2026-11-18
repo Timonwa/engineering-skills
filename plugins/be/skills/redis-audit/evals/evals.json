@@ -1,0 +1,52 @@
+{
+  "skill_name": "redis-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run the Redis audit on apps/api. src/server/clients/redis/redis.client.ts creates `new Redis({ url, token, signal: AbortSignal.timeout(500) })`.",
+      "expected_output": "Should flag the static AbortSignal as HIGH: given a plain signal, the SDK resolves an aborted command as null instead of throwing, and once that one signal fires (500ms after boot) every later command returns null silently — caches miss, and locks and claims may read as free. The fix is `signal: () => AbortSignal.timeout(500)` plus one or two retries. Verified by tracing a lock's `set nx` returning null. Report to `_reports/redis-audit.md`; no code edits.",
+      "files": [],
+      "expectations": [
+        "Flags the static AbortSignal",
+        "Explains the silent-null failure for every later command",
+        "Rates it HIGH or above",
+        "Recommends the function form",
+        "Does not edit code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit Redis. Our Upstash database has eviction turned on, and the lock helper catches Redis errors and runs the work anyway.",
+      "expected_output": "Should flag both. Eviction on Upstash uses optimistic-volatile, which evicts TTL'd keys first — locks, claims and rate-limit counters — so it must be off where those live; whether it's on is console state, so confirm it or mark 'needs confirmation' if only the user's word is available. The lock's catch-and-continue fails open; locks fail closed, or a double charge is one outage away.",
+      "files": [],
+      "expectations": [
+        "Flags eviction with the optimistic-volatile reason",
+        "Treats the eviction setting as console state to confirm",
+        "Flags the lock failing open",
+        "Requires locks to fail closed"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit apps/web for Redis.",
+      "expected_output": "Should first confirm the app uses Redis — a client, config or dependency. If apps/web has none, say so and stop without inventing findings; the audit is only for apps that use Redis.",
+      "files": [],
+      "expectations": [
+        "Checks whether the app uses Redis first",
+        "Stops cleanly if it doesn't",
+        "Invents no findings"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Audit Redis. The cache group generation key `cache:events:generation` has no TTL, with a comment saying it's one integer per group. And the rate limiter uses `@upstash/ratelimit` with no timeout option set.",
+      "expected_output": "Should not flag the generation key: it's the expected exception, with its comment. Should flag the missing timeout: `@upstash/ratelimit` defaults to 5 seconds, stalling the request path during an outage; set a few hundred milliseconds, and closed tiers must read `reason: \"timeout\"` as a denial.",
+      "files": [],
+      "expectations": [
+        "Does not flag the commented generation key",
+        "Flags the default 5-second ratelimit timeout",
+        "Notes closed tiers must treat a timeout as denial"
+      ]
+    }
+  ]
+}

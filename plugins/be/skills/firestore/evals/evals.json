@@ -1,0 +1,54 @@
+{
+  "skill_name": "firestore",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Import 1,800 product documents. Firestore batches max out at 500 writes, so split them into four batches of 500.",
+      "expected_output": "Should correct the premise: Firestore no longer caps a batch or transaction at 500 writes; the limit is the 10 MiB request size. For a large volume of independent writes use `BulkWriter`, which batches and retries. Use a batch only when the writes must commit together.",
+      "files": [],
+      "expectations": [
+        "States the 500-write cap no longer applies",
+        "Names the 10 MiB request limit",
+        "Recommends BulkWriter for independent writes",
+        "Keeps batches for writes that must commit together"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The tickets list sorts by `soldAt`, but some tickets don't show up. Also the emulator never complained about indexes, so we're fine on that front, right?",
+      "expected_output": "Should explain that `orderBy` silently drops documents that lack the field, so `soldAt` must be written on every document with a default. And the emulator runs any valid query: on the Standard edition, an equality filter plus a range or orderBy needs a composite index and fails with FAILED_PRECONDITION in production. Commit it in `firestore.indexes.json` with the query, deploy it to development to check, and deploy indexes before the code.",
+      "files": [],
+      "expectations": [
+        "Explains orderBy drops documents missing the field",
+        "Writes the field on every document with a default",
+        "Says the emulator does not catch missing indexes",
+        "Commits the composite index with the query",
+        "Deploys the index before the code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "In createMember, I read the members collection to check the user isn't already a member, then add the doc and send the welcome email, all inside db.runTransaction.",
+      "expected_output": "Should keep the read and the write in the transaction (with `create()` or the check inside it, and `FieldValue.increment()` for the member count) but move the welcome email after the commit, because a transaction can run more than once and would send it twice.",
+      "files": [],
+      "expectations": [
+        "Keeps the uniqueness check and write in the transaction",
+        "Moves the email after the commit",
+        "Explains transactions can retry",
+        "Uses increment() for the counter"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Let the dashboard read its notifications straight from Firestore in the browser with onSnapshot so they're live. Update the rules to allow read on /notifications.",
+      "expected_output": "Should open exactly that path read-only, with the same ownership check the API's guard makes (`request.auth.uid` matches the notification's owner), never a blanket allow, and unsubscribe the listener on unmount. Every other path stays denied; add rules tests for the owner, another account and a signed-out caller, run against the emulator in CI.",
+      "files": [],
+      "expectations": [
+        "Opens only that path, read-only",
+        "Checks ownership in the rule",
+        "Unsubscribes the listener on unmount",
+        "Adds rules tests for owner, another account and signed-out"
+      ]
+    }
+  ]
+}

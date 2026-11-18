@@ -1,0 +1,53 @@
+{
+  "skill_name": "feature-flags",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a flag PRO_EXPORTS so only accounts on the Pro plan can use CSV export.",
+      "expected_output": "Should refuse a flag for a plan gate: a flag never grants or removes access. What an account's plan includes is an entitlement (`plan-entitlements`); who may act is a permission (`access-control`). If the goal is to release the export gradually, a release flag can sit in front of the feature for everyone, with the plan check behind it.",
+      "files": [],
+      "expectations": [
+        "Refuses to gate a plan with a flag",
+        "Points to plan-entitlements",
+        "Separates a release flag from the entitlement check"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "If Redis and Firestore are both down, make evaluateFlag return false for every flag so nothing risky turns on.",
+      "expected_output": "Should refuse dropping every flag to off: it would switch off live features and release whatever a kill switch was holding (an ops flag that defaults on). On a failed read the evaluator serves the last catalogue read, and if there has never been one, each flag's coded default — the industry standard (LaunchDarkly keeps last values, OpenFeature returns the caller's default). The default is what the app does today, and the function never throws.",
+      "files": [],
+      "expectations": [
+        "Rejects all-off on store failure, with the reason",
+        "Serves last known values first",
+        "Falls back to the coded default",
+        "Notes that ops flags default on",
+        "Keeps evaluateFlag from throwing"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Make the flag provider fetch /api/flags on mount in a client component and put it in the root layout so every page has flags.",
+      "expected_output": "Should resolve flags on the server and pass booleans to a provider that never fetches — a client fetch renders the default first and flips after. Resolve them behind their own `<Suspense>` in the route group's layout, never the root layout, with the catalogue cached under a tag every flag change expires.",
+      "files": [],
+      "expectations": [
+        "Resolves flags on the server",
+        "The provider never fetches",
+        "Names the flash of the wrong version",
+        "Uses the route group's layout behind Suspense, not the root"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "NEW_CHECKOUT has been fully on for three weeks. Delete the flag document so the admin list is cleaner.",
+      "expected_output": "Should retire it in order: remove every code reference and the dead branch, drop it from the registry, then archive the record — never delete, since a deleted flag leaves surviving references silently serving their default and the audit trail loses its subject. The archive goes through its own POST sub-route with an audit entry.",
+      "files": [],
+      "expectations": [
+        "Archives rather than deletes",
+        "Removes code references and the dead branch first",
+        "Drops it from the registry",
+        "Uses the audited archive sub-route"
+      ]
+    }
+  ]
+}

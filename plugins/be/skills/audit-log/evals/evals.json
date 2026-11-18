@@ -1,0 +1,54 @@
+{
+  "skill_name": "audit-log",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add audit logging to the 'grant admin role' route. I'll just call `void writeAudit(...)` at the end so it doesn't slow the response, and swallow errors.",
+      "expected_output": "Should refuse a dangling promise — a serverless instance can freeze mid-write and the entry is silently lost. Because a role grant must not exist without its entry, write the entry in the same transaction as the change. For other entries, write after the response with `after()`, retry, and send a final failure to the error log with an alert — never fail the request, never lose it silently.",
+      "files": [],
+      "expectations": [
+        "Rejects the unawaited promise and says why",
+        "Writes the role-grant entry in the same transaction as the change",
+        "Uses after() with retries for entries that don't need the transaction",
+        "Alerts on a final failure rather than swallowing it",
+        "Never lets the audit write fail the request"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "When a user deletes their account under GDPR, delete their audit log entries too so we're compliant.",
+      "expected_output": "Should keep the entries for their retention period: an erasure request is met for the product's data, while audit entries are kept as a legal obligation or legitimate interest, with a published policy saying so. Where the law requires less, replace the email with a pseudonym rather than removing the entry. Corrections are new entries; nothing edits or deletes one.",
+      "files": [],
+      "expectations": [
+        "Does not delete audit entries on account deletion",
+        "Names the retention basis and the published policy",
+        "Offers pseudonymising the email where required",
+        "Keeps the log append-only"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Log every 403 in the audit log, including when a member opens another team's project by id. Also add an action 'updated stuff' for the settings page.",
+      "expected_output": "Should put only refusals on privileged permissions (and failed second-factor or step-up checks) in the audit log; an ordinary refusal on one record goes to the security log with actor, method, path and IP, so probing alerts without burying the entries that matter. Actions come from one typed list in the `scope.resource.action` grammar, registered before the feature ships — not an ad-hoc string like 'updated stuff'.",
+      "files": [],
+      "expectations": [
+        "Keeps ordinary refusals out of the audit log",
+        "Sends them to the security log instead",
+        "Rejects the ad-hoc action string",
+        "Uses a registered scope.resource.action name"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Customers keep asking whether our audit log is tamper-proof. We store entries in Firestore with rules denying clients. Is that enough?",
+      "expected_output": "Should say no: the Admin SDK can still edit a document. Make it tamper-evident by shipping entries to write-once storage (a log bucket with locked retention, or a retention-locked storage bucket) or chaining each entry with a hash of the previous one. Retention runs on a policy and a TTL field, with the period taken from the project's AGENTS.md, and reads and exports of the log are themselves audited.",
+      "files": [],
+      "expectations": [
+        "Says client-denying rules don't stop Admin SDK edits",
+        "Proposes write-once storage or a hash chain",
+        "Takes the retention period from the project",
+        "Audits reads and exports"
+      ]
+    }
+  ]
+}
