@@ -1,0 +1,44 @@
+{
+  "skill_name": "seo-aeo-geo-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /fe:seo-aeo-geo-audit on apps/web. lib/seo/build-metadata.ts declares `path = '/'` as a default and sets alternates.canonical from it; robots.ts disallows /api/; the blog post titles are 68–72 characters.",
+      "expected_output": "Should report the default path as CRITICAL: every page that omits its path becomes canonical to the home page. Disallowing /api/ blocks the /api/og share-card route, so that's a finding. Title length alone is not a finding, because Google truncates rather than limits. Each finding is verified with file:line. Writes _reports/seo-aeo-geo-audit.md and doesn't edit code.",
+      "files": [],
+      "expectations": [
+        "Rates the default canonical path CRITICAL",
+        "Reports the /api/ disallow blocking the card route",
+        "Does not report title length as a finding",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Deleted event pages call notFound() from a component rendered inside <Suspense>. robots.ts returns `allow: '/'` on every tier with no APP_ENV check. The repo doesn't show whether staging sits behind auth.",
+      "expected_output": "Should report that the deleted pages answer 200 with an injected noindex instead of 410, because the status is set after streaming starts; the fix is a 410 from the proxy or a route handler (HIGH). Non-production tiers being crawlable is a finding: they must send noindex and Disallow: /. Whether staging is behind auth is marked needs confirmation.",
+      "files": [],
+      "expectations": [
+        "Reports the post-streaming notFound() returning 200",
+        "Gives 410 from the proxy or a route handler as the fix",
+        "Reports robots allowing crawling on non-production tiers",
+        "Marks staging auth as needs confirmation",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "robots.ts blocks OAI-SearchBot and PerplexityBot, and AGENTS.md has no decision about them. next.config sets htmlLimitedBots to /GPTBot|ClaudeBot/. There's no llms.txt and the help pages have no single <h1> (each has an h2 under the site header). The help articles carry FAQPage JSON-LD, and the team expects FAQ rich results from it.",
+      "expected_output": "Should report the search-crawler blocks with no recorded reason (HIGH: the site leaves those engines' answers), and the htmlLimitedBots pattern that replaces Next's default list. Relying on FAQ rich results is a finding, because they're gone from Google Search. The missing llms.txt and the missing single h1 are not findings.",
+      "files": [],
+      "expectations": [
+        "Reports the unrecorded search-crawler blocks",
+        "Reports htmlLimitedBots dropping Next's default list",
+        "Reports reliance on FAQ rich results",
+        "Does not report the missing llms.txt",
+        "Does not report the missing single h1",
+        "Writes the report without editing any code"
+      ]
+    }
+  ]
+}

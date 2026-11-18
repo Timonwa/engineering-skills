@@ -1,0 +1,55 @@
+{
+  "skill_name": "frontend-security",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a strict CSP to our Next 16 app (cacheComponents: true): a per-request nonce in proxy.ts and script-src 'self' 'nonce-…' 'strict-dynamic'.",
+      "expected_output": "Should explain that a nonce needs the request's headers, which a Cache Components static shell doesn't have, so a nonce policy would make every page dynamic or break. Under Cache Components a strict script policy isn't available yet, and the house records script-src 'self' 'unsafe-inline' as a known gap. Every other directive stays strict (default-src 'self', object-src 'none', base-uri 'none', frame-ancestors 'none', explicit connect-src and img-src). 'unsafe-eval' never ships: local development gets it by branching on APP_ENV, never NODE_ENV. Roll out as Report-Only first.",
+      "files": [],
+      "expectations": [
+        "Explains why a nonce conflicts with Cache Components",
+        "Records the script-src 'unsafe-inline' gap instead of shipping a broken nonce policy",
+        "Keeps the other directives strict",
+        "Keeps 'unsafe-eval' out of production and branches on APP_ENV",
+        "Rolls out with Content-Security-Policy-Report-Only first"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Show the user's bio, which is rich text saved from our editor: <div dangerouslySetInnerHTML={{ __html: user.bio }} />.",
+      "expected_output": "Should render the HTML only through the one sanitising component (DOMPurify), the single place dangerouslySetInnerHTML appears, using the same allowlist policy the server applies when it saves rich text. SANITIZE_DOM stays on and SANITIZE_NAMED_PROPS is added against DOM clobbering, and the component never looks up user HTML by name.",
+      "files": [],
+      "expectations": [
+        "Routes the HTML through the single sanitising component",
+        "Uses the same policy the server applies on save",
+        "Enables SANITIZE_NAMED_PROPS against DOM clobbering",
+        "Doesn't add another dangerouslySetInnerHTML"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Our API client needs the session token. Store it in localStorage after sign-in and read it for each fetch.",
+      "expected_output": "Should refuse: the session is an httpOnly, Secure, SameSite cookie that only the API sets, so script, including injected script, can't read it. No token goes in localStorage or sessionStorage; a short-lived token a client SDK needs lives in memory only, and requests go same-origin with the cookie.",
+      "files": [],
+      "expectations": [
+        "Rejects localStorage and sessionStorage for tokens",
+        "Uses the httpOnly session cookie set by the API",
+        "Keeps any short-lived SDK token in memory only",
+        "Explains the XSS theft risk"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"apps/web is embedded by our partner at https://partner.example.com in an iframe (contract, 2026-05). The other apps are never framed.\" Add the security headers baseline to every app.",
+      "expected_output": "Should send the baseline from each app's next.config headers() on /:path*, written out in each app and changed together. apps/web allows only the named ancestor (frame-ancestors https://partner.example.com) and doesn't send X-Frame-Options: DENY, which would block the partner. Every other app sends frame-ancestors 'none' with X-Frame-Options: DENY. HSTS, nosniff, Referrer-Policy, Permissions-Policy, COOP, CORP and poweredByHeader: false apply everywhere.",
+      "files": [],
+      "expectations": [
+        "Puts the headers in each app's next.config headers()",
+        "Allows only the recorded partner origin as a frame ancestor for apps/web",
+        "Doesn't send X-Frame-Options: DENY on apps/web",
+        "Denies framing on the other apps",
+        "Includes the rest of the baseline (HSTS, nosniff, Referrer-Policy, Permissions-Policy)"
+      ]
+    }
+  ]
+}

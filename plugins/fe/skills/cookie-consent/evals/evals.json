@@ -1,0 +1,52 @@
+{
+  "skill_name": "cookie-consent",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Design our cookie banner: a big green 'Accept all' button and a small grey 'Settings' link; reject is inside settings. Pre-tick analytics so most people keep it on.",
+      "expected_output": "Should put three actions on the first layer with equal weight — Accept all, Reject all and Manage choices, the same size, style and number of clicks — because a Reject hidden in the settings or visibly weaker is the main pattern regulators act on. Every non-essential category is off until chosen, with nothing pre-ticked.",
+      "files": [],
+      "expectations": [
+        "Puts Accept all, Reject all and Manage choices on the first layer",
+        "Gives the three actions equal weight",
+        "Removes the pre-ticked analytics category",
+        "Cites the regulator view of hidden or weaker Reject"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add Google Analytics: load the gtag script in the root layout, and only set its cookies after the person accepts.",
+      "expected_output": "Should run nothing non-essential before consent: no Google tag loads until the person consents (Consent Mode v2 in basic mode). Consent defaults are set first, all denied, and updated when they choose. Withdrawing deletes the cookies and calls the provider's opt-out, because deleting cookies doesn't stop an SDK already running. The tag's origins are named in the CSP.",
+      "files": [],
+      "expectations": [
+        "Does not load the tag before consent",
+        "Uses Consent Mode v2 basic mode with denied defaults",
+        "Stops the SDK on withdrawal, not only deleting cookies",
+        "Names the tag's origins in the CSP"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "To save time, gate analytics behind our existing feature flag analyticsEnabled, which defaults to true in production.",
+      "expected_output": "Should refuse: consent isn't a feature flag. A flag is the operator's choice, while consent is the person's, never defaulted on, resolved for them or overridden centrally. Analytics loads only after the person's own choice in the banner.",
+      "files": [],
+      "expectations": [
+        "Rejects using a feature flag for consent",
+        "Explains the operator-versus-person distinction",
+        "Keeps analytics behind the person's stored choice"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Consent uses vanilla-cookieconsent; each choice is recorded through POST /v1/consent; the current revision is 3.\" Add a marketing category for our new ad pixel.",
+      "expected_output": "Should add the category, off by default, with its purpose, provider and retention, and bump the revision to 4, so every stored choice counts as absent and people are asked again. Each new choice is recorded through the project's POST /v1/consent route with a random consent id, the categories, the revision and the time. The pixel loads only after consent, its origins go in the CSP, and the footer's preferences link reopens the choices.",
+      "files": [],
+      "expectations": [
+        "Adds the marketing category off by default with provider and retention",
+        "Bumps the revision from 3 to 4 to re-ask",
+        "Records choices through the project's POST /v1/consent route",
+        "Loads the pixel only after consent"
+      ]
+    }
+  ]
+}

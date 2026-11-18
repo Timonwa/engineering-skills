@@ -1,0 +1,54 @@
+{
+  "skill_name": "nextjs",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a Server Action that renames a project. After the Firestore write, call revalidateTag('projects') and then refresh() so both the project page and the dashboard list update. We're on Next 16 with cacheComponents: true.",
+      "expected_output": "Should write the action as a public POST endpoint: authorise the caller and validate the input with the shared schema, then answer an action result rather than throw. After the write it should call updateTag on the tags the write changed, taken from the project's tag constants rather than a literal, and should not add refresh() beside it, explaining that updateTag in a Server Action already re-renders the current route and clears the client cache, private scopes included. revalidateTag is for Route Handlers. Any redirect comes after the cache calls.",
+      "files": [],
+      "expectations": [
+        "Authorises the caller and validates input with a shared schema",
+        "Returns an action result ({ success, error, fieldErrors, values }) instead of throwing",
+        "Uses updateTag, not revalidateTag, inside the Server Action",
+        "Does not add refresh() next to updateTag, and says why it's redundant",
+        "Takes the tag name from a constants module rather than a string literal"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My page is app/events/[eventId]/page.tsx: `export const revalidate = 60; export default async function Page({ params }: { params: { eventId: string } }) { const event = await getEvent(params.eventId); ... }`. next build fails with a blocking-route error. Fix it.",
+      "expected_output": "Should explain that on Next 16 params is a Promise and must be awaited, typed with the generated PageProps<'/events/[eventId]'> helper. Should say the route segment revalidate export doesn't exist under Cache Components: the read is cached with a 'use cache' function and a cacheLife tier from the project's config. Should explain the build fails because an uncached read runs outside <Suspense>, and fix it by caching the read, or by moving it into a …WithData component behind its own Suspense boundary.",
+      "files": [],
+      "expectations": [
+        "Awaits params and types the page with PageProps<'/events/[eventId]'>",
+        "Removes the segment revalidate export and explains it doesn't exist under Cache Components",
+        "Caches the read with 'use cache' and a named cacheLife tier, or moves it behind <Suspense>",
+        "Explains the build error as an uncached read outside Suspense"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Wrap getDashboardStats() in 'use cache' so the dashboard is fast. It calls getOrgId(), which reads cookies() to find the signed-in organisation.",
+      "expected_output": "Should refuse to read cookies() inside the cached scope, including through the getOrgId helper, because the request-API ban follows the call stack and can pass next build yet fail under next start. Should read the org id outside the cached function and pass it in as an argument, which becomes part of the cache key. Should consider 'use cache: private' only if the data must stay off the server. Should tag the result from the constants module and keep any redirect or notFound() out of the cached scope.",
+      "files": [],
+      "expectations": [
+        "Does not call cookies() inside the 'use cache' scope or a helper it calls",
+        "Reads the org id outside and passes it as an argument (the cache key)",
+        "Notes the call-stack trap: the build can pass while next start fails",
+        "Keeps redirects and notFound() out of the cached function"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Our AGENTS.md lists two cacheLife tiers in next.config: frequent (stale 60s) and daily. Make the unread-notifications badge use cacheLife('seconds') so it's basically live.",
+      "expected_output": "Should read the tiers from the project's config and AGENTS.md instead of using one the project doesn't define. Should say a near-live tier needs the owner's say-so and ask before adding one, noting that a stale value under 30 seconds leaves the result out of prerendering as a request-time hole. Should offer the existing frequent tier or a streamed read behind Suspense, and not invent the tier silently.",
+      "files": [],
+      "expectations": [
+        "Checks the project's defined cacheLife tiers instead of assuming 'seconds' exists",
+        "Asks before adding a near-live tier rather than adding it silently",
+        "Explains the under-30-second stale threshold and its effect on prerendering",
+        "Offers an option within the project's existing tiers"
+      ]
+    }
+  ]
+}

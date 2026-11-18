@@ -1,0 +1,42 @@
+{
+  "skill_name": "storybook-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /fe:storybook-audit on packages/ui. tabs.tsx has no story; combobox.stories.tsx has Default and Disabled stories but no keyboard play story; dialog.stories.tsx sets parameters: { a11y: { test: 'todo' } }.",
+      "expected_output": "Should cross-reference the shared components against their stories and report the missing Tabs story, the interactive Combobox with no keyboard story, and the Dialog story marking axe todo, each as HIGH. Each finding has file:line evidence and is verified. Writes _reports/storybook-audit.md and doesn't edit code or stories.",
+      "files": [],
+      "expectations": [
+        "Reports the missing Tabs story as HIGH",
+        "Reports the Combobox's missing keyboard story as HIGH",
+        "Reports the a11y todo as HIGH",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "badge.stories.tsx imports `Meta` from '@storybook/react', has a DarkMode story, and has an AllCombinations story that renders every prop combination for coverage. button.stories.tsx has a play function asserting `expect(canvas.getByRole('button').tagName).toBe('BUTTON')`.",
+      "expected_output": "Should report the renderer-package import (types come from the framework package), the DarkMode story (the toolbar covers dark mode), the coverage-only story, and the play function asserting a tag name instead of behaviour (MEDIUM: assertions on markup).",
+      "files": [],
+      "expectations": [
+        "Reports the @storybook/react import",
+        "Reports the DarkMode story",
+        "Reports the coverage-only AllCombinations story",
+        "Reports the tag-name assertion as asserting markup",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "AGENTS.md says: \"Visual tests: Chromatic.\" The Storybook app's package.json includes @chromatic-com/storybook. button.stories.tsx has no argTypes entry for onClick (it's an fn() spy in args). The CI workflow file isn't in this repo — CI is configured in an external service.",
+      "expected_output": "Should not report the Chromatic addon, because the project records visual tests, or the onClick spy lacking a control, because callbacks are exempt from the control-per-prop rule. Whether stories run in CI can't be seen in the repo, so it's marked needs confirmation rather than reported as CRITICAL or assumed to pass.",
+      "files": [],
+      "expectations": [
+        "Does not report @chromatic-com/storybook",
+        "Does not report a missing control for the fn() callback",
+        "Marks stories-in-CI as needs confirmation",
+        "Writes the report without editing any code"
+      ]
+    }
+  ]
+}

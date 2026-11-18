@@ -1,0 +1,57 @@
+{
+  "skill_name": "content-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "AGENTS.md links docs/brand-voice.md, docs/word-list.md (\"event\", never \"gig\") and banned words including \"seamless\". Audit apps/web: the hero reads 'Seamless gig booking for everyone' with a 'Get started' button, and the pricing page says 'Learn more'.",
+      "expected_output": "Should read the project's voice, word list and banned words before judging. Findings: the banned word 'seamless' (HIGH), 'gig' against the word list, 'Get started' as a vague call to action, and a bare 'Learn more' (link purpose, 2.4.4). Each fix gives the current text, the proposed text and the rule, and the audit never imposes its own voice. Writes _reports/content-audit.md and doesn't edit the copy.",
+      "files": [],
+      "expectations": [
+        "Reads the recorded voice, word list and banned words first",
+        "Reports 'seamless' as a banned word at HIGH",
+        "Reports 'gig' against the word list",
+        "Reports 'Get started' and bare 'Learn more'",
+        "Each fix shows current text, proposed text and rule",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit the sign-up flow strings: an error 'Oops! Invalid input. Please try again.', a link reading 'Click here' to the terms, a heading 'Step 2' over the address fields, and a toast 'Success!'.",
+      "expected_output": "Should report the error as failing 3.3.1 and 3.3.3 (it doesn't say what's wrong or how to fix it) and breaking the no 'oops', 'please' or 'invalid' rules. 'Click here' fails link purpose (2.4.4). 'Step 2' doesn't describe what follows (2.4.6). The toast should name what was done. WCAG copy failures on a key flow are HIGH.",
+      "files": [],
+      "expectations": [
+        "Reports the error message under 3.3.1/3.3.3",
+        "Reports 'Click here' under 2.4.4",
+        "Reports the undescriptive heading under 2.4.6",
+        "Reports the generic success toast",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit the password-reset email template: subject 'ACTION REQUIRED!!!', body asks the person to reply with the 6-digit code, the reset link is a bit.ly short link, and there's no plain-text part. The help page says 'Refunds arrive within 24 hours'.",
+      "expected_output": "Should rate the email asking for a code by reply and linking off the product's domains as CRITICAL (it looks like phishing and trains people to fall for it). It also reports the all-caps subject and the missing plain-text part. The refund claim is checked against the project's feature docs: if they say otherwise it's CRITICAL (a wrong deadline where money is at stake), and if the feature docs aren't available it's marked needs confirmation rather than guessed.",
+      "files": [],
+      "expectations": [
+        "Rates asking for the code by reply and an off-domain link as CRITICAL",
+        "Reports the all-caps subject and the missing plain-text part",
+        "Checks the refund claim against the feature docs",
+        "Marks the claim needs confirmation if no source is available",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md records: \"The product name 'Event Studio' keeps title case everywhere (brand name).\" Audit the dashboard nav: items read 'Event Studio', 'Team Settings' and 'Billing'. The terms page is written at a university reading level.",
+      "expected_output": "Should treat 'Event Studio' as a recorded exception, not a finding, and report 'Team Settings' as a sentence-case finding ('Team settings'). The terms page's reading level is reported as LOW, because the reading-level criterion (3.1.5) is AAA.",
+      "files": [],
+      "expectations": [
+        "Does not flag 'Event Studio' because of the recorded exception",
+        "Reports 'Team Settings' as a sentence-case finding",
+        "Rates reading level as LOW and cites it as AAA",
+        "Writes the report without editing any code"
+      ]
+    }
+  ]
+}

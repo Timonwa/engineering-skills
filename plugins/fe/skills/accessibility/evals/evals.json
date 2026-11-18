@@ -1,0 +1,53 @@
+{
+  "skill_name": "accessibility",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The focus ring on our buttons looks ugly in the new design. Add outline-none to the Button's base classes.",
+      "expected_output": "Should refuse to remove the focus indicator without a replacement (WCAG 2.4.7). Should use outline-hidden rather than outline-none, so forced-colours mode still draws an outline, with a :focus-visible ring of at least 3:1 contrast against what's behind it, checked in both themes.",
+      "files": [],
+      "expectations": [
+        "Does not remove the focus indicator without a replacement",
+        "Uses outline-hidden rather than outline-none, and explains forced-colours mode",
+        "Adds a :focus-visible ring with 3:1 contrast",
+        "Checks the ring in both light and dark themes"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Our sticky header is 72px tall and the cookie banner sits at the bottom. When I tab through the settings form, focused fields end up hidden behind them. Is that a WCAG AA problem, and how do I fix it?",
+      "expected_output": "Should identify it as 2.4.11 Focus Not Obscured (Minimum), an AA criterion that fails when the focused element is entirely hidden, and note that fully unobscured is 2.4.12 (AAA). Should fix it with scroll-padding on the scrolling container that matches the sticky header's and banner's heights, and check it by tabbing through.",
+      "files": [],
+      "expectations": [
+        "Names 2.4.11 as the AA criterion",
+        "Distinguishes 'entirely hidden' (AA) from fully unobscured (2.4.12, AAA)",
+        "Fixes with scroll-padding matching the sticky elements' heights",
+        "Suggests checking by keyboard"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Axe fails the DatePicker story because the third-party calendar popover uses role=\"menu\" without menu items. Just switch off the aria-required-children rule for that story so CI passes.",
+      "expected_output": "Should refuse to switch off the rule or mark the story todo. Should fix the violation in the copy the project owns, or wrap the third-party component so the wrapper passes, following the WAI-ARIA Authoring Practices pattern for a date picker dialog or grid. Should note that axe stays at error in Storybook as the component gate.",
+      "files": [],
+      "expectations": [
+        "Does not disable the axe rule or mark the story todo",
+        "Fixes the owned copy or wraps the component so the wrapper passes",
+        "Points to the APG pattern for the widget",
+        "Keeps axe failing the run"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md for apps/web says: \"No skip link on the marketing site: every page has one short nav and a <main> landmark, so landmarks meet 2.4.1 (decided 2026-04).\" Add accessibility improvements to the marketing header.",
+      "expected_output": "Should read AGENTS.md and accept the recorded deviation: landmarks and headings also meet 2.4.1, so it doesn't add a skip link. Should check that the landmarks the decision relies on are actually there (one <main>, a labelled <nav>), and work on other header issues such as focus visibility, target size and the current-page marker.",
+      "files": [],
+      "expectations": [
+        "Does not add a skip link against the recorded decision",
+        "Verifies the landmarks the decision depends on exist",
+        "Checks other header issues (focus, 24px targets, aria-current)",
+        "Does not treat the missing skip link as a failure"
+      ]
+    }
+  ]
+}

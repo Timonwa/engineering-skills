@@ -1,0 +1,53 @@
+{
+  "skill_name": "logos-and-icons",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "For our header logo, just put <span className=\"font-bold text-primary\">Acme</span> next to the icon SVG. It's quicker than exporting a file.",
+      "expected_output": "Should explain that a lockup built from live HTML text isn't a logo: it inherits the site font and the themeable token, so a font or theme change silently changes the brand, and it can't be exported. The wordmark ships as outlined <path> data (after checking the font's licence allows outlining), in a literal brand colour, never currentColor or a token, with an accessible name (role=\"img\" and a title, or the link's name).",
+      "files": [],
+      "expectations": [
+        "Rejects the live-text lockup",
+        "Outlines the wordmark as paths and checks the font licence",
+        "Uses a literal brand colour rather than a token or currentColor",
+        "Gives the logo an accessible name"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Generate the favicon set for our marketing site: favicon.ico, browserconfig.xml, mstile PNGs, a Safari mask-icon, and a manifest icon with \"purpose\": \"any maskable\".",
+      "expected_output": "Should ask which slots are needed. A marketing site that doesn't install needs a favicon.ico (16, 32 and 48), an SVG tab icon, a larger linked PNG and a 180px opaque apple-icon. browserconfig.xml, mstile files and mask-icon are dead formats and aren't generated. Maskable icons exist only for an app that installs, and then as separate manifest entries, never 'any maskable' on one.",
+      "files": [],
+      "expectations": [
+        "Asks which slots are needed or whether the site installs",
+        "Drops browserconfig.xml, mstile and mask-icon as dead formats",
+        "Rejects \"any maskable\" on a single entry",
+        "Renders every raster from the SVG onto an opaque plate"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Design a logo for our new fintech brand. Use a nice teal.",
+      "expected_output": "Should not infer the brand or invent a hex. In one batch it asks for the logo type (or offers two or three directions), whether a mark already exists, the exact brand colour and where it's recorded, the default background, the variants needed and where the logo will be used. For a new brand with no preference, it can recommend a combination mark.",
+      "files": [],
+      "expectations": [
+        "Asks before drawing rather than inferring",
+        "Asks for the exact brand colour instead of picking a teal",
+        "Asks for the type, background, variants and uses in one batch",
+        "Recommends a combination mark as the default if there's no preference"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md says: \"Brand marks live in packages/ui/src/assets/; rasters are rendered by scripts/icons.mjs (pnpm icons:generate) and committed.\" Our brand colour changed from #E5533D to #D9472F. Update the favicons.",
+      "expected_output": "Should change the colour in the authored SVGs only, then re-run the project's generator (pnpm icons:generate) to re-render every raster, favicon.ico included, onto its opaque plate. It shouldn't hand-edit PNGs, and should check the icon still reads at 16px on light and dark, then commit the regenerated outputs as the project records.",
+      "files": [],
+      "expectations": [
+        "Edits only the source SVGs",
+        "Re-runs the project's recorded generator command",
+        "Does not hand-edit raster files",
+        "Checks legibility at 16px on light and dark"
+      ]
+    }
+  ]
+}

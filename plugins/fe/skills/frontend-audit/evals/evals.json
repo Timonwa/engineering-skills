@@ -1,0 +1,56 @@
+{
+  "skill_name": "frontend-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run /fe:frontend-audit on apps/app. app/(dashboard)/projects/page.tsx starts with \"use client\" and fetches /api/projects in a useEffect; createProject in lib/server/actions/project.action.ts throws new Error('Name is required') on validation failure; the form uses useActionState.",
+      "expected_output": "Should report the 'use client' page and the fetch in an effect (the client boundary sits too high, and reads should happen on the server through the typed fetchers), and the throwing action, which loses the form and gives no field errors. The throwing action is HIGH (a lost form after a failed action), and the fetch-in-effect pattern is at least MEDIUM. Each finding has file:line evidence and is verified. Writes _reports/frontend-audit.md and never edits code.",
+      "files": [],
+      "expectations": [
+        "Reports 'use client' on a page",
+        "Reports fetching in useEffect",
+        "Reports the throwing Server Action as HIGH",
+        "Cites file:line and verifies each finding",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "In lib/server/actions/member.action.ts: after the write, `updateTag(MEMBER_TAGS.list); refresh();`. In lib/server/data/dashboard.data.ts: `async function getDashboard() { 'use cache'; const orgId = await getOrgId(); ... }`, where getOrgId() reads cookies().",
+      "expected_output": "Should report the redundant refresh() beside updateTag as a LOW finding, since updateTag in an action already re-renders the route and clears the client cache. The cookies() read through a helper inside 'use cache' is a serious finding (CRITICAL if a cached result could serve one organisation's data to another, otherwise HIGH), because the request-API ban follows the call stack and can pass next build yet fail under next start. The fix reads the org id outside the scope and passes it in.",
+      "files": [],
+      "expectations": [
+        "Reports refresh() beside updateTag as redundant",
+        "Reports cookies() reached inside 'use cache' through a helper",
+        "Rates the cache scoping issue HIGH or CRITICAL with the reason",
+        "Gives the read-outside-and-pass-in fix",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "apps/app/src/app/globals.css has `@import \"tailwindcss\";` and no @source; components use classes like `ui:bg-surface`; StatCard.tsx has `bg-[#1a1a1a]` with no comment; app/apple-icon.png is a transparent PNG.",
+      "expected_output": "Should report the missing @source for the shared UI package (its components get no CSS) and the ui: prefix classes, which match nothing and fail silently. It should flag the uncommented arbitrary colour as a token violation and the transparent apple-icon as a finding, since it must be an opaque 180px image with no alpha.",
+      "files": [],
+      "expectations": [
+        "Reports the missing @source for packages/ui",
+        "Reports the ui: prefix classes as matching nothing",
+        "Reports the uncommented arbitrary colour",
+        "Reports the transparent apple-icon",
+        "Writes the report without editing any code"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "AGENTS.md for apps/admin records: \"The React Compiler is off here until the table library is replaced; useMemo is used for column definitions.\" apps/admin/members/columns.tsx uses useMemo; apps/app/src/components/ProfileCard.tsx wraps every handler in useCallback with no comment, and the app has the compiler on.",
+      "expected_output": "Should not report the recorded useMemo in apps/admin. It should report the reflexive useCallback in apps/app (compiler on, no comment naming an escape hatch) as a LOW or MEDIUM pattern finding.",
+      "files": [],
+      "expectations": [
+        "Does not report the recorded useMemo in apps/admin",
+        "Reports reflexive useCallback in apps/app",
+        "Notes the missing comment for an escape hatch",
+        "Writes the report without editing any code"
+      ]
+    }
+  ]
+}
