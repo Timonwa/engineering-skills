@@ -129,4 +129,4 @@ The modern set is a handful of files, every raster rendered **from the SVG**:
 
 ## Related skills
 
-Clear space, colour tokens and visual identity `design-system` · the Organization logo in structured data `seo-aeo-geo` · metadata file names `code-structure` · email images `transactional-email` · contrast and names `accessibility` · file and asset names `naming` · other hand-drawn SVGs and diagrams `tw:images-and-diagrams`.
+Clear space, colour tokens and visual identity `design-system` · the Organization logo in structured data `seo-aeo-geo` · metadata file names `code-structure` · email images `transactional-email` · contrast and names `accessibility` · file and asset names `naming`. Other hand-drawn SVGs and diagrams are outside this skill.
