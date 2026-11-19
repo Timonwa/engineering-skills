@@ -8,7 +8,7 @@ description: >-
 
 The API's OpenAPI document is generated from a registry, never written by hand. Each route registers once, in the same change as the route, using the exact Zod schemas its handler validates — so the document can't describe a body the API doesn't accept. The handler is the source of truth; the registry is its projection, and a test proves the two match.
 
-The document is the contract; how it's displayed (Scalar, Swagger UI, Redoc) is a viewer choice that changes nothing here. How the prose in it reads is the writing plugin's `api-reference`.
+The document is the contract; how it's displayed (Scalar, Swagger UI, Redoc) is a viewer choice that changes nothing here. How the reference's prose reads is a writing task, outside this skill.
 
 ## Project specifics first
 
@@ -77,4 +77,4 @@ One tag at a time, reading the tag list fresh from the spec config: read the rou
 
 ## Related skills
 
-Routes, guards and the envelope `api-architecture` · the schemas `schemas-and-contracts` · the rate-limit headers `rate-limiting` · sending webhooks `webhook-delivery` · the coverage test `testing` · the reference's prose the writing plugin's `api-reference` · the audit `api-audit`.
+Routes, guards and the envelope `api-architecture` · the schemas `schemas-and-contracts` · the rate-limit headers `rate-limiting` · sending webhooks `webhook-delivery` · the coverage test `testing` · the audit `api-audit`.

@@ -175,7 +175,7 @@ Keep a change to one skill where you can, and run `pnpm check:skills`, `pnpm che
 
 ## Related
 
-- [technical-writing-skills](https://github.com/Timonwa/technical-writing-skills) — documentation: docs-site pages, READMEs, API references, help-centre guides, prose editing, and a docs audit. The two plugins compose — install both if you write documentation as well as code.
+- [writing-skills](https://github.com/Timonwa/writing-skills) — technical and content writing: docs pages, READMEs, API references, help-centre guides, articles, newsletters, editing and review. Install it beside these if you write as well as code.
 
 ## License
 

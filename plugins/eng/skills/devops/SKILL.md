@@ -73,7 +73,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 - **Every push to `main` publishes a GitHub release and its `vX.Y.Z` tag through release-drafter**, the version bumped from the labels on the pull requests it carries.
 - **A labelling workflow maps each PR's commit type to those labels, and marks a promotion PR `promotion`**, which the notes skip — so a release lists the feature PRs, not the promotions that carried them.
-- **Changesets only for a package published to a registry**; an app-only repo doesn't need them. How release notes read is the writing plugin's `release-notes`.
+- **Changesets only for a package published to a registry**; an app-only repo doesn't need them. How the release notes read is a writing task, outside this skill.
 
 ## Deploying
 
@@ -108,5 +108,5 @@ Not house defaults; add each when the project's size or risk calls for it, and r
 - Env, secrets and grants → `env`.
 - Commit messages, branches and opening PRs → `ship-changes`; reviewing a PR → `review-pr`.
 - Security headers and CSP → `frontend-security`.
-- Release-note writing → the writing plugin's `release-notes`.
+- How the release notes read is a writing task, outside this skill.
 - Reviewing dependencies → `dependency-audit`; the env setup → `env-audit`.
