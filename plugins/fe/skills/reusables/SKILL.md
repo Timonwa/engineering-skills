@@ -17,7 +17,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Before building
 
-- **Search first** — the shared UI package, the house helper packages, other features and apps. The card or dialog you need is often already built, sometimes trapped in one feature.
+- **Search first, before writing any function, hook or component** — read the house helper packages' docs and the shared UI package, then other features and apps, and use what they provide; a wrapper exists only to pin a project value (a locale, a format). The card or dialog you need is often already built, sometimes trapped in one feature. Judge an existing helper by what it does — its inputs, output and edge cases, and any logic it hand-rolls inside a larger function — against what each package documents; a matching name proves nothing, and a different name rules nothing out.
 - **Promote on the second consumer**, not before: the first copy lives beside its feature; when a second feature in the same app needs it, it moves to the app's own `src/ui/`; when a second app needs it, to the shared package (`design-system`). Each move strips local data and hooks and turns what differs into props. Never paste a second variant.
 
 ## Components
