@@ -34,10 +34,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ### Method
 
 1. **Resolve phase** — the phase argument if given; else the audit phase `AGENTS.md` records; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
-2. **Load the previous report** — if `_reports/performance-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
+2. **Load the previous report** — if `_reports/performance-audit.md` exists, read it, but still run every check against the source. Use it only to keep the ID of each finding still present (status `UNRESOLVED`), carry its `WON'T FIX` findings forward unchanged — never re-raised as new findings — drop its `FIXED` findings and any no longer present, continue ID numbering from its highest ID, and take its scores for the score-change row. First run → mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating. Drop one the project records as a deviation, with its reason, in `AGENTS.md` or a doc it links.
-5. **Write the report** to `_reports/performance-audit.md` (overwrite) and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
+5. **Write the report** to `_reports/performance-audit.md` — overwriting the whole file, so no resolved history accumulates — and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
 
 ### Severity
 
@@ -50,7 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/performance-audit.md`:
+Write to `_reports/performance-audit.md`, with one Overall row in the score change:
 
 ```
 # Performance audit — <app/scope>
@@ -67,10 +67,13 @@ Write to `_reports/performance-audit.md`:
 | --- | --- | --- | --- | --- | --- |
 | 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
 
+**Status:** `NEW` — found this run for the first time · `UNRESOLVED` — still present from an earlier run · `FIXED` — fixed after the audit; the note names the commit · `WON'T FIX` — the owner ruled it not a defect, intended, or accepted as it is; the note gives their reason
+
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
 - **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. LCP, or the `nextjs` rule it breaks>
 - **Fix:** <the specific remediation>
+- **Note:** <only once `FIXED` (the commit and what changed) or `WON'T FIX` (the owner's reason)>
 
 ## Scorecard
 | Category | Score | Notes |
@@ -92,10 +95,6 @@ Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; 
 ### <Tier>
 | # | Priority | Task (finding ID) | Effort |
 | --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
 ```
 
 ### Output
@@ -184,6 +183,10 @@ Good at the 75th percentile of field data: **LCP ≤ 2.5 s · INP ≤ 200 ms · 
 - **CLS** — image and embed dimensions, and the metric-matched font fallback (covered above).
 - **INP** — heavy client work / large hydration / long tasks on interactive pages (big synchronous handlers, un-debounced input, oversized client trees). **INP is field-only** — it needs real interaction, so it can't be scored from code or a lab run; track it with production RUM (`web-vitals`). Note this limitation in the report rather than assigning it a code-derived score.
 - Field data can't be read from code: check only that it's collected (`web-vitals` reporting, or CrUX for the origin), and mark the numbers "needs confirmation". Lab runs (Lighthouse CI on key pages — `devops`) catch regressions.
+
+## Fixing what it found
+
+Fixing is a separate request, after the report is written, and covers only the findings the owner chose. Then **update the report in place — never re-run the audit to update it**: a re-run re-checks the whole codebase, costs a full audit and raises new findings mid-fix. Mark each fixed finding `FIXED` with its commit and a one-line note of what changed, mark a finding the owner rules out `WON'T FIX` with their reason, and leave everything else as it stands. Recompute the scorecard categories the fixes touched and the Overall, and rewrite the one score-change row (previous → current) — never add a second row.
 
 ## Boundaries
 

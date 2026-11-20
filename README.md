@@ -111,7 +111,7 @@ Seventeen commands, each marked `disable-model-invocation`, so Claude never star
 | `/be:redis-audit`          | Does each Redis use fail the right way? One client, key builders, TTLs, failure direction, eviction        |
 | `/eng:review-pr`           | Is this pull request ready to merge? Its goal, the project's rules and real bugs, each finding proven      |
 
-Each audit writes a report to `_reports/<name>.md`. A finding carries a severity, its location, the evidence that proves it real and a specific fix; one that can't be proven from the code — a console setting, a DNS record — is marked "needs confirmation" rather than inflated. The report closes with a scorecard and how the score moved since the last run, carrying unresolved findings forward under their old IDs and listing the ones fixed since.
+Each audit writes a report to `_reports/<name>.md`. A finding carries a severity, its location, the evidence that proves it real and a specific fix; one that can't be proven from the code — a console setting, a DNS record — is marked "needs confirmation" rather than inflated. Each finding has a status — `NEW`, `UNRESOLVED`, `FIXED` or `WON'T FIX` — and the report closes with a scorecard and one row for how the score moved. A new run overwrites the report, carrying unresolved and won't-fix findings forward under their old IDs and dropping fixed ones; after a fix, the report is updated in place rather than re-run.
 
 None of them edit code — the Edit tool is withheld for the whole run, and fixing a finding is a separate request. `review-pr` reports in chat and stays read-only too, unless you ask it to comment on the pull request or fix findings.
 

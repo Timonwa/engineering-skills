@@ -53,7 +53,7 @@ Security rules files themselves are reviewed by the official `firebase-security-
 2. **Detect the scope** — single app or workspace, which apps are public and which internal, and which of the data, tooling and copy above are present — and pick the audits that apply and are installed.
 3. **Run them in parallel**, one subagent per audit. Every audit sets `disable-model-invocation`, so a subagent never loads one by name: tell each subagent to **Read that audit's `SKILL.md` by path** (in the plugin's `skills/<audit>/` folder) and follow it, writing its own report. Every audit is **report-only**: none changes code.
 4. **Aggregate** — each report's score, finding counts and top items. A finding two audits both raise (a missing guard in `api-audit` and `access-control-audit`) is reported once, naming both.
-5. **Write** `_reports/audit-all.md`, overwriting it and carrying the previous roll-up forward for the trend.
+5. **Write** `_reports/audit-all.md`, overwriting the whole file, so no resolved history accumulates; read the previous roll-up only for its scores, for the trend.
 
 ## Report format
 
@@ -61,23 +61,27 @@ Security rules files themselves are reviewed by the official `firebase-security-
 **Date:** YYYY-MM-DD  **Phase:** <phase>  **Mode:** Report-only  **Branch:** `<branch>`  **Scope:** <apps / packages covered>  **Overall:** <X>/10
 
 ## Suite summary
-| Audit | Score | Critical | High | Med | Low | Trend | Report |
-| accessibility-audit | 7/10 | 0 | 2 | 3 | 1 | ▲ | _reports/accessibility-audit.md |
-| … | | | | | | | |
+| Audit | Score | Critical | High | Med | Low | Fixed | Won't fix | Trend | Report |
+| accessibility-audit | 7/10 | 0 | 2 | 3 | 1 | 4 | 1 | ▲ | _reports/accessibility-audit.md |
+| … | | | | | | | | | |
 | (skipped: storybook-audit — no Storybook) |
 | (not installed: redis-audit — the be plugin isn't installed) |
 | (run separately: firebase-security-rules-auditor — rules files present) |
 
 ## Top priorities (cross-cutting, worst first)
-Consolidated CRITICAL and HIGH items across all audits, each pointing to its report and finding ID.
+Consolidated open CRITICAL and HIGH items across all audits, each pointing to its report and finding ID.
 
 ## Action items
 Phase-aware tiers (`development` → Fix Now / Before Launch / Post-Launch; `production` → Fix Now / Next Release / Backlog), merged across audits.
-
-## Resolved since last run
 ```
 
+Critical, High, Med and Low count each audit's open findings (`NEW` + `UNRESOLVED`); Fixed and Won't fix count its `FIXED` and `WON'T FIX` findings beside them.
+
 The overall score is the mean of the audits that ran, pulled down to the lowest one when any has an open CRITICAL — a single critical hole outweighs a tidy average.
+
+## Fixing what it found
+
+Fixes are made through each audit's own report, which is updated in place. To bring the roll-up up to date after fixes, read the updated reports and rewrite `_reports/audit-all.md` from them — never re-run an audit to update it: a re-run re-checks the whole codebase, costs a full audit and raises new findings mid-fix.
 
 ## Boundaries
 

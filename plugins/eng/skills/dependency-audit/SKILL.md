@@ -34,10 +34,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ### Method
 
 1. **Resolve phase** — the phase arg if given; else the audit phase in `AGENTS.md`; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount.
-2. **Load the previous report** — if `_reports/dependency-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
+2. **Load the previous report** — if `_reports/dependency-audit.md` exists, read it, but still run every check against the source. Use it only to keep the ID of each finding still present (status `UNRESOLVED`), carry its `WON'T FIX` findings forward unchanged — never re-raised as new findings — drop its `FIXED` findings and any no longer present, continue ID numbering from its highest ID, and take its scores for the score-change row. First run → mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating. Drop one the project records as a deviation, with its reason, in `AGENTS.md` or a doc it links.
-5. **Write the report** to `_reports/dependency-audit.md` (overwrite) and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
+5. **Write the report** to `_reports/dependency-audit.md` — overwriting the whole file, so no resolved history accumulates — and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
 
 ### Severity
 
@@ -50,7 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/dependency-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change, the findings table with one section per finding, the scorecard, phase-tiered action items and "Resolved since last audit".
+Write to `_reports/dependency-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change with its one Overall row, the findings table with its status legend and one section per finding, the scorecard and phase-tiered action items.
 
 ### Output
 
@@ -123,6 +123,10 @@ Owned here; `security-audit` points to it.
 
 - **One `pnpm-lock.yaml`**, committed at the root and in sync — CI's `--frozen-lockfile` install passes (read its last run rather than installing); no stray `package-lock.json` or `yarn.lock`. Drift is `HIGH`.
 - **`packageManager` names an exact pnpm version**, `engines.node` the minimum, and `.nvmrc` the version CI and every machine run. CI's setup action runs `pnpm/action-setup` (reading `packageManager`; Node 25 and later don't ship corepack), then `setup-node` from `.nvmrc` with the pnpm cache, then `pnpm install --frozen-lockfile`.
+
+## Fixing what it found
+
+Fixing is a separate request, after the report is written, and covers only the findings the owner chose. Then **update the report in place — never re-run the audit to update it**: a re-run re-checks the whole codebase, costs a full audit and raises new findings mid-fix. Mark each fixed finding `FIXED` with its commit and a one-line note of what changed, mark a finding the owner rules out `WON'T FIX` with their reason, and leave everything else as it stands. Recompute the scorecard categories the fixes touched and the Overall, and rewrite the one score-change row (previous → current) — never add a second row.
 
 ## Boundaries
 

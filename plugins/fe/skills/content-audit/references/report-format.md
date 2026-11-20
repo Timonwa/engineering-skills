@@ -1,6 +1,6 @@
 # Content audit — report format
 
-Write to `_reports/content-audit.md`:
+Write to `_reports/content-audit.md`, with one Overall row in the score change:
 
 ```
 # Content audit — <app/scope>
@@ -17,10 +17,13 @@ Write to `_reports/content-audit.md`:
 | --- | --- | --- | --- | --- | --- |
 | 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
 
+**Status:** `NEW` — found this run for the first time · `UNRESOLVED` — still present from an earlier run · `FIXED` — fixed after the audit; the note names the commit · `WON'T FIX` — the owner ruled it not a defect, intended, or accepted as it is; the note gives their reason
+
 ### F1 — <title>
 - **What:** <the defect, and the string as the reader sees it>
 - **Why it matters:** <who it confuses or misleads, and how> <· the rule: the project's voice doc, word list or banned words, a standard such as WCAG 3.3.3 or GOV.UK error messages, or "house rule">
 - **Fix:** `<current text>` → `<proposed text>`
+- **Note:** <only once `FIXED` (the commit and what changed) or `WON'T FIX` (the owner's reason)>
 
 ## Scorecard
 | Category | Score | Notes |
@@ -43,8 +46,4 @@ Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; 
 ### <Tier>
 | # | Priority | Task (finding ID) | Effort |
 | --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
 ```

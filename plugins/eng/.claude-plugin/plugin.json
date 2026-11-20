@@ -2,7 +2,7 @@
   "name": "eng",
   "displayName": "Engineering Skills",
   "description": "House engineering standards for Next.js, React, TypeScript and Firebase projects: AGENTS.md, structure, naming, TypeScript, schemas and contracts, the monorepo, env, testing, CI/CD, scaffolding, migrations, shipping and reviewing changes, and the repo-wide audits.",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "dependencies": ["turborepo"],
   "author": {
     "name": "Timonwa"
