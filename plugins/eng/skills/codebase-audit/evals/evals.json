@@ -33,14 +33,16 @@
     },
     {
       "id": 4,
-      "prompt": "Run the codebase audit again. _reports/codebase-audit.md from last week has F3 (a dangling promise in auditLog) still in the code, and F5 fixed since.",
-      "expected_output": "Should load the previous report, carry F3 forward with the same ID and status UNRESOLVED, move F5 to 'Resolved since last audit', continue ID numbering, and show the score change.",
+      "prompt": "Run the codebase audit again. _reports/codebase-audit.md from last week, whose highest ID is F9, has F3 (a dangling promise in auditLog) still in the code, F5 marked FIXED, and F7 marked WON'T FIX by the owner.",
+      "expected_output": "Should still run every check against the source, and use the previous report only to keep F3's ID with status UNRESOLVED, carry F7 forward unchanged as WON'T FIX without raising it again as a new finding, drop F5, number new findings from F10, and fill the one score-change row from its scores. Overwrites the whole file, with no resolved section.",
       "files": [],
       "expectations": [
+        "Runs every check against the source",
         "Keeps F3's ID and marks it UNRESOLVED",
-        "Moves F5 to resolved",
-        "Continues the ID numbering",
-        "Shows the score change"
+        "Carries F7 forward as WON'T FIX and doesn't re-raise it",
+        "Drops F5 and adds no resolved section",
+        "Numbers new findings from F10",
+        "Shows the score change in one row"
       ]
     }
   ]

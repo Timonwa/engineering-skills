@@ -35,11 +35,11 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 1. **Resolve phase** — the phase argument if given; else the audit phase in `AGENTS.md`; else `production`.
 2. **Load the voice** — the project's brand voice, word list, banned words, recorded formats (dates, times, money) and feature docs. Without a recorded voice, use the baseline below and say so in the report's scope line.
-3. **Load the previous report** — if `_reports/content-audit.md` exists, carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → mark all `NEW`.
+3. **Load the previous report** — if `_reports/content-audit.md` exists, read it, but still run every check against the source. Use it only to keep the ID of each finding still present (status `UNRESOLVED`), carry its `WON'T FIX` findings forward unchanged — never re-raised as new findings — drop its `FIXED` findings and any no longer present, continue ID numbering from its highest ID, and take its scores for the score-change row. First run → mark all `NEW`.
 4. **Collect the copy** — components and pages, message or translation files, MDX and help articles, metadata titles and descriptions, schema error messages that reach the screen, toasts, server errors shown to people, and email templates with their subject, preheader and plain-text part. Read strings as rendered: JSX splits sentences across expressions.
 5. **Run the checklist** (below), collecting findings with `file:line` evidence and the current text.
 6. **Verify** each candidate — the string reaches a reader as quoted; the word list or a recorded exception doesn't allow it; a claim is checked against the feature docs. A claim the docs can't settle is "needs confirmation".
-7. **Write the report** to `_reports/content-audit.md` (overwrite) and post the **chat summary**. Each fix gives the current text, the proposed text and the rule; never edit copy. Never commit or push without explicit approval.
+7. **Write the report** to `_reports/content-audit.md` — overwriting the whole file, so no resolved history accumulates — and post the **chat summary**. Each fix gives the current text, the proposed text and the rule; never edit copy. Never commit or push without explicit approval.
 
 ### Severity
 
@@ -52,7 +52,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/content-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change, the findings table with one section per finding, the scorecard, phase-tiered action items and "Resolved since last audit".
+Write to `_reports/content-audit.md` in the format in [references/report-format.md](references/report-format.md): the header line, the score change with its one Overall row, the findings table with its status legend and one section per finding, the scorecard and phase-tiered action items.
 
 ### Output
 
@@ -138,6 +138,10 @@ Read each email's From, subject, preheader and first sentence on their own, then
 - **By type** — security: what changed, when, from which device or place, and one way to secure the account; money: the amount first, in the account's currency, and what it's for; reminders: what, when in the reader's time zone, what to bring. Facts in one panel laid out the same in every email.
 - **Never like phishing** — never asks for a password, code or personal details; no full account numbers; links only to the product's own domains, with no redirect or tracking wrapper, a shown URL in full; no attachments.
 - **Readable** — live text, never images of text; real headings and the document's language; buttons made of text with the link repeated below; alt text on meaningful images; the plain-text part says the same, links written out ([Litmus](https://www.litmus.com/blog/ultimate-guide-accessible-emails)).
+
+## Fixing what it found
+
+Fixing is a separate request, after the report is written, and covers only the findings the owner chose. Then **update the report in place — never re-run the audit to update it**: a re-run re-checks the whole codebase, costs a full audit and raises new findings mid-fix. Mark each fixed finding `FIXED` with its commit and a one-line note of what changed, mark a finding the owner rules out `WON'T FIX` with their reason, and leave everything else as it stands. Recompute the scorecard categories the fixes touched and the Overall, and rewrite the one score-change row (previous → current) — never add a second row.
 
 ## Boundaries
 

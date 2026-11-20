@@ -1,6 +1,6 @@
 # Security audit — report format
 
-Write to `_reports/security-audit.md`:
+Write to `_reports/security-audit.md`, with one Overall row in the score change:
 
 ```
 # Security audit — <app/scope>
@@ -17,10 +17,13 @@ Write to `_reports/security-audit.md`:
 | --- | --- | --- | --- | --- | --- |
 | 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
 
+**Status:** `NEW` — found this run for the first time · `UNRESOLVED` — still present from an earlier run · `FIXED` — fixed after the audit; the note names the commit · `WON'T FIX` — the owner ruled it not a defect, intended, or accepted as it is; the note gives their reason
+
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
 - **Why it matters:** <impact / who it affects> <· optional standard or criterion ref, e.g. OWASP A01:2025, API1:2023>
 - **Fix:** <the specific remediation>
+- **Note:** <only once `FIXED` (the commit and what changed) or `WON'T FIX` (the owner's reason)>
 
 ## Scorecard
 | Category | Score | Notes |
@@ -43,8 +46,4 @@ Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; 
 ### <Tier>
 | # | Priority | Task (finding ID) | Effort |
 | --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
 ```

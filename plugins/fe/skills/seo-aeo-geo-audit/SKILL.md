@@ -34,10 +34,10 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 ### Method
 
 1. **Resolve phase** — the phase argument if given; else the audit phase `AGENTS.md` records; else `production`, so a CRITICAL finding gets Fix-Now urgency instead of a pre-launch discount. Phase sets the action-item tiers.
-2. **Load the previous report** — if `_reports/seo-aeo-geo-audit.md` exists, read it: carry unresolved findings forward (same ID, status `UNRESOLVED`), move fixed ones to "Resolved since last audit", and continue ID numbering. First run → skip Resolved and mark all `NEW`.
+2. **Load the previous report** — if `_reports/seo-aeo-geo-audit.md` exists, read it, but still run every check against the source. Use it only to keep the ID of each finding still present (status `UNRESOLVED`), carry its `WON'T FIX` findings forward unchanged — never re-raised as new findings — drop its `FIXED` findings and any no longer present, continue ID numbering from its highest ID, and take its scores for the score-change row. First run → mark all `NEW`.
 3. **Run the checklist** (below), collecting findings with `file:line` evidence.
 4. **Verify** each candidate — construct the concrete failure/abuse case; drop what you can't show is real; mark uncertain ones "needs confirmation" rather than inflating. Drop one the project records as a deviation, with its reason, in `AGENTS.md` or a doc it links.
-5. **Write the report** to `_reports/seo-aeo-geo-audit.md` (overwrite) and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
+5. **Write the report** to `_reports/seo-aeo-geo-audit.md` — overwriting the whole file, so no resolved history accumulates — and post the **chat summary** (see Output). Recommend fixes in the report; never modify code. Never commit or push without explicit approval.
 
 ### Severity
 
@@ -50,7 +50,7 @@ Findings are ordered worst-first in the report.
 
 ### Report format
 
-Write to `_reports/seo-aeo-geo-audit.md`:
+Write to `_reports/seo-aeo-geo-audit.md`, with one Overall row in the score change:
 
 ```
 # SEO, AEO and GEO audit — <app/scope>
@@ -67,10 +67,13 @@ Write to `_reports/seo-aeo-geo-audit.md`:
 | --- | --- | --- | --- | --- | --- |
 | 1 | HIGH | <category> | NEW | <one-line issue> | `file/path:line` |
 
+**Status:** `NEW` — found this run for the first time · `UNRESOLVED` — still present from an earlier run · `FIXED` — fixed after the audit; the note names the commit · `WON'T FIX` — the owner ruled it not a defect, intended, or accepted as it is; the note gives their reason
+
 ### F1 — <title>
 - **What:** <the defect, and the concrete evidence that proves it real>
 - **Why it matters:** <impact / who it affects> <· the source, e.g. Google Search Central: canonicalization>
 - **Fix:** <the specific remediation>
+- **Note:** <only once `FIXED` (the commit and what changed) or `WON'T FIX` (the owner's reason)>
 
 ## Scorecard
 | Category | Score | Notes |
@@ -91,10 +94,6 @@ Tiers by phase — `development` → **Fix Now / Before Launch / Post-Launch**; 
 ### <Tier>
 | # | Priority | Task (finding ID) | Effort |
 | --- | --- | --- | --- |
-
-## Resolved since last audit
-| ID | Issue | How it was resolved |
-| --- | --- | --- |
 ```
 
 ### Output
@@ -172,6 +171,10 @@ First scope it: which apps are **indexable** (a marketing site, a help centre) a
 - Analytics and the tag manager fire only in production and only after consent (`cookie-consent`); Search Console and Bing Webmaster Tools verification is checked only as its meta tag or file.
 
 > **Don't report as ranking signals:** bounce rate, time on page, pages per session. For a migration, map every old URL to its new one with a 301, preserve titles and content, and resubmit the sitemap.
+
+## Fixing what it found
+
+Fixing is a separate request, after the report is written, and covers only the findings the owner chose. Then **update the report in place — never re-run the audit to update it**: a re-run re-checks the whole codebase, costs a full audit and raises new findings mid-fix. Mark each fixed finding `FIXED` with its commit and a one-line note of what changed, mark a finding the owner rules out `WON'T FIX` with their reason, and leave everything else as it stands. Recompute the scorecard categories the fixes touched and the Overall, and rewrite the one score-change row (previous → current) — never add a second row.
 
 ## Boundaries
 
