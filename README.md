@@ -1,16 +1,59 @@
 # engineering-skills
 
-Sixty-two Claude Code skills for building web apps on Next.js, React and Firebase, in three plugins: `eng` for the whole repo, `fe` for the frontend and `be` for the API.
+Claude skills that help developers build, review and ship web apps on Next.js, React and Firebase.
 
-Most of what goes wrong in a web app isn't a missing feature. It's a route that skipped its guard, a cache that never cleared, a colour that fails contrast in dark mode, a secret that reached the browser, a name nobody can find again. These skills hold the rules that prevent those — where a file goes, which check runs first, what WCAG and OWASP ask — and the audits check a codebase against them.
+[![License: MIT](https://img.shields.io/github/license/Timonwa/engineering-skills)](LICENSE)
+[![Claude Code plugins](https://img.shields.io/badge/Claude%20Code-plugins-D97757)](#install)
+[![GitHub stars](https://img.shields.io/github/stars/Timonwa/engineering-skills?style=flat)](https://github.com/Timonwa/engineering-skills/stargazers)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/timonwa)
 
-Forty-five of them are model-invoked: Claude loads one when the work matches, so adding a route pulls in the API standard without you naming it. The other seventeen are commands you run deliberately — sixteen audits and a pull-request review.
+> [!IMPORTANT]
+> **These skills are opinionated.** They're the house rules for one stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, a pnpm and Turborepo monorepo, and Firebase, Upstash Redis and Cloudinary behind the API. Some are tied to it more than others, and the Stack column in the skills and commands tables says how much:
+>
+> - **Any stack** — follows a general standard, such as WCAG, OWASP or a language's own rules, and works on any web project.
+> - **Adaptable** — the ideas apply anywhere, but the steps, examples or file layout assume this stack, so another one needs translating.
+> - **This stack** — built for one tool in the stack, and won't carry over to another.
 
-**These are opinionated, and the opinions are specific.** They assume Next.js 16 App Router, React 19, TypeScript, Tailwind v4, a pnpm and Turborepo monorepo, and Firebase, Upstash Redis and Cloudinary behind the API. Within that stack, each rule follows the current industry standard — the platform's own docs, WCAG 2.2, OWASP — not one project's habits. If your stack is different, most of this will fight you — that's by design. I built it for my own projects and published it in case it's useful.
+## Contents
+
+- [The plugins](#the-plugins)
+- [How the skills work](#how-the-skills-work)
+- [Install](#install)
+- [Set up a project](#set-up-a-project)
+- [Skills](#skills)
+- [Official skills](#official-skills)
+- [Commands](#commands)
+- [Contributing](#contributing)
+- [Support](#support)
+
+## The plugins
+
+| Plugin | For            | Install it if you build                                                         |
+| ------ | -------------- | ------------------------------------------------------------------------------- |
+| `eng`  | The whole repo | Any Next.js and TypeScript project. It comes with `fe` and `be`                 |
+| `fe`   | The frontend   | Pages, components and a design system with Next.js, React and Tailwind CSS      |
+| `be`   | The API        | An API in Next.js route handlers, on Firebase with Upstash Redis and Cloudinary |
+
+## How the skills work
+
+- Claude picks one of the 45 skills when your request matches it, so you don't have to name it. The 17 commands run only when you call them.
+- A skill reads your project's `AGENTS.md`, and the docs it links, before anything else. Colours, collection names, limits and the brand voice come from there. A value that isn't written down is asked for, never guessed.
+- Each rule follows the current standard: the platform's own docs, WCAG 2.2 and OWASP. Where your project does something differently and records why, your way wins. Where it gives no reason, the skill asks before following either.
+- Nothing is installed, committed or pushed unless you ask. Scaffolding lists every file it will create, edit, move or delete, and waits for your approval.
+- A failing test means the code gets fixed, and a flaky test is fixed straight away. No test is deleted, skipped or loosened to make it pass.
 
 ## Install
 
-Run these in Claude Code:
+### Claude app (web or desktop)
+
+1. Open **Customize > Plugins**.
+2. Select **Add > Add marketplace > Add from a repository**, and enter `Timonwa/engineering-skills`.
+3. Add **eng**, **fe**, **be**, or only the ones your project needs. **fe** and **be** each bring in **eng** and the official skills they use.
+4. Turn on **Settings > Capabilities > Create and edit files**. Skills don't run without it. On Team and Enterprise plans, an admin turns it on.
+
+Plugins are saved to your account, so they work in chat on mobile too.
+
+### Claude Code
 
 ```shell
 /plugin marketplace add Timonwa/engineering-skills
@@ -19,148 +62,140 @@ Run these in Claude Code:
 /plugin install be@engineering-skills
 ```
 
-`fe` and `be` each depend on `eng`, so installing either pulls it in. Install only the plugins a repo needs: a frontend over someone else's API needs `eng` and `fe`.
+`fe` and `be` each bring in `eng`. Install only what a repo needs: a frontend that calls someone else's API needs `fe` alone.
 
-Pick a scope when it asks. **Project** shares the skills with everyone who clones the repo, which is usually right for a codebase you own. **Local** installs for the current repo only, for trying them on a codebase that isn't yours. **User** makes them available everywhere.
+When it asks for a scope, pick one:
 
-In a new project, run `agents-md` first. Every other skill reads the project's facts — palette, fonts, collection names, project IDs, rate-limit budgets, the brand voice — from the `AGENTS.md` it writes and the docs that file links.
+- **User** — every project on your machine.
+- **Project** — everyone who clones the repo. Usually the right choice for a codebase you own.
+- **Local** — this repo, for you only. Good for trying the skills on a codebase that isn't yours.
+
+## Set up a project
+
+- In a new project, run `eng:agents-md` first. It writes the `AGENTS.md` every other skill reads for your project's facts: palette, fonts, collection names, project IDs, rate limits and brand voice.
+- Where your project breaks a rule on purpose, write the reason in `AGENTS.md`. Skills then follow your version, and audits stop reporting it.
+- In the Claude app, attach `AGENTS.md` and the docs it links to the chat or Project, so the skills can read them.
 
 ## Skills
 
-### eng — the whole repo
+### eng
 
-| Skill                   | What it's for                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `agents-md`             | The project's `AGENTS.md` — the facts and deviations everything else here reads                    |
-| `code-structure`        | Thin route entries, components by product area, a flat kind-first `lib/`, server folders per app   |
-| `naming`                | Verb-first, ownership-revealing names, the `<domain>.<kind>.ts` grammar, fields, events and tokens |
-| `typescript`            | Strict inference-first TypeScript 7, tsconfig presets, erasable syntax, typed routes               |
-| `schemas-and-contracts` | Zod at every boundary, `.pick()` write schemas, tolerant reads, a shared contracts package         |
-| `monorepo`              | pnpm 11 and Turborepo — the catalog, build-script allowlists, workers, `--affected`                |
-| `env`                   | Secrets in env, per-tier facts in constants, a Zod guard at boot, secret rotation                  |
-| `testing`               | Vitest — mock only the I/O boundaries, in-memory fakes, deterministic tests, never weaken a test   |
-| `devops`                | Prettier and ESLint, git hooks, hardened GitHub Actions, rulesets, releases, deploys and rollback  |
-| `scaffold-app`          | Adapts a framework starter into the house app or monorepo shape, behind one approved manifest      |
-| `scaffold-feature`      | One feature slice — schema, store, server layer, page, states, stories and tests — as stubs        |
-| `migrate`               | A framework or major-version migration, one major and one verified step at a time                  |
-| `ship-changes`          | Small Conventional Commits, one approved group at a time, and a PR only when asked                 |
+| Skill                   | Use it to                                                                                                       | Stack      |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- | ---------- |
+| `agents-md`             | Write or update your project's `AGENTS.md`, the file every other skill reads for your project's facts           | Any stack  |
+| `code-structure`        | Decide where a page, component or helper goes, and keep route files thin                                        | Adaptable  |
+| `naming`                | Name functions, files, fields, events and design tokens so people can find them again                           | Any stack  |
+| `typescript`            | Write strict TypeScript and set up `tsconfig`, with no `any` or unsafe casts                                    | Any stack  |
+| `schemas-and-contracts` | Check every request, form and stored record with a Zod schema, and share those schemas between apps             | Adaptable  |
+| `monorepo`              | Set up a pnpm and Turborepo monorepo with one version of each dependency                                        | This stack |
+| `env`                   | Keep secrets in env and public settings in code, check both when the app starts, and rotate a leaked secret     | Adaptable  |
+| `testing`               | Write Vitest tests that pass or fail the same way every run, mocking only what a test can't run, like a network | Adaptable  |
+| `devops`                | Set up formatting, lint, git hooks, GitHub Actions, protected branches, releases, and deploys you can roll back | Adaptable  |
+| `scaffold-app`          | Turn a fresh Next.js starter or monorepo into the house layout, after you approve a list of every change        | This stack |
+| `scaffold-feature`      | Start a feature with its schema, data access, page, loading and error states, stories and tests as stubs        | Adaptable  |
+| `migrate`               | Upgrade Next.js, React, Tailwind or any major dependency one version and one checked step at a time             | Any stack  |
+| `ship-changes`          | Commit work as small Conventional Commits you approve one group at a time, and open a pull request when you ask | Any stack  |
 
-### fe — the frontend
+### fe
 
-| Skill               | What it's for                                                                                   |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `nextjs`            | Next 16 — Cache Components, Server Actions with action results, `updateTag`, Proxy, streaming   |
-| `react`             | React 19 — the Rules of React, derive don't sync, the Compiler, Actions, URL-owned panel state  |
-| `semantic-html`     | The element the content is — landmarks, headings, lists, tables, links versus buttons, forms    |
-| `accessibility`     | WCAG 2.2 AA beyond the markup, and the gates that verify it                                     |
-| `tailwind`          | Tailwind v4 CSS-first — layer files, three token layers, dark mode, `cn()` with custom scales   |
-| `design-system`     | The UI tiers, a base library installed as source, one component configured by props, drift      |
-| `reusables`         | One shared component, hook or helper — agnostic, controllable from outside, copy through props  |
-| `frontend-design`   | The craft of a UI built from the design system — hierarchy, type, colour, space, states, motion |
-| `storybook`         | Storybook 10 where every story is a test — setup, CSF3, `fn()` spies, keyboard plays, axe       |
-| `seo-aeo-geo`       | Being found, being the answer and being cited — indexability, metadata, JSON-LD, AI crawlers    |
-| `copywriting`       | Product copy in the project's own voice and word list — the web, forms, errors and states       |
-| `frontend-security` | XSS and safe rendering, security headers, a CSP that works with Cache Components, client tokens |
-| `cookie-consent`    | Consent as regulators read it — equal-weight choices, each recorded, withdrawable at any time   |
-| `logos-and-icons`   | Logo types, the favicon set, PWA, Android and Apple icons with their safe zones                 |
+| Skill               | Use it to                                                                                                 | Stack      |
+| ------------------- | --------------------------------------------------------------------------------------------------------- | ---------- |
+| `nextjs`            | Write Next.js 16 App Router code: server and client components, caching, Server Actions and streaming     | This stack |
+| `react`             | Write React 19 components and hooks without needless effects or hand-written memoisation                  | Adaptable  |
+| `semantic-html`     | Build markup on the right element: headings, lists, tables, forms, links and buttons                      | Any stack  |
+| `accessibility`     | Make UI meet WCAG 2.2 AA: contrast in both themes, keyboard use, focus, labels and errors people see      | Any stack  |
+| `tailwind`          | Set up Tailwind CSS v4 with design tokens and dark mode                                                   | This stack |
+| `design-system`     | Add a component, token or variant to a shared design system, and keep screens consistent                  | Adaptable  |
+| `reusables`         | Build a shared component, hook or helper that each page sets up through its props                         | Adaptable  |
+| `frontend-design`   | Make a page or component look designed with the tokens you have: hierarchy, type, colour, spacing, motion | Any stack  |
+| `storybook`         | Set up Storybook 10 and write stories that also run as tests                                              | This stack |
+| `seo-aeo-geo`       | Help people find your pages through Google and AI tools like ChatGPT, with metadata and structured data   | Any stack  |
+| `copywriting`       | Write buttons, forms, errors, empty states and page copy in your product's own voice                      | Any stack  |
+| `frontend-security` | Protect the browser side from XSS, with security headers, a Content Security Policy and safe scripts      | Any stack  |
+| `cookie-consent`    | Add a cookie banner where accepting and rejecting are equally easy, and nothing optional loads before     | Any stack  |
+| `logos-and-icons`   | Make the favicon set, app icons and logo files, with the right sizes and safe zones                       | Any stack  |
 
-### be — the API
+### be
 
-| Skill                 | What it's for                                                                                      |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| `api-architecture`    | Rate limit → authorise → validate → delegate → audit → respond; envelopes, errors, pagination      |
-| `openapi-registry`    | The OpenAPI document generated from one registration per route, with a coverage test               |
-| `auth`                | Firebase Auth with an httpOnly session cookie only the API mints, lockouts, MFA, operator sign-in  |
-| `access-control`      | Permission verbs behind one `can()`, 404 before 403, tenant scoping, API keys and share links      |
-| `rate-limiting`       | Layered limits on Upstash — named tiers, the trusted client IP, fail direction per tier, 429s      |
-| `plan-entitlements`   | What a plan allows, apart from permissions — one entitlements map, usage reserved in transaction   |
-| `audit-log`           | Who did what, when and from where — append-only, never lost, never failing the request             |
-| `backend-security`    | Server-side OWASP Top 10 2025 and API Top 10 — BOLA, injection, SSRF, CSRF, abuse, App Check       |
-| `field-encryption`    | AES-256-GCM per field, associated data, a key per purpose, rotation and crypto-shredding           |
-| `firestore`           | Firestore behind the Admin SDK only — transactions, counters, TTL, indexes and rules as code       |
-| `redis`               | Redis keys, TTLs and a failure direction per primitive — caches open, locks and claims closed      |
-| `image-handling`      | Uploads on Firebase Storage — bytes checked, pixels capped, EXIF stripped, buckets by reader       |
-| `cloudinary`          | Delivery and uploads through Cloudinary, on top of the official Cloudinary skills                  |
-| `feature-flags`       | Database-backed flags with coded defaults, one server evaluation and a stated propagation bound    |
-| `maintenance-mode`    | A two-gate kill switch, a 503 with `Retry-After`, and never on the admin app that turns it off     |
-| `transactional-email` | Sending email — authenticated domains, suppression, one-click unsubscribe, retries off the request |
-| `emails`              | The words of a transactional email — sender, subject, preheader and one action                     |
-| `webhook-delivery`    | Webhooks to customers — Standard Webhooks signing, an outbox, retries over days, SSRF checks       |
+| Skill                 | Use it to                                                                                                       | Stack      |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- | ---------- |
+| `api-architecture`    | Build an API route in a fixed order: rate limit, check access, validate, call one service, log, respond         | Adaptable  |
+| `openapi-registry`    | Generate an OpenAPI reference from your routes' schemas, with a test that no route is left out                  | Adaptable  |
+| `auth`                | Build sign-in, sessions and sign-out with Firebase Auth and a session cookie only the API can set               | This stack |
+| `access-control`      | Decide who can do what, with permissions checked in one place, plus API keys and share links                    | Adaptable  |
+| `rate-limiting`       | Limit how often each person, IP address or API key can call a route, using Upstash                              | Adaptable  |
+| `plan-entitlements`   | Limit features and usage by plan, apart from permissions, with plan changes from your payment provider          | Any stack  |
+| `audit-log`           | Record who did what, when and from where, without ever failing the request                                      | Any stack  |
+| `backend-security`    | Check server code against the OWASP Top 10: access, injection, SSRF, CSRF and abuse                             | Any stack  |
+| `field-encryption`    | Encrypt a sensitive field, such as a token a user must read back, before it's stored                            | Any stack  |
+| `firestore`           | Read and write Firestore through the server, with transactions, indexes, security rules and backups             | This stack |
+| `redis`               | Add a cache, lock or other Redis key that expires and fails safely when Redis is down                           | This stack |
+| `image-handling`      | Accept image uploads on Firebase Storage: checked, resized, stripped of location data, stored by who may see it | This stack |
+| `cloudinary`          | Deliver and upload images through Cloudinary, on top of Cloudinary's own skills                                 | This stack |
+| `feature-flags`       | Turn features on and off without a deploy, with a safe default for each                                         | Adaptable  |
+| `maintenance-mode`    | Take the app offline with one switch, while the admin app that turns it off stays reachable                     | Adaptable  |
+| `transactional-email` | Send email from the API that reaches the inbox, with signed domains, retries, bounce handling and unsubscribe   | Any stack  |
+| `emails`              | Write the words of an email the product sends: sender, subject, preview text and one clear action               | Any stack  |
+| `webhook-delivery`    | Send signed webhooks to your customers' systems, retried for days, with a delivery log                          | Any stack  |
+
+## Official skills
+
+Where a maker's own skill agrees with the rules above, the plugin brings it in, so you get the maker's updates directly. Each comes from its maker's repository.
+
+| Skill                             | Use it to                                                                    | From                                                    | Comes with |
+| --------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- | ---------- |
+| `turborepo`                       | Set up and fix Turborepo tasks, caching and filters                          | [Vercel](https://github.com/vercel/turborepo)           | `eng`      |
+| `next-dev-loop`                   | Check how a Next.js app behaves after an edit, in the dev server and browser | [Vercel](https://github.com/vercel/next.js)             | `fe`       |
+| `next-cache-components-adoption`  | Turn on Cache Components in a Next.js app and fix the routes it blocks       | [Vercel](https://github.com/vercel/next.js)             | `fe`       |
+| `next-cache-components-optimizer` | Show more of a route straight away on navigation, checked by a test          | [Vercel](https://github.com/vercel/next.js)             | `fe`       |
+| `firebase-app-hosting-basics`     | Deploy and manage a Next.js app on Firebase App Hosting                      | [Firebase](https://github.com/firebase/agent-skills)    | `be`       |
+| `firebase-security-rules-auditor` | Audit Firestore and Cloud Storage security rules for gaps                    | [Firebase](https://github.com/firebase/agent-skills)    | `be`       |
+| `extension-to-functions-codebase` | Turn an installed Firebase Extension into your own Cloud Functions code      | [Firebase](https://github.com/firebase/agent-skills)    | `be`       |
+| `upstash-ratelimit-js`            | Add rate limiting with the `@upstash/ratelimit` SDK                          | [Upstash](https://github.com/upstash/skills)            | `be`       |
+| `cloudinary-transformations`      | Build and debug Cloudinary image and video URLs                              | [Cloudinary](https://github.com/cloudinary-devs/skills) | `be`       |
+| `cloudinary-docs`                 | Look up answers in Cloudinary's latest docs                                  | [Cloudinary](https://github.com/cloudinary-devs/skills) | `be`       |
+
+The rest of each maker's set is left out. Some of those skills work against these rules, such as reading the database from the browser, unsigned uploads or keys in client code. The others cover tools outside this stack.
 
 ## Commands
 
-Seventeen commands, each marked `disable-model-invocation`, so Claude never starts one on its own. An audit takes an optional phase and path; `review-pr` takes a pull request or a branch.
+| Command                    | Use it to                                                                                    | Stack      |
+| -------------------------- | -------------------------------------------------------------------------------------------- | ---------- |
+| `/eng:audit-all`           | Run every installed audit that applies, and get one combined health report                   | Adaptable  |
+| `/eng:codebase-audit`      | Find tech debt, dead code, loose TypeScript, weak tests, and CI, branch and deploy problems  | Adaptable  |
+| `/eng:conventions-audit`   | Find names and files that don't follow `naming` and `code-structure`                         | Adaptable  |
+| `/eng:dependency-audit`    | Find unused, duplicate, misplaced or vulnerable packages, and versions that have drifted     | This stack |
+| `/eng:env-audit`           | Find secrets, env values and public variables in the wrong place                             | Adaptable  |
+| `/eng:security-audit`      | Find how an attacker could get in, across frontend and backend, against the OWASP Top 10     | Any stack  |
+| `/fe:accessibility-audit`  | Check the app against every WCAG 2.2 A and AA criterion                                      | Any stack  |
+| `/fe:frontend-audit`       | Check App Router code: the client boundary, caching, Server Actions, Tailwind setup, icons   | This stack |
+| `/fe:performance-audit`    | Find what slows a page down: images, bundle size, fonts, streaming and caching               | This stack |
+| `/fe:seo-aeo-geo-audit`    | Check that search engines and AI tools can find, read and cite your public pages             | Any stack  |
+| `/fe:storybook-audit`      | Find shared components with no story, and stories that don't test what they show             | This stack |
+| `/fe:content-audit`        | Check UI and email copy against your product's voice and word list                           | Any stack  |
+| `/be:api-audit`            | Check every route is built the same safe way: order of checks, validation, limits and errors | Adaptable  |
+| `/be:access-control-audit` | Find routes and actions where someone could reach data that isn't theirs                     | Adaptable  |
+| `/be:firestore-audit`      | Check Firestore reads, writes, indexes, rules and backups for safety and cost                | This stack |
+| `/be:redis-audit`          | Check each use of Redis fails the right way when Redis is down                               | This stack |
+| `/eng:review-pr`           | Review a pull request or branch against its goal, your project's rules and real bugs         | Any stack  |
 
-| Command                    | The question                                                                                               |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `/eng:audit-all`           | How healthy is the repo overall? Every installed audit that applies, rolled into one report                |
-| `/eng:codebase-audit`      | What hygiene has slipped? Debt, dead code, strictness, tests, CI, branches and deploys                     |
-| `/eng:conventions-audit`   | Is every name and file where the house puts it? The repo against `naming` and `code-structure`             |
-| `/eng:dependency-audit`    | Are the dependencies under control? The catalog, unused and misplaced packages, build scripts, advisories  |
-| `/eng:env-audit`           | Are config and secrets where they belong? The env guard, `.env.example` parity, `NEXT_PUBLIC_`, rotation   |
-| `/eng:security-audit`      | How would an attacker get in? Frontend and backend against the OWASP Top 10 and API Top 10                 |
-| `/fe:accessibility-audit`  | Can everyone use it? Every WCAG 2.2 A and AA criterion, with the lint, Storybook and end-to-end gates      |
-| `/fe:frontend-audit`       | Is the App Router code built the house way? Structure, the client boundary, caching, Tailwind, icons       |
-| `/fe:performance-audit`    | Is it fast for the person loading it? Images, bundle weight, fonts, streaming, caching, Core Web Vitals    |
-| `/fe:seo-aeo-geo-audit`    | Can search and AI engines find, read and cite it? Indexability, metadata, JSON-LD, robots, AI crawlers     |
-| `/fe:storybook-audit`      | Is every shared component in a story that tests it? Coverage against the shared UI, and story quality      |
-| `/fe:content-audit`        | Does the copy sound like the product and say what it means? UI and email copy against the voice            |
-| `/be:api-audit`            | Is every route built the same safe way? The six steps, validation, limits, flags, plans, webhooks, email   |
-| `/be:access-control-audit` | Can anyone reach what isn't theirs? Guards on every route and action, object and field checks, keys        |
-| `/be:firestore-audit`      | Is the store read and written safely and cheaply? Reads per request, transactions, indexes, rules, backups |
-| `/be:redis-audit`          | Does each Redis use fail the right way? One client, key builders, TTLs, failure direction, eviction        |
-| `/eng:review-pr`           | Is this pull request ready to merge? Its goal, the project's rules and real bugs, each finding proven      |
-
-Each audit writes a report to `_reports/<name>.md`. A finding carries a severity, its location, the evidence that proves it real and a specific fix; one that can't be proven from the code — a console setting, a DNS record — is marked "needs confirmation" rather than inflated. Each finding has a status — `NEW`, `UNRESOLVED`, `FIXED` or `WON'T FIX` — and the report closes with a scorecard and one row for how the score moved. A new run overwrites the report, carrying unresolved and won't-fix findings forward under their old IDs and dropping fixed ones; after a fix, the report is updated in place rather than re-run.
-
-None of them edit code — the Edit tool is withheld for the whole run, and fixing a finding is a separate request. `review-pr` reports in chat and stays read-only too, unless you ask it to comment on the pull request or fix findings.
-
-## What the skills won't do
-
-**Invent a project value.** A colour, a collection name, a budget or a word in the brand voice comes from the project's `AGENTS.md` and the docs it links. A value that isn't written down is asked for, never guessed.
-
-**Copy one project's habits.** Each rule follows the current standard — the platform's docs, WCAG, OWASP — not whatever a codebase happens to do. Where a project departs from a rule and records why, the project wins; where it departs without a reason, the skill asks before following either, and an audit reports it.
-
-**Install, commit or push unasked.** Scaffolding shows one manifest of every file it will create, edit, move or delete and waits for approval. Commits go one approved group at a time, and nothing is pushed or opened as a pull request unless you ask.
-
-**Weaken a failing test.** A red test means the code gets fixed. A test is never deleted, skipped or loosened to go green, and a flaky one is fixed at once rather than quarantined.
-
-## Vendor skills
-
-The skills above are the house rules on top of the vendors' tools. Where an official skill agrees with them, the plugin depends on it, so you get the vendor's updates directly:
-
-| Plugin | Official skills                                                                                     | Source                                                              |
-| ------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `eng`  | `turborepo`                                                                                         | [vercel/turborepo](https://github.com/vercel/turborepo)             |
-| `fe`   | `next-dev-loop`, `next-cache-components-adoption`, `next-cache-components-optimizer`                | [vercel/next.js](https://github.com/vercel/next.js)                 |
-| `be`   | `firebase-app-hosting-basics`, `firebase-security-rules-auditor`, `extension-to-functions-codebase` | [firebase/agent-skills](https://github.com/firebase/agent-skills)   |
-| `be`   | `upstash-ratelimit-js`                                                                              | [upstash/skills](https://github.com/upstash/skills)                 |
-| `be`   | `cloudinary-transformations`, `cloudinary-docs`                                                     | [cloudinary-devs/skills](https://github.com/cloudinary-devs/skills) |
-
-The rest of each vendor's set is left out: some skills work against these rules — reading the database from the browser, unsigned uploads, keys in client code — and the others cover tools outside the stack.
-
-## Repo layout
-
-```text
-plugins/<plugin>/                 # eng, fe, be
-  .claude-plugin/plugin.json      # the plugin's manifest and its dependencies
-  skills/<skill-name>/
-    SKILL.md                      # the skill or command itself
-    references/                   # longer material, loaded only when needed
-shared/project-specifics.md       # the opening section every skill shares
-scripts/                          # the checks behind the package scripts
-.claude-plugin/marketplace.json   # the marketplace, with the official skills it points at
-```
-
-Plugins install separately, so each skill carries its own copy of the shared opening. It's written once in [shared/project-specifics.md](shared/project-specifics.md); `pnpm sync:opening` copies it into every `SKILL.md`, and `pnpm check:opening` fails when one has drifted.
+- An audit takes an optional phase, `development` or `production`, and a path. Without a phase, it uses the audit phase in your `AGENTS.md`, or else `production`. The phase sorts the fixes: fix now, before launch and after launch in `development`; fix now, next release and backlog in `production`.
+- Each audit writes `_reports/<name>.md`, and `/eng:audit-all` adds `_reports/audit-all.md`. Every finding has a severity, a location, the evidence that proves it and a fix. The report ends with a score and how it moved since the last run.
+- A finding the code can't prove, such as a console setting or a DNS record, is marked "needs confirmation" instead of being inflated.
+- Findings are `NEW`, `UNRESOLVED`, `FIXED` or `WON'T FIX`. A new run replaces the report, keeping open and won't-fix findings under their old IDs and dropping fixed ones. After you fix a finding, the report is updated in place, not re-run.
+- Audits never edit code, and fixing a finding is a separate request. `/eng:review-pr` reports in chat, and comments on the pull request or fixes findings only with `--comment` or `--fix`. A project with its own review skill uses that one instead.
 
 ## Contributing
 
-Issues and pull requests are welcome. A rule that misfires in your project is worth reporting, and so is one that's fallen behind the standard it cites.
+Issues and pull requests are welcome, especially for a rule that misfires in your project or has fallen behind the standard it cites. In a pull request:
 
-Each skill is a Markdown file, so there's no build step. The scripts only format and check them:
+- Change one skill where you can.
+- Update its `evals/evals.json`.
+- Keep `SKILL.md` under 200 lines and its description under 550 characters. Longer material goes in the skill's `references/` folder, which Claude reads only when it needs it.
+- Change the opening every skill shares in `shared/project-specifics.md`, then run `pnpm sync:opening`. Plugins install separately, so each skill keeps its own copy.
+- Run the checks:
 
-| Script               | What it does                                                             | Needs                       |
+| Script               | Use it to                                                                | Needs                       |
 | -------------------- | ------------------------------------------------------------------------ | --------------------------- |
 | `pnpm format`        | Format everything with Prettier                                          | `pnpm install` first        |
 | `pnpm format:check`  | Check formatting without writing                                         | `pnpm install` first        |
@@ -169,13 +204,13 @@ Each skill is a Markdown file, so there's no build step. The scripts only format
 | `pnpm check:opening` | Fail on a skill whose shared opening has drifted                         | Node                        |
 | `pnpm sync:opening`  | Copy the shared opening into every skill                                 | Node                        |
 
-The repo uses [pnpm](https://pnpm.io), and Prettier is its only dependency — install it if you want the format scripts, or run `pnpm dlx prettier --write .` instead.
+The skills are Markdown, so there's no build step, and Prettier is the only dependency. Without installing it, run `pnpm dlx prettier --write .` instead.
 
-Keep a change to one skill where you can, and run `pnpm check:skills`, `pnpm check:opening` and `pnpm validate` before opening a pull request.
+## Support
 
-## Related
+If these skills save you time, [buy me a coffee](https://buymeacoffee.com/timonwa).
 
-- [writing-skills](https://github.com/Timonwa/writing-skills) — technical and content writing: docs pages, READMEs, API references, help-centre guides, articles, newsletters, editing and review. Install it beside these if you write as well as code.
+For writing docs, blogs and newsletters, see [writing-skills](https://github.com/Timonwa/writing-skills).
 
 ## License
 
