@@ -1,7 +1,7 @@
 {
   "name": "eng",
   "displayName": "Engineering Skills",
-  "description": "House engineering standards for Next.js, React, TypeScript and Firebase projects: AGENTS.md, structure, naming, TypeScript, schemas and contracts, the monorepo, env, testing, CI/CD, scaffolding, migrations, shipping and reviewing changes, and the repo-wide audits.",
+  "description": "Skills for the whole repo of a Next.js and TypeScript project: AGENTS.md, file structure, naming, TypeScript, Zod schemas, the monorepo, env and secrets, tests, CI, scaffolding, upgrades and commits, plus repo-wide audits and a pull request review. Comes with fe and be.",
   "version": "2.1.0",
   "dependencies": ["turborepo"],
   "author": {
@@ -9,5 +9,16 @@
   },
   "homepage": "https://github.com/Timonwa/engineering-skills",
   "repository": "https://github.com/Timonwa/engineering-skills",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "nextjs",
+    "typescript",
+    "monorepo",
+    "turborepo",
+    "pnpm",
+    "zod",
+    "vitest",
+    "ci-cd",
+    "code-review"
+  ]
 }
