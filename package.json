@@ -2,7 +2,7 @@
   "name": "engineering-skills",
   "version": "1.0.0",
   "private": true,
-  "description": "Claude Code engineering skills for Next.js, React and Firebase.",
+  "description": "Claude skills that help developers build, review and ship web apps on Next.js, React and Firebase.",
   "license": "MIT",
   "repository": "github:Timonwa/engineering-skills",
   "scripts": {
