@@ -2,7 +2,6 @@
   "name": "be",
   "displayName": "Backend Skills",
   "description": "Backend skills for an API on Next.js and Firebase: route structure, the OpenAPI reference, sign-in, permissions, rate limits, plans, audit logs, security, field encryption, Firestore, Redis, image uploads, Cloudinary, feature flags, maintenance mode, email and webhooks, plus audits. Includes eng.",
-  "version": "1.1.0",
   "dependencies": [
     "eng",
     "firebase-app-hosting-basics",

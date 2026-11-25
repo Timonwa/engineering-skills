@@ -3,7 +3,7 @@
   "owner": {
     "name": "Timonwa"
   },
-  "description": "Claude skills that help developers build, review and ship web apps on Next.js, React and Firebase. Three plugins: eng for the whole repo, fe for the frontend and be for the API, plus the official Vercel, Firebase, Upstash and Cloudinary skills they use.",
+  "description": "Agent skills that help developers build, review and ship web apps on Next.js, React and Firebase. Three plugins: eng for the whole repo, fe for the frontend and be for the API, plus the official Vercel, Firebase, Upstash and Cloudinary skills they use.",
   "plugins": [
     {
       "name": "eng",
