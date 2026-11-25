@@ -3,8 +3,6 @@ name: security-audit
 description: >-
   Manually invoked. Red-team application-security review across frontend and backend, mapped to the OWASP Top 10 2025 and API Top 10 — access control, SSRF, CSRF, headers and CSP, sessions with operator step-up, the trusted client IP, field encryption and keys, uploads and user files, injection and XSS, abuse cases, the audit trail, cookie consent, supply chain and fail-open handling — naming the domain audits for depth rather than repeating them.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

@@ -3,8 +3,6 @@ name: env-audit
 description: >-
   Manually invoked. Environment and secrets audit — secrets in env and public per-tier facts in committed constants, APP_ENV as the tier, a Zod guard at boot with no stray process.env reads, a names-only .env.example in parity, NEXT_PUBLIC correctness, App Hosting grants and overlays, worker secrets, safe ops scripts, rotation and leak response, and turbo's env listing. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

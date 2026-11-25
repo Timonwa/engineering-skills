@@ -3,8 +3,6 @@ name: review-pr
 description: >-
   Manually invoked. Reviews a pull request or a branch against what it set out to do and the project's own rules, plus real bugs — runs or reads the checks, hunts by angle, proves every finding, and reports a severity table. Read-only unless asked to comment on the PR or fix findings. A project with its own review skill uses that instead.
 argument-hint: "[pr-number | pr-url | branch] [--comment] [--fix] [extra focus]"
-model: opus
-effort: high
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Task, Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git status:*), Bash(git merge-base:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr review:*), Bash(gh issue view:*), Bash(gh repo view:*), Bash(pnpm:*)
 ---

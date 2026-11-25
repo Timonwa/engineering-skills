@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "/eng:conventions-audit. lib/server/data/user.data.ts exports getUser(), which calls fetch(); lib/types/user.type.ts declares type UserType; a component has const data = await fetchEvents().",
+      "prompt": "/conventions-audit. lib/server/data/user.data.ts exports getUser(), which calls fetch(); lib/types/user.type.ts declares type UserType; a component has const data = await fetchEvents().",
       "expected_output": "Should report getUser as a network read that must be named fetch, UserType as a Type suffix (and a likely re-declaration if a schema infers User), and the bare data name, each with file:line evidence and a severity. Changes no code.",
       "files": [],
       "expectations": [

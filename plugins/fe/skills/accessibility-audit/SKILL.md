@@ -3,8 +3,6 @@ name: accessibility-audit
 description: >-
   Manually invoked. Red-team accessibility audit of an app or a diff against WCAG 2.2 AA, organised by POUR with each check citing its success criterion — structure and landmarks, contrast on the tokens in both themes, reflow and zoom, keyboard, focus and dialogs, pointer and target size, forms and errors that are seen, status messages, and the lint, Storybook and end-to-end gates. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

@@ -3,8 +3,6 @@ name: access-control-audit
 description: >-
   Manually invoked. Access-control audit — guards on every route and Server Action (BFLA), 404 before 403 and tenant scoping (BOLA), allowlisted writes and projected reads (BOPLA), verbs never role names, roles that add up, escalation and invitations, claims and revocation, sessions and sign-in, API keys and share links, the plan and flag order, UI gates, data rules and the tests. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

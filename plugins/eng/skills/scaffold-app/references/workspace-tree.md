@@ -31,13 +31,11 @@ Four consequences worth stating, because they are where a monorepo actually diff
 |    |___ README.md                      # the folder map, and which doc a newcomer reads first
 |___ _reports/                           # audit output, committed - the diff shows what got fixed
 |    |___ README.md                      # each report, how to refresh it, how to read severity
-|___ .claude/                            # agent config, one folder per agent the team uses
-|    |                                   # (.claude/, .cursor/, .gemini/); Claude Code's shown
-|    |___ agents/                        # workspace-only subagents, if any
+|___ .agents/                            # shared agent config, read by any agent that supports it
 |    |___ skills/                        # workspace-only skills, if any
-|    |___ README.md                      # what is invocable, what the settings do, how to add
-|    |___ settings.json                  # shared: permissions, hooks
-|    |___ settings.local.json            # personal overrides, gitignored
+|    |___ README.md                      # what is invocable and how to add a skill
+|___ .<agent>/                           # one folder per agent the team uses (.claude/, .cursor/, .gemini/),
+|    |                                   # in that agent's own format: permissions, hooks, personal overrides
 |___ .github/                            # everything GitHub itself reads
 |    |___ actions/                       # reusable composite actions
 |    |    |___ setup/                    # the one setup step every job calls
@@ -503,8 +501,7 @@ apps/<name>/
 |___ _docs/                              # only docs specific to THIS app; the shared ones
 |    |                                   # are at the workspace root, and are not repeated
 |    |___ README.md                      # the folder map, and what is at the root instead
-|___ .claude/                            # app-scoped agent config (Claude Code's shown); the root's still apply
-|    |___ settings.json                  # only what differs from the workspace settings
+|___ .<agent>/                           # app-scoped agent config, only what differs from the root's
 |___ public/                             # served at this app's domain root; the subfolders are ours
 |    |___ docs/                          # downloadables - press kit, whitepapers
 |    |___ video/                         # streamed by URL; long-form belongs on a CDN

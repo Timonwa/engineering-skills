@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "/eng:dependency-audit. apps/web/package.json has \"zod\": \"^4.0.0\" while pnpm-workspace.yaml's catalog has zod 4.1.12; apps/admin has \"next\": \"16.2.4\" in a syncpack group labelled 'host refuses catalog:'.",
+      "prompt": "/dependency-audit. apps/web/package.json has \"zod\": \"^4.0.0\" while pnpm-workspace.yaml's catalog has zod 4.1.12; apps/admin has \"next\": \"16.2.4\" in a syncpack group labelled 'host refuses catalog:'.",
       "expected_output": "Should flag zod's literal range as a finding (it should be catalog:), and leave next alone because its exact pin is a labelled, recorded exception.",
       "files": [],
       "expectations": [

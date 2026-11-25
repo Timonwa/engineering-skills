@@ -3,8 +3,6 @@ name: audit-all
 description: >-
   Manually invoked. Runs the house audit suite across the eng, fe and be sets — detects what the repo has, runs every installed audit that applies (codebase, conventions, dependencies, env, security, accessibility, frontend, performance, SEO/AEO/GEO, Storybook, content, API, access control, Firestore, Redis), and rolls their reports into one health report with an overall score and cross-cutting priorities. Each audit still writes its own report.
 argument-hint: "[phase]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

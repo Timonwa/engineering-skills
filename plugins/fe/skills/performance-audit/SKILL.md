@@ -3,8 +3,6 @@ name: performance-audit
 description: >-
   Manually invoked. Frontend performance audit of a Next.js App Router app or a diff — image optimization, uploaded-image delivery and Cloudinary, the server and client boundary and bundle weight, dynamic imports for heavy libraries, font loading, streaming behind Suspense with component skeletons, cacheLife thresholds and updateTag, rendering, and Core Web Vitals proxies (LCP, CLS, INP). Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

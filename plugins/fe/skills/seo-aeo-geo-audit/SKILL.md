@@ -3,8 +3,6 @@ name: seo-aeo-geo-audit
 description: >-
   Manually invoked. SEO, AEO and GEO audit of a public-facing app or a diff — indexability per app and record state, statuses sent before streaming, a canonical only from the page's own path, metadata through one factory, generated share cards behind a validated route, JSON-LD eligibility, robots and sitemaps as Google reads them, Core Web Vitals proxies, answers easy to find, and the AI engines' search crawlers, Bing and IndexNow. Writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

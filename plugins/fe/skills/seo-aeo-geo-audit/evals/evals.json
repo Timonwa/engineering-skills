@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Run /fe:seo-aeo-geo-audit on apps/web. lib/seo/build-metadata.ts declares `path = '/'` as a default and sets alternates.canonical from it; robots.ts disallows /api/; the blog post titles are 68–72 characters.",
+      "prompt": "Run /seo-aeo-geo-audit on apps/web. lib/seo/build-metadata.ts declares `path = '/'` as a default and sets alternates.canonical from it; robots.ts disallows /api/; the blog post titles are 68–72 characters.",
       "expected_output": "Should report the default path as CRITICAL: every page that omits its path becomes canonical to the home page. Disallowing /api/ blocks the /api/og share-card route, so that's a finding. Title length alone is not a finding, because Google truncates rather than limits. Each finding is verified with file:line. Writes _reports/seo-aeo-geo-audit.md and doesn't edit code.",
       "files": [],
       "expectations": [

@@ -3,8 +3,6 @@ name: api-audit
 description: >-
   Manually invoked. API-layer audit — the six-step route, thin routes over services, validation at every boundary, the envelope, typed errors and no-store, concurrent edits and long-running work, a named rate limit on every route, cursor lists, versions and transitions, the audit log, each route's reference entry and test, cron, webhook and proxy rules, and where present maintenance mode, flags, plan entitlements, outgoing webhooks and email sending. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

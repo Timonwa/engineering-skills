@@ -3,8 +3,6 @@ name: redis-audit
 description: >-
   Manually invoked. Redis audit — one client with a short timeout, keys from builders with a TTL on every write, a failure direction per primitive (caches open, locks and claims closed, rate limits by tier, timeouts as failures), caches parsed on every hit with group invalidation, owned locks and short claims released on failure, rate-limit layers and the client IP, eviction and tiers, and tests that prove each direction. Only for apps that use Redis.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

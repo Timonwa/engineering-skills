@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Run /fe:accessibility-audit on packages/ui. button.tsx has `focus:outline-none` with no other focus style; dialog.tsx renders a fixed <div> overlay that doesn't move focus or trap it and has no Escape handler; icon-button.tsx renders an X icon with no aria-label or visible text.",
+      "prompt": "Run /accessibility-audit on packages/ui. button.tsx has `focus:outline-none` with no other focus style; dialog.tsx renders a fixed <div> overlay that doesn't move focus or trap it and has no Escape handler; icon-button.tsx renders an X icon with no aria-label or visible text.",
       "expected_output": "Should report three findings with file:line evidence, each tied to its success criterion: the missing focus indicator (2.4.7, and outline-hidden plus a 3:1 ring as the fix); the dialog not moving or keeping focus and not closing on Escape (2.4.3, 2.1.2, with native <dialog> and showModal() as the fix); and the unnamed icon button (4.1.2 and 1.1.1). Because these are shared components many pages use, each is at least HIGH, and CRITICAL where they block a core task. Each finding is verified by a concrete failure case. Writes _reports/accessibility-audit.md and never edits code.",
       "files": [],
       "expectations": [

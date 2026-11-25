@@ -3,8 +3,6 @@ name: frontend-audit
 description: >-
   Manually invoked. Next.js App Router frontend audit — Pages Router residue, app/ holding only Next's files, thin entries, the server and client boundary, typed fetchers and Cache Components scopes, Server Actions with action results and updateTag, URL-owned panel state, typed routes, shared-UI adoption with skeletons, the Tailwind v4 setup with its token layers and dark mode, favicons and app icons, and React 19 idioms. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

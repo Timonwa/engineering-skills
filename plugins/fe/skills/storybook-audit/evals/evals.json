@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Run /fe:storybook-audit on packages/ui. tabs.tsx has no story; combobox.stories.tsx has Default and Disabled stories but no keyboard play story; dialog.stories.tsx sets parameters: { a11y: { test: 'todo' } }.",
+      "prompt": "Run /storybook-audit on packages/ui. tabs.tsx has no story; combobox.stories.tsx has Default and Disabled stories but no keyboard play story; dialog.stories.tsx sets parameters: { a11y: { test: 'todo' } }.",
       "expected_output": "Should cross-reference the shared components against their stories and report the missing Tabs story, the interactive Combobox with no keyboard story, and the Dialog story marking axe todo, each as HIGH. Each finding has file:line evidence and is verified. Writes _reports/storybook-audit.md and doesn't edit code or stories.",
       "files": [],
       "expectations": [
