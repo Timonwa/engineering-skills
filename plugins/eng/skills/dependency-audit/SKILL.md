@@ -3,8 +3,6 @@ name: dependency-audit
 description: >-
   Manually invoked. Dependency-health audit of a monorepo — one version per dependency through the pnpm catalog with recorded exceptions, workspace protocol and dependency direction, peer dependencies for singletons, unused, missing, duplicate and misplaced packages, build-script allowlists, release-age holds, advisories, automated updates, and lockfile integrity. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

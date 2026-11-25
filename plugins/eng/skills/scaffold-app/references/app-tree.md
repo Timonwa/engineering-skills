@@ -23,13 +23,11 @@ The tree is drawn for the default UI foundation, Tailwind only. Lines marked **(
 |    |___ README.md                      # the folder map, and which doc a newcomer reads first
 |___ _reports/                           # audit output, committed - the diff shows what got fixed
 |    |___ README.md                      # each report, how to refresh it, how to read severity
-|___ .claude/                            # agent config, one folder per agent the team uses
-|    |                                   # (.claude/, .cursor/, .gemini/); Claude Code's shown
-|    |___ agents/                        # project-only subagents, if any
+|___ .agents/                            # shared agent config, read by any agent that supports it
 |    |___ skills/                        # project-only skills, if any
-|    |___ README.md                      # what is invocable, what the settings do, how to add
-|    |___ settings.json                  # shared: permissions, hooks
-|    |___ settings.local.json            # personal overrides, gitignored
+|    |___ README.md                      # what is invocable and how to add a skill
+|___ .<agent>/                           # one folder per agent the team uses (.claude/, .cursor/, .gemini/),
+|    |                                   # in that agent's own format: permissions, hooks, personal overrides
 |___ .github/                            # everything GitHub itself reads
 |    |___ actions/                       # reusable composite actions
 |    |    |___ setup/                    # the one setup step every job calls

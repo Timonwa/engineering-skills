@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "/eng:security-audit. PATCH /api/v1/events/[eventId] verifies the session, then calls eventService.update(eventId, body) without checking that the caller owns or manages the event.",
+      "prompt": "/security-audit. PATCH /api/v1/events/[eventId] verifies the session, then calls eventService.update(eventId, body) without checking that the caller owns or manages the event.",
       "expected_output": "Should report broken object-level authorisation (A01 / API1) as CRITICAL or HIGH, with the exploit (change the id, edit another account's event), file:line, and the fix: an ownership check that answers 404 before 403. Changes no code.",
       "files": [],
       "expectations": [

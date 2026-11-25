@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "/eng:codebase-audit. tsconfig.base.json sets \"baseUrl\": \".\" and \"moduleResolution\": \"node\"; src/lib/utils/price.utils.test.ts has it.skip on two tests and a retry: 3.",
+      "prompt": "/codebase-audit. tsconfig.base.json sets \"baseUrl\": \".\" and \"moduleResolution\": \"node\"; src/lib/utils/price.utils.test.ts has it.skip on two tests and a retry: 3.",
       "expected_output": "Should report the deprecated tsconfig options (removed in TypeScript 7) and the skipped and retried tests as findings with file:line evidence and severities, verifying each. Recommends fixes in _reports/codebase-audit.md and changes no code.",
       "files": [],
       "expectations": [

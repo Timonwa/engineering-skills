@@ -3,8 +3,6 @@ name: firestore-audit
 description: >-
   Manually invoked. Firestore audit — clients denied and the data layer the only caller, one Admin client, Timestamps converted before parsing, reads that match the response (batched, chunked at 30, counted, projected), transactions, counters and batches over 500, drift repair, cursor pagination, TTL and cascade deletes, idempotent triggers, indexes by edition, rules and their tests, and backups. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

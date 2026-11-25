@@ -2,8 +2,6 @@
 name: backend-security
 description: >-
   Server-side security mapped to the OWASP Top 10 2025 and API Security Top 10 2023 — authorisation at object, function and field level, injection and stored rich HTML, SSRF, resource limits, business-flow abuse, races and idempotency, CSRF with Origin and Fetch Metadata, App Check and the Firebase web API key, secrets and config, failing closed, logging, and upstream APIs — each pointing to the skill that owns the mechanics. Use when building or reviewing route handlers, Server Actions, services, workers or webhooks.
-model: opus
-effort: high
 ---
 
 # Backend security

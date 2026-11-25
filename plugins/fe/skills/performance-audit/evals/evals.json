@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Run /fe:performance-audit on apps/web. The home hero is `<Image src={hero} priority loading=\"lazy\" />`; fonts load from a Google Fonts <link> in the root layout; components/Calendar.tsx is a client component importing moment and a full chart library at the top level.",
+      "prompt": "Run /performance-audit on apps/web. The home hero is `<Image src={hero} priority loading=\"lazy\" />`; fonts load from a Google Fonts <link> in the root layout; components/Calendar.tsx is a client component importing moment and a full chart library at the top level.",
       "expected_output": "Should report the lazy-loaded LCP hero as CRITICAL. `priority` is deprecated in Next 16 and its use is also a finding; the fix is loading=\"eager\" or fetchPriority=\"high\" on that image only. The render-blocking Google Fonts link should move to next/font. The heavy client libraries should be replaced or loaded with a dynamic import, as a HIGH bundle-weight finding on a key route. Each finding has file:line evidence. Writes _reports/performance-audit.md and doesn't edit code.",
       "files": [],
       "expectations": [

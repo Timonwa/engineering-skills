@@ -3,8 +3,6 @@ name: content-audit
 description: >-
   Manually invoked. Copy audit of an app, its emails or a diff, against the project's own voice, word list and banned words and the plain-language standards (GOV.UK, NN/g, WCAG) — point-first writing, marketing claims and calls to action, buttons and links, form labels and errors, empty, success and loading states, sentence case and mechanics, accessible words and alt text, translation-safe strings, and each transactional email's sender, subject, preheader and body. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

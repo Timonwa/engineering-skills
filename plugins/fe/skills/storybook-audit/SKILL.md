@@ -3,8 +3,6 @@ name: storybook-audit
 description: >-
   Manually invoked. Storybook coverage and story-quality audit — cross-references shared UI components against existing stories to find gaps, and checks stories against Storybook 10 practice — CSF3 with satisfies Meta and framework-package types, tier-first titles, a control per prop, keyboard plays that assert behaviour, axe failing the run, no dark-mode or coverage-only stories. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

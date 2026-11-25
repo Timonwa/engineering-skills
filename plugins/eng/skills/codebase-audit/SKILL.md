@@ -3,8 +3,6 @@ name: codebase-audit
 description: >-
   Manually invoked. Broad repo-health triage that routes to the deep audits and covers the hygiene no other audit owns — tech debt, dead code, TypeScript strictness and the options TypeScript 6 deprecates, error handling, tests (boundary-only mocks, determinism, no skipped or flaky tests), CI hygiene, branch protection, releases and deploys, and git hygiene. Verifies each finding and writes a prioritized report with an overall health score.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

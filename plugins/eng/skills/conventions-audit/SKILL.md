@@ -3,8 +3,6 @@ name: conventions-audit
 description: >-
   Manually invoked. Audits an app or monorepo against the house naming and code-structure standards — identifier, file, test-file, field and error naming; thin route entries and app/ holding only Next's files; components by product area; kind-first lib/ and barrels; server boundaries; typed routes; promotion on the second consumer; duplicated helpers, oversized files, hardcoded values and cross-app config drift. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-model: opus
-effort: high
 disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---

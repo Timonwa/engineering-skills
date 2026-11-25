@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "/eng:env-audit. apps/web/.env.example lists NEXT_PUBLIC_PAYSTACK_SECRET_KEY, and src/lib/payments.ts reads it in a Client Component.",
+      "prompt": "/env-audit. apps/web/.env.example lists NEXT_PUBLIC_PAYSTACK_SECRET_KEY, and src/lib/payments.ts reads it in a Client Component.",
       "expected_output": "Should report a secret behind NEXT_PUBLIC_ as CRITICAL: it's inlined into the bundle at build time, so the fix is rotating the key as well as moving it server-side.",
       "files": [],
       "expectations": [

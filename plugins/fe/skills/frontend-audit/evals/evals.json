@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Run /fe:frontend-audit on apps/app. app/(dashboard)/projects/page.tsx starts with \"use client\" and fetches /api/projects in a useEffect; createProject in lib/server/actions/project.action.ts throws new Error('Name is required') on validation failure; the form uses useActionState.",
+      "prompt": "Run /frontend-audit on apps/app. app/(dashboard)/projects/page.tsx starts with \"use client\" and fetches /api/projects in a useEffect; createProject in lib/server/actions/project.action.ts throws new Error('Name is required') on validation failure; the form uses useActionState.",
       "expected_output": "Should report the 'use client' page and the fetch in an effect (the client boundary sits too high, and reads should happen on the server through the typed fetchers), and the throwing action, which loses the form and gives no field errors. The throwing action is HIGH (a lost form after a failed action), and the fetch-in-effect pattern is at least MEDIUM. Each finding has file:line evidence and is verified. Writes _reports/frontend-audit.md and never edits code.",
       "files": [],
       "expectations": [
