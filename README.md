@@ -37,7 +37,6 @@ Agent skills that help developers build, review and ship web apps on Next.js, Re
 ## How the skills work
 
 - Your agent picks one of the 45 skills when your request matches it, so you don't have to name it. The 17 commands run only when you call them.
-- To call a skill or command by name, type `$` and its name in Codex (`$naming`, `$security-audit development`), or `/` in Claude Code (`/naming`, or `/eng:naming` with the plugins). In other agents, ask for it by name: "use the naming skill". To see them all, ask your agent "which engineering skills do you have?"
 - A skill reads your project's `AGENTS.md`, and the docs it links, before anything else. Colours, collection names, limits and the brand voice come from there. A value that isn't written down is asked for, never guessed.
 - Each rule follows the current standard: the platform's own docs, WCAG 2.2 and OWASP. Where your project does something differently and records why, your way wins. Where it gives no reason, the skill asks before following either.
 - Nothing is installed, committed or pushed unless you ask. Scaffolding lists every file it will create, edit, move or delete, and waits for your approval.
@@ -51,38 +50,11 @@ Agent skills that help developers build, review and ship web apps on Next.js, Re
 npx skills add Timonwa/engineering-skills
 ```
 
-[`npx skills`](https://github.com/vercel-labs/skills) asks which skills to install and which agents to install them for — Cursor, GitHub Copilot, Codex, Gemini CLI, Claude Code and many more — and installs them in the current project. Add `-g` to install them for every project. To get the latest changes, run `npx skills update`.
-
-To skip the questions, name your agents and take every skill. For example, for Codex and Claude Code in every project:
-
-```shell
-npx skills add Timonwa/engineering-skills -g -a codex -a claude-code --skill '*'
-```
+[`npx skills`](https://github.com/vercel-labs/skills) asks which skills to install and which agents to install them for, and installs them in the current project. Add `-g` to install them for every project. To get the latest changes, run `npx skills update`.
 
 Without Node, copy the folders inside `plugins/eng/skills/`, `plugins/fe/skills/` and `plugins/be/skills/` into `.agents/skills/` in your project, or `~/.agents/skills/` for every project. Many agents read that folder. For the rest, use the skills folder your agent's docs name. To update, copy them again from the latest version of this repo.
 
-Either way, the [official skills](#official-skills) these build on aren't included. Install the ones you need from their makers' repositories, such as `npx skills add vercel/turborepo --skill turborepo`.
-
-### Claude Code as plugins
-
-Claude Code can also install the sets as plugins, which keeps the `eng:`, `fe:` and `be:` prefixes, brings in the official skills each set uses, and runs commands as slash commands:
-
-```shell
-/plugin marketplace add Timonwa/engineering-skills
-/plugin install eng@engineering-skills
-/plugin install fe@engineering-skills
-/plugin install be@engineering-skills
-```
-
-`fe` and `be` each bring in `eng`. Install only what a repo needs: a frontend that calls someone else's API needs `fe` alone.
-
-When it asks for a scope, pick one:
-
-- **User** — every project on your machine.
-- **Project** — everyone who clones the repo. Usually the right choice for a codebase you own.
-- **Local** — this repo, for you only. Good for trying the skills on a codebase that isn't yours.
-
-To get the latest changes, run `/plugin marketplace update engineering-skills`, or turn on auto-update for `engineering-skills` under **Marketplaces** in `/plugin`.
+The [official skills](#official-skills) these build on aren't included. Install the ones you need from their makers' repositories, such as `npx skills add vercel/turborepo --skill turborepo`.
 
 ### Claude app (web or desktop)
 
@@ -95,9 +67,9 @@ Plugins are saved to your account, so they work in chat on mobile too. To get th
 
 ## Set up a project
 
-- In a new project, run `eng:agents-md` first. It writes the `AGENTS.md` every other skill reads for your project's facts: palette, fonts, collection names, project IDs, rate limits and brand voice.
+- In a new project, run `agents-md` first. It writes the `AGENTS.md` every other skill reads for your project's facts: palette, fonts, collection names, project IDs, rate limits and brand voice.
 - Where your project breaks a rule on purpose, write the reason in `AGENTS.md`. Skills then follow your version, and audits stop reporting it.
-- In a chat app, such as the Claude app, attach `AGENTS.md` and the docs it links to the chat or project, so the skills can read them.
+- In a chat app, attach `AGENTS.md` and the docs it links to the chat or project, so the skills can read them.
 
 ## Skills
 
@@ -163,7 +135,7 @@ Plugins are saved to your account, so they work in chat on mobile too. To get th
 
 ## Official skills
 
-Where a maker's own skill agrees with the rules above, the plugin brings it in, in Claude Code and the Claude app, so you get the maker's updates directly. Anywhere else, install it from the maker's repository with `npx skills add <owner>/<repo> --skill <name>`.
+Where a maker's own skill agrees with the rules above, these skills build on it, so you get the maker's updates directly. Install it from the maker's repository with `npx skills add <owner>/<repo> --skill <name>`. In the Claude app, the plugins bring it in for you.
 
 | Skill                             | Use it to                                                                    | From                                                    | Comes with |
 | --------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- | ---------- |
@@ -182,32 +154,32 @@ The rest of each maker's set is left out. Some of those skills work against thes
 
 ## Commands
 
-| Command                    | Use it to                                                                                    | Stack      |
-| -------------------------- | -------------------------------------------------------------------------------------------- | ---------- |
-| `/eng:audit-all`           | Run every installed audit that applies, and get one combined health report                   | Adaptable  |
-| `/eng:codebase-audit`      | Find tech debt, dead code, loose TypeScript, weak tests, and CI, branch and deploy problems  | Adaptable  |
-| `/eng:conventions-audit`   | Find names and files that don't follow `naming` and `code-structure`                         | Adaptable  |
-| `/eng:dependency-audit`    | Find unused, duplicate, misplaced or vulnerable packages, and versions that have drifted     | This stack |
-| `/eng:env-audit`           | Find secrets, env values and public variables in the wrong place                             | Adaptable  |
-| `/eng:security-audit`      | Find how an attacker could get in, across frontend and backend, against the OWASP Top 10     | Any stack  |
-| `/fe:accessibility-audit`  | Check the app against every WCAG 2.2 A and AA criterion                                      | Any stack  |
-| `/fe:frontend-audit`       | Check App Router code: the client boundary, caching, Server Actions, Tailwind setup, icons   | This stack |
-| `/fe:performance-audit`    | Find what slows a page down: images, bundle size, fonts, streaming and caching               | This stack |
-| `/fe:seo-aeo-geo-audit`    | Check that search engines and AI tools can find, read and cite your public pages             | Any stack  |
-| `/fe:storybook-audit`      | Find shared components with no story, and stories that don't test what they show             | This stack |
-| `/fe:content-audit`        | Check UI and email copy against your product's voice and word list                           | Any stack  |
-| `/be:api-audit`            | Check every route is built the same safe way: order of checks, validation, limits and errors | Adaptable  |
-| `/be:access-control-audit` | Find routes and actions where someone could reach data that isn't theirs                     | Adaptable  |
-| `/be:firestore-audit`      | Check Firestore reads, writes, indexes, rules and backups for safety and cost                | This stack |
-| `/be:redis-audit`          | Check each use of Redis fails the right way when Redis is down                               | This stack |
-| `/eng:review-pr`           | Review a pull request or branch against its goal, your project's rules and real bugs         | Any stack  |
+| Command                 | Use it to                                                                                    | Stack      |
+| ----------------------- | -------------------------------------------------------------------------------------------- | ---------- |
+| `/audit-all`            | Run every installed audit that applies, and get one combined health report                   | Adaptable  |
+| `/codebase-audit`       | Find tech debt, dead code, loose TypeScript, weak tests, and CI, branch and deploy problems  | Adaptable  |
+| `/conventions-audit`    | Find names and files that don't follow `naming` and `code-structure`                         | Adaptable  |
+| `/dependency-audit`     | Find unused, duplicate, misplaced or vulnerable packages, and versions that have drifted     | This stack |
+| `/env-audit`            | Find secrets, env values and public variables in the wrong place                             | Adaptable  |
+| `/security-audit`       | Find how an attacker could get in, across frontend and backend, against the OWASP Top 10     | Any stack  |
+| `/accessibility-audit`  | Check the app against every WCAG 2.2 A and AA criterion                                      | Any stack  |
+| `/frontend-audit`       | Check App Router code: the client boundary, caching, Server Actions, Tailwind setup, icons   | This stack |
+| `/performance-audit`    | Find what slows a page down: images, bundle size, fonts, streaming and caching               | This stack |
+| `/seo-aeo-geo-audit`    | Check that search engines and AI tools can find, read and cite your public pages             | Any stack  |
+| `/storybook-audit`      | Find shared components with no story, and stories that don't test what they show             | This stack |
+| `/content-audit`        | Check UI and email copy against your product's voice and word list                           | Any stack  |
+| `/api-audit`            | Check every route is built the same safe way: order of checks, validation, limits and errors | Adaptable  |
+| `/access-control-audit` | Find routes and actions where someone could reach data that isn't theirs                     | Adaptable  |
+| `/firestore-audit`      | Check Firestore reads, writes, indexes, rules and backups for safety and cost                | This stack |
+| `/redis-audit`          | Check each use of Redis fails the right way when Redis is down                               | This stack |
+| `/review-pr`            | Review a pull request or branch against its goal, your project's rules and real bugs         | Any stack  |
 
 - An audit takes an optional phase, `development` or `production`, and a path. Without a phase, it uses the audit phase in your `AGENTS.md`, or else `production`. The phase sorts the fixes: fix now, before launch and after launch in `development`; fix now, next release and backlog in `production`.
-- Each audit writes `_reports/<name>.md`, and `/eng:audit-all` adds `_reports/audit-all.md`. Every finding has a severity, a location, the evidence that proves it and a fix. The report ends with a score and how it moved since the last run.
+- Each audit writes `_reports/<name>.md`, and `/audit-all` adds `_reports/audit-all.md`. Every finding has a severity, a location, the evidence that proves it and a fix. The report ends with a score and how it moved since the last run.
 - A finding the code can't prove, such as a console setting or a DNS record, is marked "needs confirmation" instead of being inflated.
 - Findings are `NEW`, `UNRESOLVED`, `FIXED` or `WON'T FIX`. A new run replaces the report, keeping open and won't-fix findings under their old IDs and dropping fixed ones. After you fix a finding, the report is updated in place, not re-run.
-- The table uses Claude Code plugin names. With a plain install, Claude Code drops the prefix (`/security-audit development`), and a command runs only when you type its `/` name. In Codex, type `$security-audit development`; in other agents, ask by name, such as "run security-audit in development". Add `--comment` or `--fix` the same way.
-- Audits never edit code, and fixing a finding is a separate request. `/eng:review-pr` reports in chat, and comments on the pull request or fixes findings only with `--comment` or `--fix`. A project with its own review skill uses that one instead.
+- Add `--comment` or `--fix` after the command's name, such as `/review-pr --comment`.
+- Audits never edit code, and fixing a finding is a separate request. `/review-pr` reports in chat, and comments on the pull request or fixes findings only with `--comment` or `--fix`. A project with its own review skill uses that one instead.
 
 ## Contributing
 
@@ -223,8 +195,8 @@ Issues and pull requests are welcome, especially for a rule that misfires in you
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | `pnpm format`        | Format everything with Prettier                                                                                                               | `pnpm install` first        |
 | `pnpm format:check`  | Check formatting without writing                                                                                                              | `pnpm install` first        |
-| `pnpm validate`      | Validate the Claude Code marketplace and plugin manifests                                                                                     | the Claude Code CLI on PATH |
 | `pnpm check:skills`  | Check every skill against the Agent Skills rules and the house limits: 200 lines, a 550-character description, and a name no other skill uses | Node                        |
+| `pnpm validate`      | Validate the Claude Code marketplace and plugin manifests                                                                                     | the Claude Code CLI on PATH |
 | `pnpm check:opening` | Fail on a skill whose shared opening has drifted                                                                                              | Node                        |
 | `pnpm sync:opening`  | Copy the shared opening into every skill                                                                                                      | Node                        |
 
@@ -234,7 +206,7 @@ The skills are Markdown, so there's no build step, and Prettier is the only depe
 
 If these skills save you time, [buy me a coffee](https://buymeacoffee.com/timonwa).
 
-For writing docs, blogs and newsletters, see [writing-skills](https://github.com/Timonwa/writing-skills).
+For writing docs, see [technical-writing-skills](https://github.com/Timonwa/technical-writing-skills). For blog posts, newsletters and social posts, see [content-writing-skills](https://github.com/Timonwa/content-writing-skills).
 
 ## License
 
