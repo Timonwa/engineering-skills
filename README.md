@@ -1,9 +1,9 @@
 # engineering-skills
 
-Claude skills that help developers build, review and ship web apps on Next.js, React and Firebase.
+Agent skills that help developers build, review and ship web apps on Next.js, React and Firebase, in any IDE or AI agent that supports [Agent Skills](https://agentskills.io).
 
 [![License: MIT](https://img.shields.io/github/license/Timonwa/engineering-skills)](LICENSE)
-[![Claude Code plugins](https://img.shields.io/badge/Claude%20Code-plugins-D97757)](#install)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-6E56CF)](https://agentskills.io)
 [![GitHub stars](https://img.shields.io/github/stars/Timonwa/engineering-skills?style=flat)](https://github.com/Timonwa/engineering-skills/stargazers)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/timonwa)
 
@@ -16,7 +16,7 @@ Claude skills that help developers build, review and ship web apps on Next.js, R
 
 ## Contents
 
-- [The plugins](#the-plugins)
+- [The skill sets](#the-skill-sets)
 - [How the skills work](#how-the-skills-work)
 - [Install](#install)
 - [Set up a project](#set-up-a-project)
@@ -26,17 +26,18 @@ Claude skills that help developers build, review and ship web apps on Next.js, R
 - [Contributing](#contributing)
 - [Support](#support)
 
-## The plugins
+## The skill sets
 
-| Plugin | For            | Install it if you build                                                         |
-| ------ | -------------- | ------------------------------------------------------------------------------- |
-| `eng`  | The whole repo | Any Next.js and TypeScript project. It comes with `fe` and `be`                 |
-| `fe`   | The frontend   | Pages, components and a design system with Next.js, React and Tailwind CSS      |
-| `be`   | The API        | An API in Next.js route handlers, on Firebase with Upstash Redis and Cloudinary |
+| Set   | For            | Install it if you build                                                         |
+| ----- | -------------- | ------------------------------------------------------------------------------- |
+| `eng` | The whole repo | Any Next.js and TypeScript project. It comes with `fe` and `be`                 |
+| `fe`  | The frontend   | Pages, components and a design system with Next.js, React and Tailwind CSS      |
+| `be`  | The API        | An API in Next.js route handlers, on Firebase with Upstash Redis and Cloudinary |
 
 ## How the skills work
 
-- Claude picks one of the 45 skills when your request matches it, so you don't have to name it. The 17 commands run only when you call them.
+- Your agent picks one of the 45 skills when your request matches it, so you don't have to name it. The 17 commands run only when you call them.
+- To call a skill or command by name, type `$` and its name in Codex (`$naming`, `$security-audit development`), or `/` in Claude Code (`/naming`, or `/eng:naming` with the plugins). In other agents, ask for it by name: "use the naming skill". To see them all, ask your agent "which engineering skills do you have?"
 - A skill reads your project's `AGENTS.md`, and the docs it links, before anything else. Colours, collection names, limits and the brand voice come from there. A value that isn't written down is asked for, never guessed.
 - Each rule follows the current standard: the platform's own docs, WCAG 2.2 and OWASP. Where your project does something differently and records why, your way wins. Where it gives no reason, the skill asks before following either.
 - Nothing is installed, committed or pushed unless you ask. Scaffolding lists every file it will create, edit, move or delete, and waits for your approval.
@@ -44,16 +45,27 @@ Claude skills that help developers build, review and ship web apps on Next.js, R
 
 ## Install
 
-### Claude app (web or desktop)
+### Any IDE or AI agent
 
-1. Open **Customize > Plugins**.
-2. Select **Add > Add marketplace > Add from a repository**, and enter `Timonwa/engineering-skills`.
-3. Add **eng**, **fe**, **be**, or only the ones your project needs. **fe** and **be** each bring in **eng** and the official skills they use.
-4. Turn on **Settings > Capabilities > Create and edit files**. Skills don't run without it. On Team and Enterprise plans, an admin turns it on.
+```shell
+npx skills add Timonwa/engineering-skills
+```
 
-Plugins are saved to your account, so they work in chat on mobile too.
+[`npx skills`](https://github.com/vercel-labs/skills) asks which skills to install and which agents to install them for — Cursor, GitHub Copilot, Codex, Gemini CLI, Claude Code and many more — and installs them in the current project. Add `-g` to install them for every project. To get the latest changes, run `npx skills update`.
 
-### Claude Code
+To skip the questions, name your agents and take every skill. For example, for Codex and Claude Code in every project:
+
+```shell
+npx skills add Timonwa/engineering-skills -g -a codex -a claude-code --skill '*'
+```
+
+Without Node, copy the folders inside `plugins/eng/skills/`, `plugins/fe/skills/` and `plugins/be/skills/` into `.agents/skills/` in your project, or `~/.agents/skills/` for every project. Many agents read that folder. For the rest, use the skills folder your agent's docs name. To update, copy them again from the latest version of this repo.
+
+Either way, the [official skills](#official-skills) these build on aren't included. Install the ones you need from their makers' repositories, such as `npx skills add vercel/turborepo --skill turborepo`.
+
+### Claude Code as plugins
+
+Claude Code can also install the sets as plugins, which keeps the `eng:`, `fe:` and `be:` prefixes, brings in the official skills each set uses, and runs commands as slash commands:
 
 ```shell
 /plugin marketplace add Timonwa/engineering-skills
@@ -70,11 +82,22 @@ When it asks for a scope, pick one:
 - **Project** — everyone who clones the repo. Usually the right choice for a codebase you own.
 - **Local** — this repo, for you only. Good for trying the skills on a codebase that isn't yours.
 
+To get the latest changes, run `/plugin marketplace update engineering-skills`, or turn on auto-update for `engineering-skills` under **Marketplaces** in `/plugin`.
+
+### Claude app (web or desktop)
+
+1. Open **Customize > Plugins**.
+2. Select **Add > Add marketplace > Add from a repository**, and enter `Timonwa/engineering-skills`.
+3. Add **eng**, **fe**, **be**, or only the ones your project needs. **fe** and **be** each bring in **eng** and the official skills they use.
+4. Turn on **Settings > Capabilities > Create and edit files**. Skills don't run without it. On Team and Enterprise plans, an admin turns it on.
+
+Plugins are saved to your account, so they work in chat on mobile too. To get the latest changes, select **Check for updates** in **Customize > Plugins**, or turn on **Sync automatically** for the marketplace.
+
 ## Set up a project
 
 - In a new project, run `eng:agents-md` first. It writes the `AGENTS.md` every other skill reads for your project's facts: palette, fonts, collection names, project IDs, rate limits and brand voice.
 - Where your project breaks a rule on purpose, write the reason in `AGENTS.md`. Skills then follow your version, and audits stop reporting it.
-- In the Claude app, attach `AGENTS.md` and the docs it links to the chat or Project, so the skills can read them.
+- In a chat app, such as the Claude app, attach `AGENTS.md` and the docs it links to the chat or project, so the skills can read them.
 
 ## Skills
 
@@ -140,7 +163,7 @@ When it asks for a scope, pick one:
 
 ## Official skills
 
-Where a maker's own skill agrees with the rules above, the plugin brings it in, so you get the maker's updates directly. Each comes from its maker's repository.
+Where a maker's own skill agrees with the rules above, the plugin brings it in, in Claude Code and the Claude app, so you get the maker's updates directly. Anywhere else, install it from the maker's repository with `npx skills add <owner>/<repo> --skill <name>`.
 
 | Skill                             | Use it to                                                                    | From                                                    | Comes with |
 | --------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------- | ---------- |
@@ -183,6 +206,7 @@ The rest of each maker's set is left out. Some of those skills work against thes
 - Each audit writes `_reports/<name>.md`, and `/eng:audit-all` adds `_reports/audit-all.md`. Every finding has a severity, a location, the evidence that proves it and a fix. The report ends with a score and how it moved since the last run.
 - A finding the code can't prove, such as a console setting or a DNS record, is marked "needs confirmation" instead of being inflated.
 - Findings are `NEW`, `UNRESOLVED`, `FIXED` or `WON'T FIX`. A new run replaces the report, keeping open and won't-fix findings under their old IDs and dropping fixed ones. After you fix a finding, the report is updated in place, not re-run.
+- The table uses Claude Code plugin names. With a plain install, Claude Code drops the prefix (`/security-audit development`), and a command runs only when you type its `/` name. In Codex, type `$security-audit development`; in other agents, ask by name, such as "run security-audit in development". Add `--comment` or `--fix` the same way.
 - Audits never edit code, and fixing a finding is a separate request. `/eng:review-pr` reports in chat, and comments on the pull request or fixes findings only with `--comment` or `--fix`. A project with its own review skill uses that one instead.
 
 ## Contributing
@@ -191,18 +215,18 @@ Issues and pull requests are welcome, especially for a rule that misfires in you
 
 - Change one skill where you can.
 - Update its `evals/evals.json`.
-- Keep `SKILL.md` under 200 lines and its description under 550 characters. Longer material goes in the skill's `references/` folder, which Claude reads only when it needs it.
-- Change the opening every skill shares in `shared/project-specifics.md`, then run `pnpm sync:opening`. Plugins install separately, so each skill keeps its own copy.
+- Keep `SKILL.md` under 200 lines and its description under 550 characters, and give a new skill a name no other set uses. Longer material goes in the skill's `references/` folder, which the agent reads only when it needs it.
+- Change the opening every skill shares in `shared/project-specifics.md`, then run `pnpm sync:opening`. Skills install one at a time, so each keeps its own copy.
 - Run the checks:
 
-| Script               | Use it to                                                                | Needs                       |
-| -------------------- | ------------------------------------------------------------------------ | --------------------------- |
-| `pnpm format`        | Format everything with Prettier                                          | `pnpm install` first        |
-| `pnpm format:check`  | Check formatting without writing                                         | `pnpm install` first        |
-| `pnpm validate`      | Validate the marketplace and plugin manifests                            | the Claude Code CLI on PATH |
-| `pnpm check:skills`  | Fail on a `SKILL.md` over 200 lines or a description over 550 characters | Node                        |
-| `pnpm check:opening` | Fail on a skill whose shared opening has drifted                         | Node                        |
-| `pnpm sync:opening`  | Copy the shared opening into every skill                                 | Node                        |
+| Script               | Use it to                                                                                                                                     | Needs                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `pnpm format`        | Format everything with Prettier                                                                                                               | `pnpm install` first        |
+| `pnpm format:check`  | Check formatting without writing                                                                                                              | `pnpm install` first        |
+| `pnpm validate`      | Validate the Claude Code marketplace and plugin manifests                                                                                     | the Claude Code CLI on PATH |
+| `pnpm check:skills`  | Check every skill against the Agent Skills rules and the house limits: 200 lines, a 550-character description, and a name no other skill uses | Node                        |
+| `pnpm check:opening` | Fail on a skill whose shared opening has drifted                                                                                              | Node                        |
+| `pnpm sync:opening`  | Copy the shared opening into every skill                                                                                                      | Node                        |
 
 The skills are Markdown, so there's no build step, and Prettier is the only dependency. Without installing it, run `pnpm dlx prettier --write .` instead.
 
