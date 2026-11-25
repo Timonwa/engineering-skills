@@ -11,6 +11,8 @@ allowed-tools: Read, Grep, Glob, Task, Bash(git diff:*), Bash(git log:*), Bash(g
 
 # Review a pull request
 
+**Run this only when the user asks for it by name. It reports in chat first, and changes no code and posts nothing to the pull request unless asked to (`--fix`, `--comment`).**
+
 A review exists to catch what would hurt after merge — a bug, a security hole, a broken rule the next feature would copy — and to say so in a way the author can act on in one pass. Every finding is proved before it's reported; a short true list beats a long padded one.
 
 **This is the generic review.** A project that keeps its own review skill — with where its specs live, its extra rules and angles — uses that one instead; this is the base such a skill is built from.
@@ -39,7 +41,7 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Step 2 — Hunt, angle by angle
 
-Read every changed line, then look at it from each angle. On a diff over a few hundred lines, run the angles as parallel subagents so they don't share blind spots; each returns its findings with file, line, quote and failure scenario.
+Read every changed line, then look at it from each angle. On a diff over a few hundred lines, run the angles as separate parallel tasks if your agent can, so they don't share blind spots; otherwise take them one at a time. Each angle's findings carry file, line, quote and failure scenario.
 
 1. **Correctness** — wrong conditions, off-by-one, null and undefined, a missing `await`, `0` or `""` treated as missing, swallowed errors, a state that can't be reached or left, a loading or error state never shown.
 2. **Removed behaviour** — for every deleted or replaced line, what it guaranteed and where the new code still guarantees it. A dropped guard, error path or validation is a finding.

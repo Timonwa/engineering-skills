@@ -3,12 +3,12 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "/eng:audit-all on a single Next.js app with no Redis, no Firestore and no Storybook. The fe and be plugins are installed.",
-      "expected_output": "Should detect the scope and run only the audits that apply, one subagent each, telling each to read its audit's SKILL.md by path. Redis, Firestore and Storybook audits are listed as skipped with the reason. Should write _reports/audit-all.md with the roll-up and change no code.",
+      "prompt": "/eng:audit-all on a single Next.js app with no Redis, no Firestore and no Storybook. Every fe and be audit is installed.",
+      "expected_output": "Should detect the scope and run only the audits that apply, reading each audit's SKILL.md by path, one parallel task each where the agent can run them. Redis, Firestore and Storybook audits are listed as skipped with the reason. Should write _reports/audit-all.md with the roll-up and change no code.",
       "files": [],
       "expectations": [
         "Detects what the repo has",
-        "Runs each applicable audit in its own subagent by path",
+        "Runs each applicable audit by reading its SKILL.md by path",
         "Lists skipped audits with reasons",
         "Writes _reports/audit-all.md",
         "Changes no code"

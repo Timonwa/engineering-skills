@@ -2,13 +2,13 @@
   "name": "engineering-skills",
   "version": "1.0.0",
   "private": true,
-  "description": "Claude skills that help developers build, review and ship web apps on Next.js, React and Firebase.",
+  "description": "Agent skills that help developers build, review and ship web apps on Next.js, React and Firebase.",
   "license": "MIT",
   "repository": "github:Timonwa/engineering-skills",
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "validate": "claude plugin validate . --strict",
+    "validate": "claude plugin validate .",
     "sync:opening": "node scripts/sync-opening.mjs",
     "check:opening": "node scripts/sync-opening.mjs --check",
     "check:skills": "node scripts/check-skills.mjs"

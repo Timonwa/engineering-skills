@@ -1,7 +1,7 @@
 ---
 name: audit-all
 description: >-
-  Manually invoked. Runs the house audit suite across the eng, fe and be plugins — detects what the repo has, runs every installed audit that applies (codebase, conventions, dependencies, env, security, accessibility, frontend, performance, SEO/AEO/GEO, Storybook, content, API, access control, Firestore, Redis), and rolls their reports into one health report with an overall score and cross-cutting priorities. Each audit still writes its own report.
+  Manually invoked. Runs the house audit suite across the eng, fe and be sets — detects what the repo has, runs every installed audit that applies (codebase, conventions, dependencies, env, security, accessibility, frontend, performance, SEO/AEO/GEO, Storybook, content, API, access control, Firestore, Redis), and rolls their reports into one health report with an overall score and cross-cutting priorities. Each audit still writes its own report.
 argument-hint: "[phase]"
 model: opus
 effort: high
@@ -10,6 +10,8 @@ disallowed-tools: Edit, NotebookEdit
 ---
 
 # Audit all
+
+**Run this only when the user asks for it by name. It runs the audits that apply, writes their reports and a roll-up, and changes no code; fixing a finding is a separate request.**
 
 The **orchestrator** for the house audits. It works out what the repo contains, runs each audit that is **installed and applies**, and rolls the results into one report — one health picture instead of a dozen. Each audit still writes its own `_reports/<name>.md`; this adds `_reports/audit-all.md`.
 
@@ -28,22 +30,22 @@ Severity levels (CRITICAL / HIGH / MEDIUM / LOW) are each audit's own; this skil
 
 ## The audits
 
-Each is its own manually invoked command, in the plugin that owns its domain. Run only the ones installed — a project may have one plugin and not the others — and say in the report which weren't available.
+Each is its own manually invoked command, in the set that owns its domain. Run only the ones installed — a project may have one set and not the others — and say in the report which weren't available.
 
-| Audit                                                          | Plugin | Run when                                                                                                         |
-| -------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
-| `codebase-audit`                                               | `eng`  | always — broad triage first                                                                                      |
-| `conventions-audit`                                            | `eng`  | always                                                                                                           |
-| `dependency-audit`                                             | `eng`  | a lockfile or workspace exists (its deepest checks target pnpm workspaces; other managers scope to what applies) |
-| `env-audit`                                                    | `eng`  | the code reads environment variables                                                                             |
-| `security-audit`                                               | `eng`  | always — scoped to frontend, backend or both                                                                     |
-| `accessibility-audit` · `frontend-audit` · `performance-audit` | `fe`   | there's browser UI                                                                                               |
-| `seo-aeo-geo-audit`                                            | `fe`   | an app is public and meant to be found                                                                           |
-| `storybook-audit`                                              | `fe`   | Storybook is configured                                                                                          |
-| `content-audit`                                                | `fe`   | there's user-facing copy — pages, help articles, UI strings — or email templates                                 |
-| `api-audit` · `access-control-audit`                           | `be`   | there's an API or route-handler layer                                                                            |
-| `firestore-audit`                                              | `be`   | Firestore is used — rules, indexes or Admin SDK queries                                                          |
-| `redis-audit`                                                  | `be`   | Redis is used                                                                                                    |
+| Audit                                                          | Set   | Run when                                                                                                         |
+| -------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------- |
+| `codebase-audit`                                               | `eng` | always — broad triage first                                                                                      |
+| `conventions-audit`                                            | `eng` | always                                                                                                           |
+| `dependency-audit`                                             | `eng` | a lockfile or workspace exists (its deepest checks target pnpm workspaces; other managers scope to what applies) |
+| `env-audit`                                                    | `eng` | the code reads environment variables                                                                             |
+| `security-audit`                                               | `eng` | always — scoped to frontend, backend or both                                                                     |
+| `accessibility-audit` · `frontend-audit` · `performance-audit` | `fe`  | there's browser UI                                                                                               |
+| `seo-aeo-geo-audit`                                            | `fe`  | an app is public and meant to be found                                                                           |
+| `storybook-audit`                                              | `fe`  | Storybook is configured                                                                                          |
+| `content-audit`                                                | `fe`  | there's user-facing copy — pages, help articles, UI strings — or email templates                                 |
+| `api-audit` · `access-control-audit`                           | `be`  | there's an API or route-handler layer                                                                            |
+| `firestore-audit`                                              | `be`  | Firestore is used — rules, indexes or Admin SDK queries                                                          |
+| `redis-audit`                                                  | `be`  | Redis is used                                                                                                    |
 
 Security rules files themselves are reviewed by the official `firebase-security-rules-auditor`, which this skill **doesn't run** — it's a separate, official skill with its own invocation. Where rules files exist, the suite summary lists it as "run separately" (or "not installed"); `firestore-audit` and `access-control-audit` check the code around the rules.
 
@@ -51,7 +53,7 @@ Security rules files themselves are reviewed by the official `firebase-security-
 
 1. **Resolve the phase once**, as above.
 2. **Detect the scope** — single app or workspace, which apps are public and which internal, and which of the data, tooling and copy above are present — and pick the audits that apply and are installed.
-3. **Run them in parallel**, one subagent per audit. Every audit sets `disable-model-invocation`, so a subagent never loads one by name: tell each subagent to **Read that audit's `SKILL.md` by path** (in the plugin's `skills/<audit>/` folder) and follow it, writing its own report. Every audit is **report-only**: none changes code.
+3. **Run them in parallel** if your agent can run tasks in parallel, one task per audit; otherwise run them one after another. An audit runs only when called by name, so never wait for one to load itself: **read that audit's `SKILL.md` by path** (its folder beside this skill's, or `skills/<audit>/` in its set's plugin folder) and follow it, writing its own report. Every audit is **report-only**: none changes code.
 4. **Aggregate** — each report's score, finding counts and top items. A finding two audits both raise (a missing guard in `api-audit` and `access-control-audit`) is reported once, naming both.
 5. **Write** `_reports/audit-all.md`, overwriting the whole file, so no resolved history accumulates; read the previous roll-up only for its scores, for the trend.
 
@@ -65,7 +67,7 @@ Security rules files themselves are reviewed by the official `firebase-security-
 | accessibility-audit | 7/10 | 0 | 2 | 3 | 1 | 4 | 1 | ▲ | _reports/accessibility-audit.md |
 | … | | | | | | | | | |
 | (skipped: storybook-audit — no Storybook) |
-| (not installed: redis-audit — the be plugin isn't installed) |
+| (not installed: redis-audit — the be set isn't installed) |
 | (run separately: firebase-security-rules-auditor — rules files present) |
 
 ## Top priorities (cross-cutting, worst first)

@@ -2,7 +2,6 @@
   "name": "fe",
   "displayName": "Frontend Skills",
   "description": "Frontend skills for Next.js and React: components, semantic HTML, accessibility, Tailwind CSS, the design system, Storybook, search and AI visibility, product copy, browser security, cookie consent and icons, plus audits for each. Includes eng.",
-  "version": "1.1.0",
   "dependencies": [
     "eng",
     "next-dev-loop",

@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # Access control audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+
 A **manually-invoked, red-team access-control audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/access-control-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`access-control`**, **`auth`**, **`api-architecture`** and **`backend-security`** are installed, apply their house rules too; rule internals go to **`firebase-security-rules-auditor`** (the official Firebase skill, where installed).

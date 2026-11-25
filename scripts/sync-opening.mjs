@@ -1,5 +1,5 @@
 // Copies shared/project-specifics.md into every skill, before its first `## ` section.
-// Plugins install separately, so each skill carries its own copy; --check fails on any drift.
+// Skills install one at a time, so each carries its own copy; --check fails on any drift.
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 

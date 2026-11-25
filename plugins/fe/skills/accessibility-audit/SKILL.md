@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # Accessibility audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+
 A **manually-invoked, red-team accessibility audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/accessibility-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`accessibility`** and **`semantic-html`**, which are the fix targets when installed. Each check names its WCAG 2.2 success criterion; a check marked **house rule** goes beyond WCAG and is reported as LOW, never as a WCAG failure.

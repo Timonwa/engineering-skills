@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # Redis audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+
 A **manually-invoked, red-team Redis audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/redis-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`redis`**, **`rate-limiting`** and **`api-architecture`** are installed, apply their house rules too.

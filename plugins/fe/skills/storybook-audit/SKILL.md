@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # Storybook audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+
 A **manually-invoked, red-team Storybook audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/storybook-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`storybook`**, and **`design-system`** for the tiers; both are the fix targets when installed.
