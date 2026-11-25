@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # API audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+
 A **manually-invoked, red-team API audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/api-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`api-architecture`**, **`rate-limiting`**, **`audit-log`**, **`openapi-registry`**, **`access-control`**, **`schemas-and-contracts`**, **`image-handling`**, **`maintenance-mode`**, **`feature-flags`**, **`plan-entitlements`**, **`webhook-delivery`** and **`transactional-email`** are installed, apply their house rules too.
@@ -108,8 +110,6 @@ Every run produces two things:
 
 - **Full report** → `_reports/api-audit.md`, in the format above, overwriting the prior run.
 - **Chat summary** → a short recap posted in chat: the overall `<X>/10` (with Δ vs last run), a severity count (Critical / High / Medium / Low, i.e. C / H / M / L), the top findings worst-first (id · severity · one-line · `file:line`), and the report path. Note any "needs confirmation" items.
-
-**Report-only** — this audit recommends fixes in the report; it never modifies code.
 
 ## Checklist
 

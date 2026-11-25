@@ -1,6 +1,6 @@
 # Interview
 
-Ask with `AskUserQuestion` in batches of at most four, the house default first in every option list. Pre-fill from detection and ask to confirm ("the lockfile says pnpm 11 — keep it?"), never blind. Skip what detection already answered. Record every answer verbatim: they are the project facts `agents-md` writes into `AGENTS.md`.
+Ask the user in batches of at most four questions, with your agent's question tool where it has one, the house default first in every option list. Pre-fill from detection and ask to confirm ("the lockfile says pnpm 11 — keep it?"), never blind. Skip what detection already answered. Record every answer verbatim: they are the project facts `agents-md` writes into `AGENTS.md`.
 
 ## Contents
 

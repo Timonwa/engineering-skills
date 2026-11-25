@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # Security audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+
 A **manually-invoked, red-team security audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/security-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`backend-security`**, **`frontend-security`**, **`field-encryption`**, **`image-handling`**, **`audit-log`** and **`cookie-consent`** are installed, they are the fix target for what this finds; rules files themselves → **`firebase-security-rules-auditor`**.

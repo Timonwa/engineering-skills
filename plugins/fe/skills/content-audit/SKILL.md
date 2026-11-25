@@ -11,6 +11,8 @@ disallowed-tools: Edit, NotebookEdit
 
 # Content audit
 
+**Run this only when the user asks for it by name. It writes a report and changes no copy; fixing a finding is a separate request.**
+
 A **manually-invoked audit of every word a product shows** — website pages, help articles, app and admin screens, forms, buttons, errors, dialogs, empty states, notifications and the emails it sends — for an app or a specific diff/PR. Each finding is verified against the real string before it lands in a phase-aware, scored report at `_reports/content-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`copywriting`** and the words side of **`emails`**, which are the fix targets when installed. The project's voice is the yardstick: this audit reports where copy departs from the voice, word list and banned words the project records, and never imposes a voice of its own.

@@ -72,7 +72,7 @@ Codex, Cursor, Copilot and most other agents read `AGENTS.md` as it is. The rest
 - **A personal `CLAUDE.local.md` counts too** and silently stops `AGENTS.md` loading for that person, unless their user settings set Claude Code's project instructions to `claude-md-and-agents-md`.
 - **Gemini CLI:** `"context": { "fileName": ["AGENTS.md", "GEMINI.md"] }` in `.gemini/settings.json`. **Aider:** `read: AGENTS.md` in `.aider.conf.yml`.
 
-Check the wiring from a nested folder: `/memory` in Claude Code lists the files it loaded.
+Check the wiring from a nested folder in each tool the team uses, by asking which instruction files it loaded; in Claude Code, `/memory` lists them.
 
 ## Per-app and per-package files
 

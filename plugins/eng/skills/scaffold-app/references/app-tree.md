@@ -23,7 +23,8 @@ The tree is drawn for the default UI foundation, Tailwind only. Lines marked **(
 |    |___ README.md                      # the folder map, and which doc a newcomer reads first
 |___ _reports/                           # audit output, committed - the diff shows what got fixed
 |    |___ README.md                      # each report, how to refresh it, how to read severity
-|___ .claude/                            # Claude Code config for this project
+|___ .claude/                            # agent config, one folder per agent the team uses
+|    |                                   # (.claude/, .cursor/, .gemini/); Claude Code's shown
 |    |___ agents/                        # project-only subagents, if any
 |    |___ skills/                        # project-only skills, if any
 |    |___ README.md                      # what is invocable, what the settings do, how to add
