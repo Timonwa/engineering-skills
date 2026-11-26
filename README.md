@@ -52,7 +52,7 @@ npx skills add Timonwa/engineering-skills
 
 [`npx skills`](https://github.com/vercel-labs/skills) asks which skills to install and which agents to install them for, and installs them in the current project. Add `-g` to install them for every project. To get the latest changes, run `npx skills update`.
 
-Without Node, copy the folders inside `plugins/eng/skills/`, `plugins/fe/skills/` and `plugins/be/skills/` into `.agents/skills/` in your project, or `~/.agents/skills/` for every project. Many agents read that folder. For the rest, use the skills folder your agent's docs name. To update, copy them again from the latest version of this repo.
+Without Node, copy the folders inside `plugins/eng/skills/`, `plugins/fe/skills/` and `plugins/be/skills/` into `.agents/skills/` in your project, or `~/.agents/skills/` for every project. Many agents read that folder. For the rest, use the skills folder your agent's docs name.
 
 The [official skills](#official-skills) these build on aren't included. Install the ones you need from their makers' repositories, such as `npx skills add vercel/turborepo --skill turborepo`.
 
@@ -187,7 +187,7 @@ Issues and pull requests are welcome, especially for a rule that misfires in you
 
 - Change one skill where you can.
 - Update its `evals/evals.json`.
-- Keep `SKILL.md` under 200 lines and its description under 550 characters, and give a new skill a name no other set uses. Longer material goes in the skill's `references/` folder, which the agent reads only when it needs it.
+- Keep `SKILL.md` under 200 lines and its description under 550 characters, and give a new skill a name no other skill uses. Longer material goes in the skill's `references/` folder, which the agent reads only when it needs it.
 - Change the opening every skill shares in `shared/project-specifics.md`, then run `pnpm sync:opening`. Skills install one at a time, so each keeps its own copy.
 - Run the checks:
 
@@ -204,9 +204,9 @@ The skills are Markdown, so there's no build step, and Prettier is the only depe
 
 ## Support
 
-If these skills save you time, [buy me a coffee](https://buymeacoffee.com/timonwa).
+If these skills save you time, [star the repo](https://github.com/Timonwa/engineering-skills) so other developers can find it, or [buy me a coffee](https://buymeacoffee.com/timonwa).
 
-For writing docs, see [technical-writing-skills](https://github.com/Timonwa/technical-writing-skills). For blog posts, newsletters and social posts, see [content-writing-skills](https://github.com/Timonwa/content-writing-skills).
+For documentation, see [technical-writing-skills](https://github.com/Timonwa/technical-writing-skills). For blog posts, newsletters and social posts, see [content-writing-skills](https://github.com/Timonwa/content-writing-skills).
 
 ## License
 
