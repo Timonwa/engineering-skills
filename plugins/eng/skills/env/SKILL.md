@@ -112,6 +112,8 @@ Every env var a build reads is listed in the build task's `env` in `turbo.json`,
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/env-audit`, written from its own template. Run it rather than writing a report from here.
+
 - Secrets in CI and the deploy flow → `devops`.
 - turbo's strict env mode → `monorepo`.
 - Which secrets a backend holds and how they're used → `backend-security`; encryption keys → `field-encryption`.

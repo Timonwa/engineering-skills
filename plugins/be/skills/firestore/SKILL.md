@@ -83,4 +83,6 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/firestore-audit`, written from its own template. Run it rather than writing a report from here.
+
 Sign-in and sessions `auth` · roles, claims and guards `access-control` · schemas and projections `schemas-and-contracts` · Storage and uploads `image-handling` · App Check and server threats `backend-security` · env and secrets `env` · the emulator in tests `testing` · deploys `devops` · encrypted fields `field-encryption` · the audit `firestore-audit` · rules review `firebase-security-rules-auditor` (official).

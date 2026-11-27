@@ -121,6 +121,8 @@ The same four kinds whatever the repo's shape. A single app keeps them in `lib/`
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 - Validating a schema inside a route, and the route order → `api-architecture`.
 - Server Actions answering with an action result → `nextjs`.
 - Roles, verbs and `can()` → `access-control`.

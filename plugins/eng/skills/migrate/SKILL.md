@@ -92,3 +92,7 @@ For each step: make the change, then run the project's type check and lint, and 
 ## Output
 
 In chat: the migration and its scope, each step with what changed and its verification result, the breaking changes handled and how, anything left unresolved, and the manual follow-ups (servers to restart, docs to update). No report file; the diff is the artifact. Committing is `ship-changes`'; CI or workflow changes the migration needs are `devops`'.
+
+## Related skills
+
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/codebase-audit`, written from its own template. Run it rather than writing a report from here.

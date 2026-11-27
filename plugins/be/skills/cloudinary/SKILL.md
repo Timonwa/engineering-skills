@@ -77,4 +77,6 @@ Credits are one pool shared by transformations, storage and bandwidth ([current 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/performance-audit`, written from its own template. Run it rather than writing a report from here.
+
 Transformations, crops and effects `cloudinary-transformations` (official) · `next-cloudinary` components `cloudinary-next` (official) · the upload pipeline and storage `image-handling` · constants and secrets `env` · `next/image` loaders `nextjs` · `img`, `srcset` and `sizes` markup `semantic-html` · upload routes `api-architecture` · signature-route limits `rate-limiting` · server threats `backend-security` · alt text `accessibility`.

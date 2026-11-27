@@ -69,4 +69,6 @@ The banner is a dialog on first paint: reachable by keyboard from the first Tab,
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/security-audit`, written from its own template. Run it rather than writing a report from here.
+
 The CSP, embeds and third-party scripts `frontend-security` · loading scripts and client boundaries `nextjs` · overlay accessibility `accessibility` · the shape of the consent-record route `api-architecture` · banner copy `copywriting` · shared components `reusables`.

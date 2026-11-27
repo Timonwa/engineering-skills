@@ -105,3 +105,7 @@ In chat: the situation and what decided it, the interview answers, the approved 
 ## Owning skills
 
 Layout `code-structure` · names `naming` · tsconfig and typed routes `typescript` · schemas and the contracts package `schemas-and-contracts` · env `env` · workspace and catalog `monorepo` · CI and hooks `devops` · tests `testing` · styles `tailwind` · UI tiers `design-system` · components `reusables` · stories `storybook` · an Adire design system Adire's own skill · framework config `nextjs` · API layering `api-architecture` · Firebase `firestore` · integrations their own skills, named in [references/interview.md](references/interview.md).
+
+## Related skills
+
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/conventions-audit`, written from its own template. Run it rather than writing a report from here.

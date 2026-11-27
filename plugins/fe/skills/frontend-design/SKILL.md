@@ -113,4 +113,6 @@ Each of these is fine when it carries information and a tell of a template when 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/frontend-audit`, written from its own template. Run it rather than writing a report from here.
+
 Tokens and theming `tailwind` · the system, tiers and skeletons `design-system` · building a reusable component `reusables` · markup `semantic-html` · contrast, focus and motion rules `accessibility` · the logo and icons `logos-and-icons` · checking in the running app `next-dev-loop` (official) · the audit `frontend-audit`.

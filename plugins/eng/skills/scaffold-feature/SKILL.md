@@ -101,3 +101,7 @@ In chat: the approved plan, the files created and modified, the type-check and t
 - **Features inside an existing app only.** A new project is shaped first by `scaffold-app`.
 - **Never implements business logic** — it scaffolds the shape and stops.
 - Owning skills: placement `code-structure` · API layer `api-architecture` · caching and actions `nextjs` · schemas `schemas-and-contracts` · the store's files `firestore` · names `naming` · components `reusables` · stories `storybook` · tests `testing` · permissions `access-control`. Framework or major-version moves → `migrate`.
+
+## Related skills
+
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/conventions-audit`, written from its own template. Run it rather than writing a report from here.

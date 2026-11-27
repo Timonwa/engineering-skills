@@ -102,4 +102,6 @@ Mock `@upstash/ratelimit` with a fake whose next verdict a test sets (`testing`)
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 Where the call sits in a route `api-architecture` · the Redis client, locks and failure directions `redis` · the SDK `upstash-ratelimit-js` (official) · sign-in, verification and second factors `auth` · keys and passcodes `access-control` · quotas `plan-entitlements` · other resource limits (body size, page size, timeouts) `backend-security` · the limiter fake `testing`.

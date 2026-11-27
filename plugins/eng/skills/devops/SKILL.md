@@ -104,6 +104,8 @@ Not house defaults; add each when the project's size or risk calls for it, and r
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/dependency-audit`, `/env-audit`, and `/codebase-audit`, each written from its own template. Run it rather than writing a report from here.
+
 - Workspace, catalog, `allowBuilds` and `--affected` → `monorepo`.
 - Env, secrets and grants → `env`.
 - Commit messages, branches and opening PRs → `ship-changes`; reviewing a PR → `review-pr`.

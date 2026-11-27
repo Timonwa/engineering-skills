@@ -170,6 +170,8 @@ Every file Next.js reads by name — route files, metadata files, the ones besid
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/conventions-audit`, written from its own template. Run it rather than writing a report from here.
+
 - Names of files, symbols and suffixes → `naming`.
 - UI tiers and how components are organised in them → `design-system`; building one reusable → `reusables`.
 - The `"use client"` boundary, data fetching and caching → `nextjs`.

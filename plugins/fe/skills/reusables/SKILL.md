@@ -77,4 +77,6 @@ Components inside one app may use that app's hooks and data; only the shared lay
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/frontend-audit`, written from its own template. Run it rather than writing a report from here.
+
 Tiers, tokens and drift `design-system` · where files live `code-structure` · `cn()` and tokens `tailwind` · React practice `react` · markup `semantic-html` · keyboard, focus and names `accessibility` · stories `storybook` · names `naming` · types `typescript` · the audits `frontend-audit`, `storybook-audit`.

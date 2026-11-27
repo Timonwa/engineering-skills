@@ -91,4 +91,6 @@ The signs: literal values in feature code, two components doing one job, off-sca
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/frontend-audit` and `/storybook-audit`, each written from its own template. Run it rather than writing a report from here.
+
 Tokens and CSS `tailwind` · building one component `reusables` · visual quality `frontend-design` · where `src/ui/` sits in an app `code-structure` · stories `storybook` · contrast and status signals `accessibility` · logo files `logos-and-icons` · names `naming`.

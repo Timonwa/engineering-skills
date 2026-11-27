@@ -92,4 +92,6 @@ Code for signing, the address check and the retry schedule is in [references/pat
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 Receiving webhooks and versioning `api-architecture` · API keys and endpoint permissions `access-control` · outbound limits `rate-limiting` · storing secrets `field-encryption` · claims and locks `redis` · the event record and TTL `firestore` · payload projections `schemas-and-contracts` · SSRF and server threats `backend-security` · failure emails `transactional-email`.

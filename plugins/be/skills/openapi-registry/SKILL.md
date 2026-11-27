@@ -77,4 +77,6 @@ One tag at a time, reading the tag list fresh from the spec config: read the rou
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 Routes, guards and the envelope `api-architecture` · the schemas `schemas-and-contracts` · the rate-limit headers `rate-limiting` · sending webhooks `webhook-delivery` · the coverage test `testing` · the audit `api-audit`.

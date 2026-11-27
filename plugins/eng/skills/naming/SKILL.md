@@ -133,3 +133,7 @@ Two kinds, named for what they hold. **Ramps** name the hue and step (`--color-b
 Ship logos and symbols as **SVG**; add a PNG only where a raster is required (email, social cards, an OS icon), with the same stem. Favicon and app-icon files are not brand assets — in Next they are metadata files in `app/` (`favicon.ico`, `icon.svg`, `apple-icon.png`) and keep the framework's required names.
 
 > **Audit:** review this domain on demand with `conventions-audit` (see `audit-all` for the whole suite).
+
+## Related skills
+
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/conventions-audit`, written from its own template. Run it rather than writing a report from here.

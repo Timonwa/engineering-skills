@@ -126,4 +126,6 @@ Crawlers, writing and monitoring in detail: [references/aeo-geo.md](references/a
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/seo-aeo-geo-audit`, written from its own template. Run it rather than writing a report from here.
+
 The Metadata API, `ImageResponse` and caching `nextjs` · metadata file names `code-structure` · share links `access-control` · the 503 during maintenance `maintenance-mode` · the logo `logos-and-icons` · markup `semantic-html` · names `naming` · per-tier constants `env` · clear writing `copywriting` · auditing a site `seo-aeo-geo-audit`.

@@ -113,4 +113,6 @@ The house model is **Cache Components** (`cacheComponents: true`): a page is a s
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/frontend-audit` and `/performance-audit`, each written from its own template. Run it rather than writing a report from here.
+
 Files and folders `code-structure` · React `react` · sessions and the current user `auth` · the API the app reads `api-architecture` · schemas and action results `schemas-and-contracts` · env `env` · headers and CSP `frontend-security` · metadata and OG images `seo-aeo-geo` · images `image-handling` · flags `feature-flags` · the audits `frontend-audit`, `performance-audit` · adopting Cache Components `next-cache-components-adoption`, tuning it `next-cache-components-optimizer`, partial prefetching `next-partial-prefetching-adoption`, checking a change in the running app `next-dev-loop` (all official).

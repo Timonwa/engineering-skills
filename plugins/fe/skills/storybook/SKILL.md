@@ -136,4 +136,6 @@ Axe runs on every story and fails the run ([references/setup.md](references/setu
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/storybook-audit`, written from its own template. Run it rather than writing a report from here.
+
 Stories as the UI tests `testing` · tiers `design-system` · keyboard patterns and axe `accessibility` · building the component `reusables` · tokens and CSS `tailwind` · file and story names `naming` · catalog and versions `monorepo` · CI and hosting `devops` · the audit `storybook-audit`.

@@ -69,4 +69,6 @@ Run `npx @tailwindcss/upgrade` (Node 20+) on a branch, then check by hand: `them
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/frontend-audit`, written from its own template. Run it rather than writing a report from here.
+
 Governance, tiers and when something earns a token `design-system` · visual quality `frontend-design` · building one component `reusables` · contrast and motion `accessibility` · documenting tokens as stories `storybook` · class and token names `naming`.

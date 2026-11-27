@@ -91,6 +91,8 @@ A worker in `functions/*` is bundled — esbuild into a `deploy/` folder with it
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/dependency-audit`, written from its own template. Run it rather than writing a report from here.
+
 - Turborepo's mechanics — task syntax, the graph, caching, filters, `prune`, `boundaries`, troubleshooting → the official `turborepo` skill. It reads the docs bundled with the installed `turbo`; on a `turbo` too old to bundle them, upgrade first.
 - Where code goes inside apps and packages, and source vs `dist/` packages → `code-structure`.
 - tsconfig presets and NodeNext → `typescript`.

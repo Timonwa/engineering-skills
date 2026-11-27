@@ -108,4 +108,6 @@ A worked example — the registry, the ladder and the provider — is in [refere
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 The cache tier `redis` · the kill switch for the whole product `maintenance-mode` · permissions `access-control` · plan limits `plan-entitlements` · sub-routes, audit and the cron tick `api-architecture` · caching and Suspense `nextjs` · deploy-time config `env` · the store `firestore` · tests `testing`.

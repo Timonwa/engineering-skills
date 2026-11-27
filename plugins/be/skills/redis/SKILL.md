@@ -97,4 +97,6 @@ Code for the client, keys, cache, lock and claim is in [references/patterns.md](
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/redis-audit`, written from its own template. Run it rather than writing a report from here.
+
 Rate limits, lockouts and the client IP `rate-limiting` · where a lock or claim sits in a route, and webhook records `api-architecture` · framework caching `nextjs` · cached values' schemas `schemas-and-contracts` · flags on this cache tier `feature-flags` · the fake client `testing` · env and credentials `env` · the SDK `upstash-redis-js` (official) · the audit `redis-audit`.

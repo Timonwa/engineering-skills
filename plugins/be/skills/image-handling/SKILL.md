@@ -77,4 +77,6 @@ A worked example — caps, the browser and server checks, a fixed-slot replace, 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/performance-audit` and `/security-audit`, each written from its own template. Run it rather than writing a report from here.
+
 The Admin client and the store `firestore` · upload routes and the 202 `api-architecture` · per-account upload limits `rate-limiting` · server threats and file access (BOLA) `backend-security` · delivery transforms `cloudinary` · `next/image` and refresh after a mutation `nextjs` · generated images (`ImageResponse`) `seo-aeo-geo` · alt text `accessibility` · slot and asset names `naming`.

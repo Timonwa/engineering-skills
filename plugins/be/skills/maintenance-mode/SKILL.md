@@ -79,4 +79,6 @@ The two gates and the bypass route, in code, are in [references/gates.md](refere
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 The flag's lifecycle and schedule `feature-flags` · the error envelope, webhooks and cron `api-architecture` · the mirror and failure directions `redis` · proxy and route-handler mechanics `nextjs` · constant-time comparison and the 404 `backend-security` · the bypass token as a secret `env` · deploys and rollback, which are not a maintenance flip `devops` · crawlers and 503 `seo-aeo-geo`.

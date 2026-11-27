@@ -92,4 +92,6 @@ From [Gmail's sender guidelines](https://support.google.com/a/answer/81126) and 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit` and `/content-audit`, each written from its own template. Run it rather than writing a report from here.
+
 Auth links and which emails auth sends `auth` · per-recipient budgets `rate-limiting` · claims `redis` · provider webhooks `api-architecture` · tokens and per-tier constants `env` · the safe URL schema `schemas-and-contracts` · the fetch mock `testing` · email accessibility `accessibility` · what the email says `emails` · its voice `copywriting`.

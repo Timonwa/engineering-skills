@@ -115,6 +115,8 @@ With `typedRoutes: true` in `next.config`, Next checks every `href` against the 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/codebase-audit`, written from its own template. Run it rather than writing a report from here.
+
 - Zod schemas, write and read shapes, and the shared contracts package → `schemas-and-contracts`.
 - Names of types, schemas and generics → `naming`.
 - Where route and endpoint files live → `code-structure`.

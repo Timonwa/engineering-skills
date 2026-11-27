@@ -98,4 +98,6 @@ In the same change: the request and response schemas (`schemas-and-contracts`), 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 Rate limits `rate-limiting` · sessions `auth` · permissions `access-control` · schemas `schemas-and-contracts` · the store `firestore` · the API reference `openapi-registry` · route tests `testing` · server-side threats `backend-security` · the audit log `audit-log` · where files live `code-structure`.

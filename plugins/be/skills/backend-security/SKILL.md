@@ -119,4 +119,6 @@ Concrete snippets — the ownership check, the field mapper, the SSRF guard, tok
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/security-audit`, written from its own template. Run it rather than writing a report from here.
+
 Browser-side threats `frontend-security` · sessions `auth` · roles and guards `access-control` · budgets and lockouts `rate-limiting` · route order, webhooks and audit `api-architecture` · schemas `schemas-and-contracts` · rules `firestore` (and `firebase-security-rules-auditor`) · uploads `image-handling` · secrets `env` · CI and supply chain `devops` · encrypted fields `field-encryption` · the review `security-audit`.

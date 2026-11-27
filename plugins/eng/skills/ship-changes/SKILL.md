@@ -91,3 +91,7 @@ Then, for each group: stage its paths, show `git diff --cached --stat` and the m
 ## Output
 
 In chat: the branch used and why, the approved plan, each commit's hash and hook result, what's left uncommitted, and the PR URL when one was opened. Reviewing a PR is `review-pr`'s.
+
+## Related skills
+
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/review-pr`, written from its own template. Run it rather than writing a report from here.

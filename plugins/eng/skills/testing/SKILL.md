@@ -117,6 +117,8 @@ Most tests are unit and integration; end-to-end covers the few journeys the prod
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/codebase-audit`, written from its own template. Run it rather than writing a report from here.
+
 - Test-file and fixture names → `naming`; where `src/testing/` and the testing package sit → `code-structure`.
 - Stories as UI tests → `storybook`.
 - CI jobs and the opt-in end-to-end gate → `devops`.

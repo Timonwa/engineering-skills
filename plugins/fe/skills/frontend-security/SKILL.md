@@ -105,4 +105,6 @@ The headers block, both CSP setups and the sanitiser are in [references/frontend
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/security-audit`, written from its own template. Run it rather than writing a report from here.
+
 Server-side threats, CSRF and Server Actions `backend-security` · the session cookie `auth` · public values and tiers `env` · the safe URL schema `schemas-and-contracts` · consent before scripts `cookie-consent` · proxy and rendering `nextjs` · indexing headers `seo-aeo-geo` · uploads `image-handling` · dependency gates `devops` · a full review `security-audit`.

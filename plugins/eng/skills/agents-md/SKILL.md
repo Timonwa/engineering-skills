@@ -85,3 +85,7 @@ A stale `AGENTS.md` is worse than none, because the agent trusts it. Update it i
 ## Step 4 — Report
 
 Summarise what was detected and what the user supplied, list each deviation recorded and anything assumed, and give the line count. If the repo has no structure yet, point to `scaffold-app` first. Don't commit; that's `ship-changes`'.
+
+## Related skills
+
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/codebase-audit`, written from its own template. Run it rather than writing a report from here.

@@ -91,4 +91,6 @@ The order on every route, after the rate limit (`api-architecture`):
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit`, written from its own template. Run it rather than writing a report from here.
+
 Who may act, and the check order `access-control` · webhooks and audit entries `api-architecture` · rate limits versus quotas `rate-limiting` · counters and transactions `firestore` · cache invalidation `redis`, `nextjs` · switching a feature off `feature-flags` · usage emails `transactional-email` · tests `testing`.

@@ -112,4 +112,6 @@ How labels are read, and how errors are shown and announced, is `accessibility`'
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/accessibility-audit`, written from its own template. Run it rather than writing a report from here.
+
 Focus, keyboard, contrast, ARIA states and announcements `accessibility` · a reusable component's API and focus handling `reusables` · Tailwind and `sr-only` `tailwind` · images, forms and metadata in Next.js `nextjs` · titles and structured data `seo-aeo-geo` · form schemas `schemas-and-contracts` · the review `accessibility-audit`.

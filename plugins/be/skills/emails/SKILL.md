@@ -69,4 +69,6 @@ Before applying this skill, read the project's root `AGENTS.md`, the `AGENTS.md`
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/content-audit`, written from its own template. Run it rather than writing a report from here.
+
 Sending, deliverability, unsubscribe, templates and previews `transactional-email` · voice, word list and mechanics `copywriting` · auth emails and what they link to `auth` · alt text and contrast `accessibility`.

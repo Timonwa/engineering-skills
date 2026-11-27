@@ -109,4 +109,6 @@ Next.js's own rule: the real check sits beside the data, because layouts don't r
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/access-control-audit` and `/security-audit`, each written from its own template. Run it rather than writing a report from here.
+
 Permissions `access-control` · lockout and auth rate tiers `rate-limiting` · the route around the guard `api-architecture` · CSRF and server threats `backend-security` · the idle clock `redis` · auth email delivery `transactional-email` · caching the current user `nextjs` · the sign-in UI `react`.

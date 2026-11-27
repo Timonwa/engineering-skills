@@ -87,4 +87,6 @@ Browser snippets for checking a rendered page — unlabelled inputs, small targe
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/accessibility-audit`, written from its own template. Run it rather than writing a report from here.
+
 Element choice, headings, labels and landmarks `semantic-html` · colour tokens and contrast pairs `design-system`, `tailwind` · component behaviour and focus management `reusables` · keyboard and axe stories `storybook` · route announcements and titles `nextjs`, `seo-aeo-geo` · sign-in `auth` · end-to-end checks `testing` · the review `accessibility-audit`.

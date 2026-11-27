@@ -86,4 +86,6 @@ Each encrypted field gets a round-trip test: write it, read the raw document and
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/security-audit`, written from its own template. Run it rather than writing a report from here.
+
 Secrets, the env guard and rotation overlap `env` · password hashing and sign-in `auth` · verify routes and lockouts `rate-limiting` · projections and list shapes `schemas-and-contracts` · the store and its backups `firestore` · where the service sits `api-architecture` · server threats `backend-security` · test keys `testing`.

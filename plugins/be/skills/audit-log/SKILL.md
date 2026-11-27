@@ -82,4 +82,6 @@ Each privileged route's test asserts its audit entry — the action, the actor, 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/api-audit` and `/security-audit`, each written from its own template. Run it rather than writing a report from here.
+
 Where the audit step sits in a route `api-architecture` · guards, verbs and impersonation `access-control` · the security log and what never gets logged `backend-security` · `after()` `nextjs` · the transaction `firestore` · streaming `webhook-delivery` · plan features `plan-entitlements` · tests `testing` · retention and erasure across the product `field-encryption`.

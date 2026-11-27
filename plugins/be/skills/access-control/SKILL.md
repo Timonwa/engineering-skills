@@ -166,4 +166,6 @@ Where clients read the store directly, the security rules mirror the same model 
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/access-control-audit`, written from its own template. Run it rather than writing a report from here.
+
 Sessions, claims and key issuing `auth` · plan checks `plan-entitlements` · flags `feature-flags` · attempt limits `rate-limiting` · the route the guard sits in `api-architecture` · field allowlists and projections `schemas-and-contracts` · security rules `firestore` · server threats `backend-security` · tests `testing` · the audit `access-control-audit`.

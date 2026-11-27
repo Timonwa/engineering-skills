@@ -97,4 +97,6 @@ State someone would want to share, refresh or go Back to lives in the search par
 
 ## Related skills
 
+**This skill sets the rules and never writes an audit report.** An audit of this area is `/frontend-audit` and `/performance-audit`, each written from its own template. Run it rather than writing a report from here.
+
 Designing a reusable component or hook `reusables` · server and client boundary, data, caching, Server Actions and the compiler setting `nextjs` · form schemas and field errors `schemas-and-contracts` · markup `semantic-html` · keyboard and focus `accessibility` · types `typescript` · names `naming` · component tests `testing` · the audit `frontend-audit`.
