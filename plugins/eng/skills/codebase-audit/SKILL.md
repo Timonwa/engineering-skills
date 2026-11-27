@@ -1,17 +1,16 @@
 ---
 name: codebase-audit
 description: >-
-  Manually invoked. Broad repo-health triage that routes to the deep audits and covers the hygiene no other audit owns — tech debt, dead code, TypeScript strictness and the options TypeScript 6 deprecates, error handling, tests (boundary-only mocks, determinism, no skipped or flaky tests), CI hygiene, branch protection, releases and deploys, and git hygiene. Verifies each finding and writes a prioritized report with an overall health score.
+  A command. Broad repo-health triage that routes to the deep audits and covers the hygiene no other audit owns — tech debt, dead code, TypeScript strictness and the options TypeScript 6 deprecates, error handling, tests (boundary-only mocks, determinism, no skipped or flaky tests), CI hygiene, branch protection, releases and deploys, and git hygiene. Verifies each finding and writes a prioritized report with an overall health score.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Codebase audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team codebase audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/codebase-audit.md`.
+A **red-team codebase audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/codebase-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`typescript`**, **`testing`**, **`naming`** and **`devops`** are installed, they are the fix target for what this finds.
 

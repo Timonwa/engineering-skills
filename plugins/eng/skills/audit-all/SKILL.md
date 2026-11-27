@@ -1,15 +1,14 @@
 ---
 name: audit-all
 description: >-
-  Manually invoked. Runs the house audit suite across the eng, fe and be sets — detects what the repo has, runs every installed audit that applies (codebase, conventions, dependencies, env, security, accessibility, frontend, performance, SEO/AEO/GEO, Storybook, content, API, access control, Firestore, Redis), and rolls their reports into one health report with an overall score and cross-cutting priorities. Each audit still writes its own report.
+  A command. Runs the house audit suite across the eng, fe and be sets — detects what the repo has, runs every installed audit that applies (codebase, conventions, dependencies, env, security, accessibility, frontend, performance, SEO/AEO/GEO, Storybook, content, API, access control, Firestore, Redis), and rolls their reports into one health report with an overall score and cross-cutting priorities. Each audit still writes its own report.
 argument-hint: "[phase]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Audit all
 
-**Run this only when the user asks for it by name. It runs the audits that apply, writes their reports and a roll-up, and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It runs the audits that apply, writes their reports and a roll-up, and changes no code; fixing a finding is a separate request.**
 
 The **orchestrator** for the house audits. It works out what the repo contains, runs each audit that is **installed and applies**, and rolls the results into one report — one health picture instead of a dozen. Each audit still writes its own `_reports/<name>.md`; this adds `_reports/audit-all.md`.
 
@@ -28,7 +27,7 @@ Severity levels (CRITICAL / HIGH / MEDIUM / LOW) are each audit's own; this skil
 
 ## The audits
 
-Each is its own manually invoked command, in the set that owns its domain. Run only the ones installed — a project may have one set and not the others — and say in the report which weren't available.
+Each is its own command, in the set that owns its domain. Run only the ones installed — a project may have one set and not the others — and say in the report which weren't available.
 
 | Audit                                                          | Set   | Run when                                                                                                         |
 | -------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------- |

@@ -1,17 +1,16 @@
 ---
 name: frontend-audit
 description: >-
-  Manually invoked. Next.js App Router frontend audit — Pages Router residue, app/ holding only Next's files, thin entries, the server and client boundary, typed fetchers and Cache Components scopes, Server Actions with action results and updateTag, URL-owned panel state, typed routes, shared-UI adoption with skeletons, the Tailwind v4 setup with its token layers and dark mode, favicons and app icons, and React 19 idioms. Verifies each finding and writes a prioritized report.
+  A command. Next.js App Router frontend audit — Pages Router residue, app/ holding only Next's files, thin entries, the server and client boundary, typed fetchers and Cache Components scopes, Server Actions with action results and updateTag, URL-owned panel state, typed routes, shared-UI adoption with skeletons, the Tailwind v4 setup with its token layers and dark mode, favicons and app icons, and React 19 idioms. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Frontend audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team frontend audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/frontend-audit.md`.
+A **red-team frontend audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/frontend-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`nextjs`**, **`react`**, **`reusables`**, **`design-system`**, **`tailwind`**, **`logos-and-icons`**, **`code-structure`** and **`typescript`**, which are the fix targets when installed; speed goes deeper in **`performance-audit`**, client security in **`security-audit`**.
 

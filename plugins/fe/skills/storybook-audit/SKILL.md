@@ -1,17 +1,16 @@
 ---
 name: storybook-audit
 description: >-
-  Manually invoked. Storybook coverage and story-quality audit — cross-references shared UI components against existing stories to find gaps, and checks stories against Storybook 10 practice — CSF3 with satisfies Meta and framework-package types, tier-first titles, a control per prop, keyboard plays that assert behaviour, axe failing the run, no dark-mode or coverage-only stories. Verifies each finding and writes a prioritized report.
+  A command. Storybook coverage and story-quality audit — cross-references shared UI components against existing stories to find gaps, and checks stories against Storybook 10 practice — CSF3 with satisfies Meta and framework-package types, tier-first titles, a control per prop, keyboard plays that assert behaviour, axe failing the run, no dark-mode or coverage-only stories. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Storybook audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team Storybook audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/storybook-audit.md`.
+A **red-team Storybook audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/storybook-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`storybook`**, and **`design-system`** for the tiers; both are the fix targets when installed.
 

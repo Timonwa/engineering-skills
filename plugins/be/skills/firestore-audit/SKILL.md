@@ -1,17 +1,16 @@
 ---
 name: firestore-audit
 description: >-
-  Manually invoked. Firestore audit — clients denied and the data layer the only caller, one Admin client, Timestamps converted before parsing, reads that match the response (batched, chunked at 30, counted, projected), transactions, counters and batches over 500, drift repair, cursor pagination, TTL and cascade deletes, idempotent triggers, indexes by edition, rules and their tests, and backups. Verifies each finding and writes a prioritised report.
+  A command. Firestore audit — clients denied and the data layer the only caller, one Admin client, Timestamps converted before parsing, reads that match the response (batched, chunked at 30, counted, projected), transactions, counters and batches over 500, drift repair, cursor pagination, TTL and cascade deletes, idempotent triggers, indexes by edition, rules and their tests, and backups. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Firestore audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team Firestore audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/firestore-audit.md`.
+A **red-team Firestore audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/firestore-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`firestore`** is installed, apply its house rules too; rule internals go to **`firebase-security-rules-auditor`** (the official Firebase skill, where installed).
 

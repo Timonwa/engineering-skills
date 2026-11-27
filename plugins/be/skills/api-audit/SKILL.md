@@ -1,17 +1,16 @@
 ---
 name: api-audit
 description: >-
-  Manually invoked. API-layer audit — the six-step route, thin routes over services, validation at every boundary, the envelope, typed errors and no-store, concurrent edits and long-running work, a named rate limit on every route, cursor lists, versions and transitions, the audit log, each route's reference entry and test, cron, webhook and proxy rules, and where present maintenance mode, flags, plan entitlements, outgoing webhooks and email sending. Verifies each finding and writes a prioritised report.
+  A command. API-layer audit — the six-step route, thin routes over services, validation at every boundary, the envelope, typed errors and no-store, concurrent edits and long-running work, a named rate limit on every route, cursor lists, versions and transitions, the audit log, each route's reference entry and test, cron, webhook and proxy rules, and where present maintenance mode, flags, plan entitlements, outgoing webhooks and email sending. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # API audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team API audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/api-audit.md`.
+A **red-team API audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/api-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`api-architecture`**, **`rate-limiting`**, **`audit-log`**, **`openapi-registry`**, **`access-control`**, **`schemas-and-contracts`**, **`image-handling`**, **`maintenance-mode`**, **`feature-flags`**, **`plan-entitlements`**, **`webhook-delivery`** and **`transactional-email`** are installed, apply their house rules too.
 

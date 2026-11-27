@@ -1,15 +1,14 @@
 ---
 name: review-pr
 description: >-
-  Manually invoked. Reviews a pull request or a branch against what it set out to do and the project's own rules, plus real bugs — runs or reads the checks, hunts by angle, proves every finding, and reports a severity table. Read-only unless asked to comment on the PR or fix findings. A project with its own review skill uses that instead.
+  A command. Reviews a pull request or a branch against what it set out to do and the project's own rules, plus real bugs — runs or reads the checks, hunts by angle, proves every finding, and reports a severity table. Read-only unless asked to comment on the PR or fix findings. A project with its own review skill uses that instead.
 argument-hint: "[pr-number | pr-url | branch] [--comment] [--fix] [extra focus]"
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Task, Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git status:*), Bash(git merge-base:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr review:*), Bash(gh issue view:*), Bash(gh repo view:*), Bash(pnpm:*)
 ---
 
 # Review a pull request
 
-**Run this only when the user asks for it by name. It reports in chat first, and changes no code and posts nothing to the pull request unless asked to (`--fix`, `--comment`).**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It reports in chat first, and changes no code and posts nothing to the pull request unless asked to (`--fix`, `--comment`).**
 
 A review exists to catch what would hurt after merge — a bug, a security hole, a broken rule the next feature would copy — and to say so in a way the author can act on in one pass. Every finding is proved before it's reported; a short true list beats a long padded one.
 

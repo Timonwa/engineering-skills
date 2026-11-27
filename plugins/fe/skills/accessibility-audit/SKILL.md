@@ -1,17 +1,16 @@
 ---
 name: accessibility-audit
 description: >-
-  Manually invoked. Red-team accessibility audit of an app or a diff against WCAG 2.2 AA, organised by POUR with each check citing its success criterion — structure and landmarks, contrast on the tokens in both themes, reflow and zoom, keyboard, focus and dialogs, pointer and target size, forms and errors that are seen, status messages, and the lint, Storybook and end-to-end gates. Verifies each finding and writes a prioritized report.
+  A command. Red-team accessibility audit of an app or a diff against WCAG 2.2 AA, organised by POUR with each check citing its success criterion — structure and landmarks, contrast on the tokens in both themes, reflow and zoom, keyboard, focus and dialogs, pointer and target size, forms and errors that are seen, status messages, and the lint, Storybook and end-to-end gates. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Accessibility audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team accessibility audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/accessibility-audit.md`.
+A **red-team accessibility audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/accessibility-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`accessibility`** and **`semantic-html`**, which are the fix targets when installed. Each check names its WCAG 2.2 success criterion; a check marked **house rule** goes beyond WCAG and is reported as LOW, never as a WCAG failure.
 

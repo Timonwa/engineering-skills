@@ -1,17 +1,16 @@
 ---
 name: redis-audit
 description: >-
-  Manually invoked. Redis audit — one client with a short timeout, keys from builders with a TTL on every write, a failure direction per primitive (caches open, locks and claims closed, rate limits by tier, timeouts as failures), caches parsed on every hit with group invalidation, owned locks and short claims released on failure, rate-limit layers and the client IP, eviction and tiers, and tests that prove each direction. Only for apps that use Redis.
+  A command. Redis audit — one client with a short timeout, keys from builders with a TTL on every write, a failure direction per primitive (caches open, locks and claims closed, rate limits by tier, timeouts as failures), caches parsed on every hit with group invalidation, owned locks and short claims released on failure, rate-limit layers and the client IP, eviction and tiers, and tests that prove each direction. Only for apps that use Redis.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Redis audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team Redis audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/redis-audit.md`.
+A **red-team Redis audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/redis-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`redis`**, **`rate-limiting`** and **`api-architecture`** are installed, apply their house rules too.
 

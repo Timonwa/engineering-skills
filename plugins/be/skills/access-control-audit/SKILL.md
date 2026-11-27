@@ -1,17 +1,16 @@
 ---
 name: access-control-audit
 description: >-
-  Manually invoked. Access-control audit — guards on every route and Server Action (BFLA), 404 before 403 and tenant scoping (BOLA), allowlisted writes and projected reads (BOPLA), verbs never role names, roles that add up, escalation and invitations, claims and revocation, sessions and sign-in, API keys and share links, the plan and flag order, UI gates, data rules and the tests. Verifies each finding and writes a prioritised report.
+  A command. Access-control audit — guards on every route and Server Action (BFLA), 404 before 403 and tenant scoping (BOLA), allowlisted writes and projected reads (BOPLA), verbs never role names, roles that add up, escalation and invitations, claims and revocation, sessions and sign-in, API keys and share links, the plan and flag order, UI gates, data rules and the tests. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Access control audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team access-control audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/access-control-audit.md`.
+A **red-team access-control audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/access-control-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where **`access-control`**, **`auth`**, **`api-architecture`** and **`backend-security`** are installed, apply their house rules too; rule internals go to **`firebase-security-rules-auditor`** (the official Firebase skill, where installed).
 

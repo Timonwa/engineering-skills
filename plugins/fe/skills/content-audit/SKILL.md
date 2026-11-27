@@ -1,17 +1,16 @@
 ---
 name: content-audit
 description: >-
-  Manually invoked. Copy audit of an app, its emails or a diff, against the project's own voice, word list and banned words and the plain-language standards (GOV.UK, NN/g, WCAG) — point-first writing, marketing claims and calls to action, buttons and links, form labels and errors, empty, success and loading states, sentence case and mechanics, accessible words and alt text, translation-safe strings, and each transactional email's sender, subject, preheader and body. Verifies each finding and writes a prioritized report.
+  A command. Copy audit of an app, its emails or a diff, against the project's own voice, word list and banned words and the plain-language standards (GOV.UK, NN/g, WCAG) — point-first writing, marketing claims and calls to action, buttons and links, form labels and errors, empty, success and loading states, sentence case and mechanics, accessible words and alt text, translation-safe strings, and each transactional email's sender, subject, preheader and body. Verifies each finding and writes a prioritized report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Content audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no copy; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no copy; fixing a finding is a separate request.**
 
-A **manually-invoked audit of every word a product shows** — website pages, help articles, app and admin screens, forms, buttons, errors, dialogs, empty states, notifications and the emails it sends — for an app or a specific diff/PR. Each finding is verified against the real string before it lands in a phase-aware, scored report at `_reports/content-audit.md`.
+An **audit of every word a product shows** — website pages, help articles, app and admin screens, forms, buttons, errors, dialogs, empty states, notifications and the emails it sends — for an app or a specific diff/PR. Each finding is verified against the real string before it lands in a phase-aware, scored report at `_reports/content-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`copywriting`** and the words side of **`emails`**, which are the fix targets when installed. The project's voice is the yardstick: this audit reports where copy departs from the voice, word list and banned words the project records, and never imposes a voice of its own.
 

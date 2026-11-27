@@ -1,17 +1,16 @@
 ---
 name: security-audit
 description: >-
-  Manually invoked. Red-team application-security review across frontend and backend, mapped to the OWASP Top 10 2025 and API Top 10 — access control, SSRF, CSRF, headers and CSP, sessions with operator step-up, the trusted client IP, field encryption and keys, uploads and user files, injection and XSS, abuse cases, the audit trail, cookie consent, supply chain and fail-open handling — naming the domain audits for depth rather than repeating them.
+  A command. Red-team application-security review across frontend and backend, mapped to the OWASP Top 10 2025 and API Top 10 — access control, SSRF, CSRF, headers and CSP, sessions with operator step-up, the trusted client IP, field encryption and keys, uploads and user files, injection and XSS, abuse cases, the audit trail, cookie consent, supply chain and fail-open handling — naming the domain audits for depth rather than repeating them.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Security audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team security audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/security-audit.md`.
+A **red-team security audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/security-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`backend-security`**, **`frontend-security`**, **`field-encryption`**, **`image-handling`**, **`audit-log`** and **`cookie-consent`** are installed, they are the fix target for what this finds; rules files themselves → **`firebase-security-rules-auditor`**.
 

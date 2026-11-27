@@ -1,17 +1,16 @@
 ---
 name: dependency-audit
 description: >-
-  Manually invoked. Dependency-health audit of a monorepo — one version per dependency through the pnpm catalog with recorded exceptions, workspace protocol and dependency direction, peer dependencies for singletons, unused, missing, duplicate and misplaced packages, build-script allowlists, release-age holds, advisories, automated updates, and lockfile integrity. Verifies each finding and writes a prioritised report.
+  A command. Dependency-health audit of a monorepo — one version per dependency through the pnpm catalog with recorded exceptions, workspace protocol and dependency direction, peer dependencies for singletons, unused, missing, duplicate and misplaced packages, build-script allowlists, release-age holds, advisories, automated updates, and lockfile integrity. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Dependency audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team dependency audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/dependency-audit.md`.
+A **red-team dependency audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/dependency-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`monorepo`** and **`devops`** are installed, they are the fix target for what this finds.
 

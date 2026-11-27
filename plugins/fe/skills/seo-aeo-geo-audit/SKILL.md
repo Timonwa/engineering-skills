@@ -1,17 +1,16 @@
 ---
 name: seo-aeo-geo-audit
 description: >-
-  Manually invoked. SEO, AEO and GEO audit of a public-facing app or a diff — indexability per app and record state, statuses sent before streaming, a canonical only from the page's own path, metadata through one factory, generated share cards behind a validated route, JSON-LD eligibility, robots and sitemaps as Google reads them, Core Web Vitals proxies, answers easy to find, and the AI engines' search crawlers, Bing and IndexNow. Writes a prioritised report.
+  A command. SEO, AEO and GEO audit of a public-facing app or a diff — indexability per app and record state, statuses sent before streaming, a canonical only from the page's own path, metadata through one factory, generated share cards behind a validated route, JSON-LD eligibility, robots and sitemaps as Google reads them, Core Web Vitals proxies, answers easy to find, and the AI engines' search crawlers, Bing and IndexNow. Writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # SEO, AEO and GEO audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team SEO, AEO and GEO audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/seo-aeo-geo-audit.md`.
+A **red-team SEO, AEO and GEO audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/seo-aeo-geo-audit.md`.
 
 > **Self-contained** — every check is spelled out below, so it runs with no other skill installed. It mirrors **`seo-aeo-geo`**, with **`nextjs`** and **`semantic-html`** where they meet it; those are the fix targets when installed. A check that lives in a search console rather than the code is marked "needs confirmation", never scored from code.
 

@@ -1,17 +1,16 @@
 ---
 name: conventions-audit
 description: >-
-  Manually invoked. Audits an app or monorepo against the house naming and code-structure standards — identifier, file, test-file, field and error naming; thin route entries and app/ holding only Next's files; components by product area; kind-first lib/ and barrels; server boundaries; typed routes; promotion on the second consumer; duplicated helpers, oversized files, hardcoded values and cross-app config drift. Verifies each finding and writes a prioritised report.
+  A command. Audits an app or monorepo against the house naming and code-structure standards — identifier, file, test-file, field and error naming; thin route entries and app/ holding only Next's files; components by product area; kind-first lib/ and barrels; server boundaries; typed routes; promotion on the second consumer; duplicated helpers, oversized files, hardcoded values and cross-app config drift. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Conventions audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team conventions audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/conventions-audit.md`.
+A **red-team conventions audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/conventions-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skills **`naming`** and **`code-structure`** are installed, they are the fix target for what this finds.
 

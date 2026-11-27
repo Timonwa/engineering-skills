@@ -36,7 +36,7 @@ Agent skills that help developers build, review and ship web apps on Next.js, Re
 
 ## How the skills work
 
-- Your agent picks one of the 45 skills when your request matches it, so you don't have to name it. The 17 commands run only when you call them.
+- Your agent picks one of the 45 skills when your request matches it, so you don't have to name it. The 17 commands are the audits and reviews you run by name. Your agent can also run one when a task needs it.
 - A skill reads your project's `AGENTS.md`, and the docs it links, before anything else. Colours, collection names, limits and the brand voice come from there. A value that isn't written down is asked for, never guessed.
 - Each rule follows the current standard: the platform's own docs, WCAG 2.2 and OWASP. Where your project does something differently and records why, your way wins. Where it gives no reason, the skill asks before following either.
 - Nothing is installed, committed or pushed unless you ask. Scaffolding lists every file it will create, edit, move or delete, and waits for your approval.

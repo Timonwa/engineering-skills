@@ -1,17 +1,16 @@
 ---
 name: env-audit
 description: >-
-  Manually invoked. Environment and secrets audit — secrets in env and public per-tier facts in committed constants, APP_ENV as the tier, a Zod guard at boot with no stray process.env reads, a names-only .env.example in parity, NEXT_PUBLIC correctness, App Hosting grants and overlays, worker secrets, safe ops scripts, rotation and leak response, and turbo's env listing. Verifies each finding and writes a prioritised report.
+  A command. Environment and secrets audit — secrets in env and public per-tier facts in committed constants, APP_ENV as the tier, a Zod guard at boot with no stray process.env reads, a names-only .env.example in parity, NEXT_PUBLIC correctness, App Hosting grants and overlays, worker secrets, safe ops scripts, rotation and leak response, and turbo's env listing. Verifies each finding and writes a prioritised report.
 argument-hint: "[phase] [path]"
-disable-model-invocation: true
 disallowed-tools: Edit, NotebookEdit
 ---
 
 # Env audit
 
-**Run this only when the user asks for it by name. It writes a report and changes no code; fixing a finding is a separate request.**
+**The user usually runs this by name, and an agent can run it too when the work needs this check. It writes a report and changes no code; fixing a finding is a separate request.**
 
-A **manually-invoked, red-team env audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/env-audit.md`.
+A **red-team env audit** of an app or a specific diff/PR. It is **self-contained** — every check is spelled out inline, so it runs a full review with zero other skills installed — and each finding is verified against the real code before it lands in a phase-aware, scored report at `_reports/env-audit.md`.
 
 > **Self-contained** — this checklist is comprehensive on its own and needs no other skill installed. Where the house skill **`env`** is installed, it is the fix target for what this finds; secrets in CI belong to `devops`.
 
